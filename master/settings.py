@@ -14,6 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='your-secret-key-here')
 
 DEBUG = config('DEBUG', default=False, cast=bool)
+
 # DEBUG = True
 
 # Add your actual domain
@@ -279,6 +280,10 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+
+WP_SITE_URL     = 'https://naijadeleys.com.ng'
+WP_USERNAME     = 'AlphaDev_'
+WP_APP_PASSWORD = 'scK9 fIaZ FUmY tDWo Mhqb rXbq'
 
 # HOSTING EMAILS:
     # udsn.defence@gmail.com

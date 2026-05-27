@@ -303,8 +303,8 @@
   {% if blockbusters %}
   <div class="row-s" style="padding-top:1.2rem;">
     <div class="row-hd">
-      <span class="row-ttl">🏆 Blockbusters</span>
-      <span class="badge-label bl-gold">Must Watch</span>
+      <span class="row-ttl">🏆 Most Watched</span>
+      <span class="badge-label bl-gold">1K+ Views</span>
     </div>
     <div class="srow-wrap">
       <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
@@ -392,8 +392,21 @@
   {% if categories %}{% for category in categories %}{% if category.latest_movies %}
   <div class="row-s">
     <div class="row-hd">
-      <span class="row-ttl">{{ category.name }}</span>
-      <a href="{% url 'movies:category_movies' category.id %}" class="row-see">Explore All &rsaquo;</a>
+      <span class="row-ttl">
+        {% if 'nollywood' in category.name|lower %}🎭
+        {% elif 'hollywood' in category.name|lower %}🎬
+        {% elif 'korean' in category.name|lower %}🇰🇷
+        {% elif 'chinese' in category.name|lower %}🇨🇳
+        {% elif 'anime' in category.name|lower %}⛩️
+        {% elif 'thai' in category.name|lower %}🇹🇭
+        {% elif 'bollywood' in category.name|lower %}🎵
+        {% elif 'series' in category.name|lower %}📺
+        {% elif 'animation' in category.name|lower %}🎨
+        {% else %}🎥
+        {% endif %}
+        {{ category.name }}
+      </span>
+      <a href="{% url 'movies:category_movies' category.id %}" class="row-see" style="opacity:1;transform:none;font-size:.68rem;color:#54b3d6;font-weight:600;text-decoration:none;margin-left:auto;white-space:nowrap;">See All &rsaquo;</a>
     </div>
     <div class="srow-wrap">
       <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
@@ -438,7 +451,7 @@
           <span class="cbadge cbtr b-hd" style="font-size:.48rem;">HD</span>
         </div>
         <div class="gc-ttl">{{ movie.title }}</div>
-        {% if movie.year %}<div class="gc-yr">{{ movie.year }}</div>{% endif %}
+        {% if movie.vi_year %}<div class="gc-yr">{{ movie.vi_year }}</div>{% endif %}
       </a>
       {% empty %}
       <div class="empty-state" style="grid-column:1/-1;text-align:center;padding:3rem;">
@@ -487,6 +500,98 @@
   </div>
   {% endif %}
 
+  {# ═══ ONGOING SERIES GRID ═══ #}
+  {% if ongoing_series %}
+  <div class="grid-s" id="ongoing-section">
+    <div class="row-hd" style="padding-left:0;padding-right:0;margin-bottom:.5rem;">
+      <span class="row-ttl">📡 Ongoing Series</span>
+      <span class="badge-label bl-blue">Updating</span>
+      <span style="margin-left:auto;font-size:.62rem;display:flex;align-items:center;gap:5px;color:#9ca3af;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#e50914;display:inline-block;animation:pulse-dot 2s infinite;"></span> Live Updates
+      </span>
+    </div>
+    <div class="grid-wrap" id="ongoing-grid">
+      {% for series in ongoing_series %}
+      <a href="{% url 'movies:movie_detail' series.pk %}" class="gc">
+        <div class="gc-img shim">
+          {% if series.image_url %}<img src="{{ series.image_url }}" alt="{{ series.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
+          <div class="gc-ov"></div>
+          <div class="gc-play"><div class="gc-play-btn"><i class="fas fa-play"></i></div></div>
+          <span class="cbadge cbtl b-ep" style="font-size:.48rem;">EP</span>
+          <span class="cbadge cbtr b-hd" style="font-size:.48rem;">HD</span>
+        </div>
+        <div class="gc-ttl">{{ series.title }}</div>
+        {% if series.title_b %}<div class="gc-yr" style="color:#7c3aed;">{{ series.title_b }}</div>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+    {% if ongoing_series.has_next %}
+    <div class="lm-wrap">
+      <button class="lm-btn" data-page="{{ ongoing_series.next_page_number }}" data-type="ongoing">
+        <i class="fas fa-plus"></i> Load More Ongoing Series
+      </button>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ═══ BROWSE BY CATEGORY GRID ═══ #}
+  {% if all_categories %}
+  <div class="grid-s" id="categories-section" style="padding-bottom:3rem;">
+    <div class="row-hd" style="padding-left:0;padding-right:0;margin-bottom:.8rem;">
+      <span class="row-ttl">🗂️ Browse by Category</span>
+      <span class="badge-label bl-green">All Genres</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+      {% for cat in all_categories %}
+      <a href="{% url 'movies:category_movies' cat.id %}" class="cat-tile">
+        <span class="cat-icon">
+          {% if 'nollywood' in cat.name|lower %}🎭
+          {% elif 'hollywood' in cat.name|lower %}🎬
+          {% elif 'korean' in cat.name|lower or 'kdrama' in cat.name|lower %}🇰🇷
+          {% elif 'chinese' in cat.name|lower %}🇨🇳
+          {% elif 'anime' in cat.name|lower %}⛩️
+          {% elif 'thai' in cat.name|lower %}🇹🇭
+          {% elif 'bollywood' in cat.name|lower %}🎵
+          {% elif 'series' in cat.name|lower %}📺
+          {% elif 'ongoing' in cat.name|lower %}🔄
+          {% elif 'horror' in cat.name|lower %}👻
+          {% elif 'comedy' in cat.name|lower %}😂
+          {% elif 'romance' in cat.name|lower %}❤️
+          {% elif 'action' in cat.name|lower %}💥
+          {% elif 'sport' in cat.name|lower or 'wrestling' in cat.name|lower %}🏆
+          {% elif '18' in cat.name %}🔞
+          {% else %}🎥
+          {% endif %}
+        </span>
+        <span class="cat-name">{{ cat.name }}</span>
+        <span class="cat-count">{{ cat.movie_count }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <style>
+    .cat-tile {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:5px; padding:14px 8px; border-radius:8px; text-decoration:none;
+      background:rgba(0,0,0,.03); border:1px solid rgba(0,0,0,.08);
+      transition:background .18s,transform .18s; text-align:center; cursor:pointer;
+    }
+    .dark .cat-tile { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.1); }
+    .cat-tile:hover { background:rgba(229,9,20,.07); border-color:rgba(229,9,20,.25); transform:translateY(-2px); }
+    .dark .cat-tile:hover { background:rgba(229,9,20,.12); border-color:rgba(229,9,20,.3); }
+    .cat-icon { font-size:1.5rem; line-height:1; }
+    .cat-name { font-size:.65rem; font-weight:700; color:#374151; line-height:1.2; }
+    .dark .cat-name { color:#ccc; }
+    .cat-count { font-size:.55rem; color:#9ca3af; font-weight:500; }
+    @media (min-width:480px) { #categories-section > div { grid-template-columns:repeat(4,1fr); } }
+    @media (min-width:640px) { #categories-section > div { grid-template-columns:repeat(5,1fr); } }
+    @media (min-width:900px) { #categories-section > div { grid-template-columns:repeat(7,1fr); } }
+    @media (min-width:1200px) { #categories-section > div { grid-template-columns:repeat(9,1fr); } }
+  </style>
+
   {# ═══ FOOTER CTA ═══ #}
   <div class="footer-cta">
     <p>Thousands of HD movies, updated daily. 100% free.</p>
@@ -524,12 +629,11 @@
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
     btn.disabled = true;
 
-    const qs = type === 'series' ? '?completed_page=' : '?page=';
-    fetch(qs + page)
+    const qs = type === 'series' ? '?completed_page=' : type === 'ongoing' ? '?ongoing_page=' : '?page=';
+    const gridId = type === 'series' ? '#series-grid' : type === 'ongoing' ? '#ongoing-grid' : '#recent-grid';    fetch(qs + page)
       .then(r => r.text())
       .then(html => {
         const doc = new DOMParser().parseFromString(html, 'text/html');
-        const gridId = type === 'series' ? '#series-grid' : '#recent-grid';
         const newGrid = doc.querySelector(gridId);
         const curGrid = document.querySelector(gridId);
         if (newGrid && curGrid) {

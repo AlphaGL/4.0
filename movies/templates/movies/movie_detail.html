@@ -209,6 +209,92 @@
             </div>
           {% endif %}
 
+          {# ── Video Information Table ── #}
+          {% with vi_any=movie.vi_year|default:movie.vi_genre|default:movie.vi_country|default:movie.vi_cast|default:movie.vi_status|default:movie.vi_language|default:movie.vi_episodes|default:movie.vi_runtime|default:movie.vi_filesize|default:movie.vi_subtitle %}
+          {% if vi_any %}
+          <div class="mt-4 mb-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+
+              {% if movie.vi_year %}
+              <div class="flex items-start gap-2">
+                <span class="shrink-0 text-gray-400 w-20">Year</span>
+                <span class="text-white/90 font-medium">{{ movie.vi_year }}</span>
+              </div>
+              {% endif %}
+
+              {% if movie.vi_country %}
+              <div class="flex items-start gap-2">
+                <span class="shrink-0 text-gray-400 w-20">Country</span>
+                <span class="text-white/90 font-medium">{{ movie.vi_country }}</span>
+              </div>
+              {% endif %}
+
+              {% if movie.vi_language %}
+              <div class="flex items-start gap-2">
+                <span class="shrink-0 text-gray-400 w-20">Language</span>
+                <span class="text-white/90 font-medium">{{ movie.vi_language }}</span>
+              </div>
+              {% endif %}
+
+              {% if movie.vi_subtitle %}
+              <div class="flex items-start gap-2">
+                <span class="shrink-0 text-gray-400 w-20">Subtitle</span>
+                <span class="text-white/90 font-medium">{{ movie.vi_subtitle }}</span>
+              </div>
+              {% endif %}
+
+              {% if movie.vi_genre %}
+              <div class="flex items-start gap-2 sm:col-span-2">
+                <span class="shrink-0 text-gray-400 w-20">Genre</span>
+                <span class="text-white/90 font-medium">{{ movie.vi_genre }}</span>
+              </div>
+              {% endif %}
+
+              {% if movie.vi_cast %}
+              <div class="flex items-start gap-2 sm:col-span-2">
+                <span class="shrink-0 text-gray-400 w-20">Stars</span>
+                <span class="text-white/80 leading-relaxed">{{ movie.vi_cast }}</span>
+              </div>
+              {% endif %}
+
+              {% if movie.vi_episodes %}
+              <div class="flex items-start gap-2">
+                <span class="shrink-0 text-gray-400 w-20">Episodes</span>
+                <span class="text-white/90 font-medium">{{ movie.vi_episodes }}</span>
+              </div>
+              {% endif %}
+
+              {% if movie.vi_status %}
+              <div class="flex items-start gap-2">
+                <span class="shrink-0 text-gray-400 w-20">Status</span>
+                <span class="font-semibold
+                  {% if 'complet' in movie.vi_status|lower %}text-green-400
+                  {% elif 'ongoing' in movie.vi_status|lower or 'going' in movie.vi_status|lower %}text-yellow-400
+                  {% else %}text-white/90{% endif %}">
+                  {{ movie.vi_status }}
+                </span>
+              </div>
+              {% endif %}
+
+              {% if movie.vi_runtime %}
+              <div class="flex items-start gap-2">
+                <span class="shrink-0 text-gray-400 w-20">Runtime</span>
+                <span class="text-white/90 font-medium">{{ movie.vi_runtime }}</span>
+              </div>
+              {% endif %}
+
+              {% if movie.vi_filesize %}
+              <div class="flex items-start gap-2">
+                <span class="shrink-0 text-gray-400 w-20">File Size</span>
+                <span class="text-white/90 font-medium">{{ movie.vi_filesize }}</span>
+              </div>
+              {% endif %}
+
+            </div>
+          </div>
+          {% endif %}
+          {% endwith %}
+
           {# CTA buttons #}
           <div class="flex flex-wrap gap-2 mt-4">
             {% if movie.download_links.exists or movie.download_url or movie.hls_manifest %}

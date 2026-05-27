@@ -30,6 +30,7 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST, require_GET
 import requests
 import re
+from django.db import models as django_models
 
 # Cache key constants
 SIDEBAR_CATEGORIES_CACHE_KEY = 'sidebar_categories_v2'
@@ -43,9 +44,14 @@ def get_sidebar_categories():
     if not categories:
         target_categories = [
             'Nollywood movies',
-            'Korean drama', 
+            'Korean drama',
             'Hollywood movies',
-            'Bollywood movies'
+            'Bollywood movies',
+            'Anime',
+            'Chinese drama',
+            'Thai drama',
+            'Series',
+            'Animation',
         ]
         
         categories_qs = Category.objects.filter(
@@ -59,7 +65,6 @@ def get_sidebar_categories():
                 to_attr='latest_movies'
             )
         )
-        
         
         # Order categories as specified
         category_order = {name: i for i, name in enumerate(target_categories)}
@@ -453,36 +458,41 @@ class HomeView(ListView):
         # only standalone movies (no title_b)
         return (
             Movie.objects
-                 .only('id', 'title', 'image_url', 'created_at', 'title_b')
+                 .only('id', 'title', 'image_url', 'created_at', 'title_b', 'vi_year')
                  .filter(Q(title_b__isnull=True) | Q(title_b=''))
                  .order_by('-created_at')
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # 0. Blockbusters (flagged in admin)
+ 
+        # ── 0. Blockbusters — AUTO: top views >= 1 000, no manual flag needed ──
         block_qs = (
             Movie.objects
-                 .only('id', 'title', 'image_url', 'created_at')
-                 .filter(is_blockbuster=True)
-                 .order_by('-created_at')
+                 .only('id', 'title', 'image_url', 'created_at', 'views')
+                 .filter(views__gte=1000)
+                 .order_by('-views', '-created_at')
         )
-        context['blockbusters'] = block_qs[:12]  # first 12
-
-        # 1. Trending Now (all‑time most viewed)
+        context['blockbusters'] = block_qs[:12]
+ 
+        # ── 1. Trending Now (top 24 by all-time views > 0) ──
         context['trending'] = (
             Movie.objects
                  .only('id', 'title', 'image_url', 'views', 'created_at')
                  .filter(views__gt=0)
-                 .order_by('-views', '-created_at')[:12]  # top 6
+                 .order_by('-views', '-created_at')[:24]
         )
-
-        # 2. Sidebar categories
+ 
+        # ── 2. Sidebar categories (cached) ──
         context['categories'] = get_sidebar_categories()
-
-        # 3. New episodes (non-completed series)
-        new_eps = (
+ 
+        # ── 3. All categories for the "Browse by Category" grid at the bottom ──
+        context['all_categories'] = Category.objects.annotate(
+            movie_count=django_models.Count('movies')
+        ).filter(movie_count__gt=0).order_by('name')
+ 
+        # ── 4. Ongoing series (grid section — has title_b, not completed) ──
+        ongoing_qs = (
             Movie.objects
                  .only('id', 'title', 'title_b', 'image_url', 'title_b_updated_at')
                  .filter(
@@ -490,11 +500,16 @@ class HomeView(ListView):
                  )
                  .order_by('-title_b_updated_at')
         )
-        context['new_episodes'] = Paginator(new_eps, 12).get_page(
+        context['ongoing_series'] = Paginator(ongoing_qs, 12).get_page(
+            self.request.GET.get('ongoing_page', 1)
+        )
+ 
+        # ── 5. Latest episodes row (horizontal scroll, same queryset) ──
+        context['new_episodes'] = Paginator(ongoing_qs, 12).get_page(
             self.request.GET.get('new_page', 1)
         )
-
-        # 4. Completed series
+ 
+        # ── 6. Completed series ──
         comp_ser = (
             Movie.objects
                  .only('id', 'title', 'title_b', 'image_url', 'title_b_updated_at')
@@ -506,9 +521,8 @@ class HomeView(ListView):
         context['completed_series'] = Paginator(comp_ser, 12).get_page(
             self.request.GET.get('completed_page', 1)
         )
-
+ 
         return context
-
 
 @method_decorator(cache_page(60 * 60 * 4), name='dispatch')  # 4 hours instead of 24
 class CategoryMoviesView(ListView):
@@ -521,7 +535,7 @@ class CategoryMoviesView(ListView):
         self.category = get_object_or_404(Category, id=self.kwargs['cat_id'])
         # Show all movies in this category, newest first - optimized query
         return Movie.objects.select_related().only(
-            'id', 'title', 'image_url', 'created_at', 'description'
+            'id', 'title', 'image_url', 'created_at', 'description', 'vi_year'
         ).filter(categories=self.category).order_by('-created_at')
 
     def get_context_data(self, **kwargs):

@@ -241,81 +241,150 @@ def _detect_hashtags(movie):
         'pimville', 'generations', 'skeem', 'uzalo', 'isibaya',
         'rhythm city', 'scandal', 'gomora', 'diep city'
     ]):
-        tg = (
+        # tg = (
+        #     "#Watch2D #SASeries #SouthAfricanSeries #MzansiMagic #AfricanDrama "
+        #     "#Mzansi #AfricanEntertainment #FreeDownload #HDDownload #NowStreaming "
+        #     "#MustWatch #BingeWatch #SouthAfrica #AfricanTV #BlackExcellence "
+        #     "#WatchFree #StreamFree #Trending #Entertainment"
+        # )
+        # tw = "#Watch2D #SASeries #MzansiMagic #AfricanDrama #FreeDownload"
+        # fb = tg
+        tg=""
+        fb = (
             "#Watch2D #SASeries #SouthAfricanSeries #MzansiMagic #AfricanDrama "
             "#Mzansi #AfricanEntertainment #FreeDownload #HDDownload #NowStreaming "
             "#MustWatch #BingeWatch #SouthAfrica #AfricanTV #BlackExcellence "
             "#WatchFree #StreamFree #Trending #Entertainment"
         )
         tw = "#Watch2D #SASeries #MzansiMagic #AfricanDrama #FreeDownload"
-        fb = tg
+        # fb = tg
 
     elif any(kw in combined for kw in ['korean', 'kdrama', 'k-drama', 'korea']):
-        tg = (
+        # tg = (
+        #     "#Watch2D #KDrama #KoreanDrama #KoreanSeries #KDramaLover #KDramaAddict "
+        #     "#AsianDrama #KoreanTV #FreeDownload #HDDownload #NowStreaming #MustWatch "
+        #     "#BingeWatch #KoreanContent #Hallyu #KDramaEnglishSub #WatchFree #Trending"
+        # )
+        # tw = "#Watch2D #KDrama #KoreanDrama #AsianDrama #FreeDownload"
+        # fb = tg
+        tg=""
+        fb = (
             "#Watch2D #KDrama #KoreanDrama #KoreanSeries #KDramaLover #KDramaAddict "
             "#AsianDrama #KoreanTV #FreeDownload #HDDownload #NowStreaming #MustWatch "
             "#BingeWatch #KoreanContent #Hallyu #KDramaEnglishSub #WatchFree #Trending"
         )
         tw = "#Watch2D #KDrama #KoreanDrama #AsianDrama #FreeDownload"
-        fb = tg
+        # fb = tg
 
     elif any(kw in combined for kw in ['nigerian', 'nollywood', 'naija', 'nigeria']):
-        tg = (
+        # tg = (
+        #     "#Watch2D #Nollywood #NigerianMovies #NaijaMovies #AfricanMovies "
+        #     "#NollywoodSeries #FreeDownload #HDDownload #NowStreaming #MustWatch "
+        #     "#BingeWatch #NigerianEntertainment #Naija #AfricanCinema #9jaMovies "
+        #     "#NollywoodFinest #WatchFree #Trending #BlackExcellence"
+        # )
+        # tw = "#Watch2D #Nollywood #NaijaMovies #AfricanMovies #FreeDownload"
+        # fb = tg
+        tg=""
+        fb = (
             "#Watch2D #Nollywood #NigerianMovies #NaijaMovies #AfricanMovies "
             "#NollywoodSeries #FreeDownload #HDDownload #NowStreaming #MustWatch "
             "#BingeWatch #NigerianEntertainment #Naija #AfricanCinema #9jaMovies "
             "#NollywoodFinest #WatchFree #Trending #BlackExcellence"
         )
         tw = "#Watch2D #Nollywood #NaijaMovies #AfricanMovies #FreeDownload"
-        fb = tg
+        # fb = tg
 
     elif any(kw in combined for kw in ['turkish', 'turkey', 'dizi']):
-        tg = (
+        # tg = (
+        #     "#Watch2D #TurkishSeries #TurkishDrama #Dizi #TurkishTV #FreeDownload "
+        #     "#HDDownload #NowStreaming #MustWatch #BingeWatch #TurkishContent "
+        #     "#TurkDizi #EnglishSubtitles #WatchFree #StreamFree #Trending"
+        # )
+        # tw = "#Watch2D #TurkishDrama #Dizi #TurkishSeries #FreeDownload"
+        # fb = tg
+        tg=""
+        fb = (
             "#Watch2D #TurkishSeries #TurkishDrama #Dizi #TurkishTV #FreeDownload "
             "#HDDownload #NowStreaming #MustWatch #BingeWatch #TurkishContent "
             "#TurkDizi #EnglishSubtitles #WatchFree #StreamFree #Trending"
         )
         tw = "#Watch2D #TurkishDrama #Dizi #TurkishSeries #FreeDownload"
-        fb = tg
+        # fb = tg
 
     elif any(kw in combined for kw in ['indian', 'bollywood', 'hindi', 'telugu', 'tamil']):
-        tg = (
+        # tg = (
+        #     "#Watch2D #Bollywood #IndianSeries #HindiSeries #IndianDrama "
+        #     "#TeluguMovies #TamilMovies #FreeDownload #HDDownload #NowStreaming "
+        #     "#MustWatch #BingeWatch #IndianCinema #Tollywood #Kollywood "
+        #     "#WatchFree #StreamFree #Trending #IndianEntertainment"
+        # )
+        # tw = "#Watch2D #Bollywood #IndianSeries #HindiSeries #FreeDownload"
+        # fb = tg
+        tg=""
+        fb = (
             "#Watch2D #Bollywood #IndianSeries #HindiSeries #IndianDrama "
             "#TeluguMovies #TamilMovies #FreeDownload #HDDownload #NowStreaming "
             "#MustWatch #BingeWatch #IndianCinema #Tollywood #Kollywood "
             "#WatchFree #StreamFree #Trending #IndianEntertainment"
         )
         tw = "#Watch2D #Bollywood #IndianSeries #HindiSeries #FreeDownload"
-        fb = tg
+        # fb = tg
 
     elif any(kw in combined for kw in ['chinese', 'china', 'cdrama', 'c-drama']):
-        tg = (
+        # tg = (
+        #     "#Watch2D #CDrama #ChineseDrama #ChineseSeries #AsianDrama "
+        #     "#ChineseTV #FreeDownload #HDDownload #NowStreaming #MustWatch "
+        #     "#BingeWatch #Cdramaland #ChineseEntertainment #WatchFree #Trending"
+        # )
+        # tw = "#Watch2D #CDrama #ChineseDrama #AsianDrama #FreeDownload"
+        # fb = tg
+        tg=""
+        fb = (
             "#Watch2D #CDrama #ChineseDrama #ChineseSeries #AsianDrama "
             "#ChineseTV #FreeDownload #HDDownload #NowStreaming #MustWatch "
             "#BingeWatch #Cdramaland #ChineseEntertainment #WatchFree #Trending"
         )
         tw = "#Watch2D #CDrama #ChineseDrama #AsianDrama #FreeDownload"
-        fb = tg
+        # fb = tg
 
     elif movie.is_series:
-        tg = (
+        # tg = (
+        #     "#Watch2D #NewSeries #TVSeries #Series #NowStreaming #FreeDownload "
+        #     "#HDDownload #MustWatch #BingeWatch #SeriesAlert #Entertainment "
+        #     "#WatchFree #StreamFree #NewRelease #Trending #NetflixAlternative "
+        #     "#FreeMovies #OnlineTV #BingeAlert #WeekendWatch"
+        # )
+        # tw = "#Watch2D #TVSeries #NowStreaming #FreeDownload #BingeWatch"
+        # fb = tg
+        tg=""
+        fb = (
             "#Watch2D #NewSeries #TVSeries #Series #NowStreaming #FreeDownload "
             "#HDDownload #MustWatch #BingeWatch #SeriesAlert #Entertainment "
             "#WatchFree #StreamFree #NewRelease #Trending #NetflixAlternative "
             "#FreeMovies #OnlineTV #BingeAlert #WeekendWatch"
         )
         tw = "#Watch2D #TVSeries #NowStreaming #FreeDownload #BingeWatch"
-        fb = tg
+        # fb = tg
 
     else:
-        tg = (
+        # tg = (
+        #     "#Watch2D #NewMovie #Hollywood #FullMovie #FreeDownload #HDMovie "
+        #     "#NowStreaming #MustWatch #MovieLovers #Cinema #Entertainment "
+        #     "#WatchFree #StreamFree #NewRelease #Trending #NetflixAlternative "
+        #     "#FreeMovies #MovieNight #FilmLovers #WeekendWatch"
+        # )
+        # tw = "#Watch2D #NewMovie #Hollywood #FreeDownload #MustWatch"
+        # fb = tg
+        tg=""
+        fb = (
             "#Watch2D #NewMovie #Hollywood #FullMovie #FreeDownload #HDMovie "
             "#NowStreaming #MustWatch #MovieLovers #Cinema #Entertainment "
             "#WatchFree #StreamFree #NewRelease #Trending #NetflixAlternative "
             "#FreeMovies #MovieNight #FilmLovers #WeekendWatch"
         )
         tw = "#Watch2D #NewMovie #Hollywood #FreeDownload #MustWatch"
-        fb = tg
+        # fb = tg
 
     return tg, tw, fb
 
@@ -354,7 +423,7 @@ def _post_movie_to_telegram(movie, is_new: bool):
 
             lines += [
                 "",
-                f"🔗 <a href='{url}'>▶️ Watch FREE on Watch2D</a>",
+                f"🔗 <a href='{url}'>▶️ CLICK HERE TO WATCH / DOWNLOAD</a>",
                 "",
                 tg_tags,
                 TELEGRAM_FOOTER,
@@ -592,6 +661,65 @@ def _post_to_all_platforms(movie, is_new: bool):
     _post_movie_to_facebook(movie, is_new=is_new)
 
 
+
+
+# ══════════════════════════════════════════════════════════════
+# VIDEO INFO PARSER
+# Extracts structured metadata from the nkiri content paragraph:
+#   Filesize: – 102 MB
+#   Duration: 00:46:43
+#   Title: Flower Boy
+#   Year: 2026
+#   Country: Thailand
+#   Language: th
+#   Genre: Drama, Sci-Fi, Fantasy
+#   Stars: Actor1, Actor2, ...
+#   Total Episodes: 8
+#   Status: On Going
+#   Subtitle: English
+# ══════════════════════════════════════════════════════════════
+
+def _parse_video_info(soup) -> dict:
+    """
+    Scan all <p> tags in the content for the metadata info block
+    that nkiri embeds. Returns a dict with any fields found.
+    """
+    info = {}
+    # Field aliases: (search_key_lower, our_dict_key)
+    field_map = [
+        ('filesize',       'filesize'),
+        ('duration',       'runtime'),
+        ('country',        'country'),
+        ('language',       'language'),
+        ('genre',          'genre'),
+        ('stars',          'cast'),
+        ('total episodes', 'episodes'),
+        ('status',         'status'),
+        ('subtitle',       'subtitle'),
+        ('year',           'year'),
+    ]
+
+    for p in soup.find_all('p'):
+        text = p.get_text('\n', strip=True)
+        for line in text.splitlines():
+            line = line.strip()
+            if ':' not in line:
+                continue
+            key_raw, _, val = line.partition(':')
+            key  = key_raw.strip().lower().lstrip('–- ')
+            val  = val.strip().lstrip('–- ').strip()
+            if not val:
+                continue
+            for search_key, dict_key in field_map:
+                if search_key in key and dict_key not in info:
+                    # Clean up filesize: "– 102 MB" → "102 MB"
+                    val = val.lstrip('–- ').strip()
+                    info[dict_key] = val
+                    break
+
+    return info
+
+
 # ══════════════════════════════════════════════════════════════
 # SCRAPER CONSTANTS
 # ══════════════════════════════════════════════════════════════
@@ -602,7 +730,7 @@ KNOWN_DOWNLOAD_DOMAINS = [
     'dl.downloadwella.com.ng', 'archive.org', 'mega.nz', 'drive.google.com',
     'mediafire.com', 'pixeldrain.com', 'terabox.com', 'onedrive.live.com',
     'downloadwella.com', 'netnaijafiles.xyz', 'loadedfiles.org',
-    'sabishares.com', 'meetdownload.com', 'webloaded.com.ng'
+    'sabishares.com', 'meetdownload.com', 'webloaded.com.ng', 'wideshares.org',
 ]
 
 FILE_EXTENSIONS = ['.mp4', '.mkv', '.zip', '.rar', '.srt']
@@ -905,6 +1033,11 @@ class Command(BaseCommand):
 
                 soup = BeautifulSoup(item.get('content', {}).get('rendered', ''), 'html.parser')
 
+                # ── Parse video info block (Filesize, Duration, Stars, etc.) ──
+                vi = _parse_video_info(soup)
+                if vi:
+                    print(f"📋 Video info: {vi}")
+
                 video_url = ''
                 iframe    = soup.find('iframe')
                 if iframe and iframe.get('src'):
@@ -966,6 +1099,16 @@ class Command(BaseCommand):
                             image_url=image_url,
                             completed=is_complete,
                             scraped=True,
+                            vi_country  = vi.get('country', ''),
+                            vi_language = vi.get('language', ''),
+                            vi_cast     = vi.get('cast', ''),
+                            vi_genre    = vi.get('genre', ''),
+                            vi_year     = vi.get('year', ''),
+                            vi_episodes = vi.get('episodes', ''),
+                            vi_status   = vi.get('status', ''),
+                            vi_runtime  = vi.get('runtime', ''),
+                            vi_filesize = vi.get('filesize', ''),
+                            vi_subtitle = vi.get('subtitle', ''),
                         )
                         created = True
                         print(f"✅ Created new movie: {title}")
@@ -1012,6 +1155,19 @@ class Command(BaseCommand):
                             print(f"🏁 Completion: {movie.completed} → {is_complete}")
                             movie.completed = is_complete
                             updated         = True
+
+                        # Update video info fields if we have new data and field is blank
+                        for vi_field, vi_key in [
+                            ('vi_country', 'country'), ('vi_language', 'language'),
+                            ('vi_cast', 'cast'),       ('vi_genre', 'genre'),
+                            ('vi_year', 'year'),       ('vi_episodes', 'episodes'),
+                            ('vi_status', 'status'),   ('vi_runtime', 'runtime'),
+                            ('vi_filesize', 'filesize'),('vi_subtitle', 'subtitle'),
+                        ]:
+                            val = vi.get(vi_key, '')
+                            if val and not getattr(movie, vi_field, ''):
+                                setattr(movie, vi_field, val)
+                                updated = True
 
                         if updated:
                             movie.save()
