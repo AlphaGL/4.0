@@ -213,7 +213,7 @@
   .footer-cta p { color: #9ca3af; font-size: .76rem; margin-bottom: 1rem; }
   .dark .footer-cta p { color: #555; }
   .footer-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 28px; background: #e50914; border-radius: 4px; color: #fff; font-weight: 700; font-size: .83rem; text-decoration: none; transition: background .18s; }
-  .footer-btn:hover { background: #b20710; }
+  .footer-btn:hover { background: #024374; }
 
   /* ── EMPTY STATE ── */
   .empty-state { color: #9ca3af; }
@@ -327,7 +327,7 @@
   </div>
   {% endif %}
 
-  {# ═══ TRENDING ROW ═══ #}
+  <!-- {# ═══ TRENDING ROW ═══ #}
   {% if trending %}
   <div class="row-s">
     <div class="row-hd">
@@ -357,7 +357,7 @@
       <button class="sarr sarr-r" onclick="doScroll(this,1)"><i class="fas fa-chevron-right"></i></button>
     </div>
   </div>
-  {% endif %}
+  {% endif %} -->
 
   {# ═══ LATEST EPISODES ROW ═══ #}
   {% if new_episodes %}
@@ -595,8 +595,8 @@
   {# ═══ FOOTER CTA ═══ #}
   <div class="footer-cta">
     <p>Thousands of HD movies, updated daily. 100% free.</p>
-    <a href="{% url 'movies:home' %}" class="footer-btn">
-      <i class="fas fa-film"></i> Browse All Movies
+    <a href="https://t.me/officialwatch2dchannel" class="footer-btn">
+      <i class="fas fa-film"></i> DOWNLOAD FROM TELEGRAM CHANNEL
     </a>
   </div>
 
