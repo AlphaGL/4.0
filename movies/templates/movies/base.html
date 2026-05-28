@@ -276,7 +276,7 @@
             
             {# Dynamic Categories #}
             {% for category in categories %}
-              <a href="{% url 'movies:category_movies' category.id %}" 
+              <a href="{% url 'movies:category_movies' category.id category.slug %}" 
                  class="nav-link {% if request.resolver_match.kwargs.category_id == category.id %}active{% endif %}">
                 <i class="fas fa-film mr-2"></i>
                 <span>{{ category.name }}</span>
@@ -358,7 +358,7 @@
                   
                   {# Dynamic Categories Mobile #}
                   {% for category in categories %}
-                    <a href="{% url 'movies:category_movies' category.id %}" 
+                    <a href="{% url 'movies:category_movies' category.id category.slug %}" 
                        class="mobile-nav-link {% if request.resolver_match.kwargs.category_id == category.id %}active{% endif %}">
                       <div class="flex items-center">
                         <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mr-3">

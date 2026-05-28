@@ -8,6 +8,26 @@ from django.utils.text import slugify
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=120, unique=True, blank=True,
+                            help_text="Auto-generated from name. Used in SEO URLs.")
+
+    def _generate_unique_slug(self):
+        base = slugify(self.name)
+        slug = base
+        n = 1
+        qs = Category.objects.exclude(pk=self.pk)
+        while qs.filter(slug=slug).exists():
+            n += 1
+            slug = f"{base}-{n}"
+        return slug
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = self._generate_unique_slug()
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse('movies:category_movies', args=[self.pk, self.slug])
 
     def __str__(self):
         return self.name

@@ -521,7 +521,7 @@
         {% endif %}
         {{ category.name }}
       </span>
-      <a href="{% url 'movies:category_movies' category.id %}" class="row-see" style="opacity:1;transform:none;font-size:.68rem;color:#54b3d6;font-weight:600;text-decoration:none;margin-left:auto;white-space:nowrap;">See All &rsaquo;</a>
+      <a href="{% url 'movies:category_movies' category.id category.slug %}" class="row-see" style="opacity:1;transform:none;font-size:.68rem;color:#54b3d6;font-weight:600;text-decoration:none;margin-left:auto;white-space:nowrap;">See All &rsaquo;</a>
     </div>
     <div class="srow-wrap">
       <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
@@ -624,7 +624,7 @@
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
       {% for cat in all_categories %}
-      <a href="{% url 'movies:category_movies' cat.id %}" class="cat-tile">
+      <a href="{% url 'movies:category_movies' cat.id cat.slug %}" class="cat-tile">
         <span class="cat-icon">
           {% if 'nollywood' in cat.name|lower %}🎭
           {% elif 'hollywood' in cat.name|lower %}🎬

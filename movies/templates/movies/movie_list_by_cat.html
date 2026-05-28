@@ -1,0 +1,565 @@
+{% extends 'movies/base.html' %}
+{% load movie_extras %}
+{% load static %}
+
+{# ═══════════════════════════════════════════════════════════
+   SEO BLOCKS
+   ═══════════════════════════════════════════════════════════ #}
+
+{% block title %}
+  {% if category %}
+    {% if page_obj.number > 1 %}
+      {{ category.name }} Movies – Page {{ page_obj.number }} | Watch2D
+    {% else %}
+      {{ category.name }} Movies – Free HD Download & Stream | Watch2D
+    {% endif %}
+  {% else %}
+    All Movies – Free HD Download & Stream | Watch2D
+  {% endif %}
+{% endblock %}
+
+{% block meta_description %}
+  {% if category %}
+    {% if page_obj.number > 1 %}
+      Page {{ page_obj.number }} of {{ category.name }} movies on Watch2D. {{ page_obj.paginator.count }} titles available to download or stream free in HD.
+    {% else %}
+      Watch and download {{ category.name }} movies free in HD on Watch2D. {{ page_obj.paginator.count }} titles available. No registration needed.
+    {% endif %}
+  {% else %}
+    Browse all free HD movies on Watch2D. {{ page_obj.paginator.count }} titles available to stream and download. Hollywood, Nollywood, K-Drama, Anime and more.
+  {% endif %}
+{% endblock %}
+
+{% block meta_keywords %}
+  {% if category %}{{ category.name }}, {{ category.name }} movies, download {{ category.name }}, free {{ category.name }}, HD {{ category.name }}, Watch2D{% else %}free movies, download movies, HD movies, Watch2D{% endif %}
+{% endblock %}
+
+{% block canonical_block %}
+  {# Only page 1 is canonical; paginated pages use rel=prev/next #}
+  {% if page_obj.number == 1 %}
+    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}" />
+  {% else %}
+    <link rel="canonical" href="{{ request.build_absolute_uri }}" />
+  {% endif %}
+  {% if page_obj.has_previous %}
+    <link rel="prev" href="?page={{ page_obj.previous_page_number }}" />
+  {% endif %}
+  {% if page_obj.has_next %}
+    <link rel="next" href="?page={{ page_obj.next_page_number }}" />
+  {% endif %}
+{% endblock %}
+
+{% block og_type %}website{% endblock %}
+{% block og_title %}{% if category %}{{ category.name }} Movies – Watch2D{% else %}All Movies – Watch2D{% endif %}{% endblock %}
+{% block og_description %}{% if category %}Download & stream {{ category.name }} movies free in HD on Watch2D. {{ page_obj.paginator.count }} titles.{% else %}Browse all free HD movies on Watch2D. {{ page_obj.paginator.count }} titles.{% endif %}{% endblock %}
+{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
+
+{% block extra_ld_json %}
+{# BreadcrumbList structured data #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'movies:home' %}"
+    }{% if category %},
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "{{ category.name }}",
+      "item": "{{ request.build_absolute_uri }}"
+    }{% endif %}
+  ]
+}
+</script>
+{# ItemList structured data for movie cards #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "{% if category %}{{ category.name }} Movies{% else %}All Movies{% endif %} – Watch2D",
+  "numberOfItems": {{ page_obj.paginator.count }},
+  "itemListElement": [
+    {% for movie in movies %}
+    {
+      "@type": "ListItem",
+      "position": {{ forloop.counter0|add:1 }},
+      "url": "{{ request.scheme }}://{{ request.get_host }}{{ movie.get_absolute_url }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .w2d {
+    background: #f8fafc;
+    color: #111827;
+    min-height: 100vh;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    overflow-x: hidden;
+  }
+  .dark .w2d { background: #141414; color: #e5e5e5; }
+
+  /* ── Page header ── */
+  .cat-header {
+    padding: 1.4rem 4% 0;
+    margin-bottom: .2rem;
+  }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .68rem;
+    color: #9ca3af;
+    margin-bottom: .9rem;
+    flex-wrap: wrap;
+  }
+  .breadcrumb a {
+    color: #6b7280;
+    text-decoration: none;
+    transition: color .15s;
+  }
+  .breadcrumb a:hover { color: #e50914; }
+  .dark .breadcrumb a { color: #9ca3af; }
+  .dark .breadcrumb a:hover { color: #e50914; }
+  .breadcrumb-sep { color: #d1d5db; font-size: .55rem; }
+  .breadcrumb-current { color: #374151; font-weight: 600; }
+  .dark .breadcrumb-current { color: #e5e5e5; }
+
+  /* Heading row */
+  .cat-heading-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+  }
+  .cat-heading {
+    font-size: clamp(1.1rem, 2.2vw, 1.7rem);
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.2;
+  }
+  .dark .cat-heading { color: #f3f4f6; }
+  .cat-count-pill {
+    font-size: .65rem;
+    font-weight: 700;
+    background: rgba(229,9,20,.1);
+    color: #e50914;
+    border: 1px solid rgba(229,9,20,.2);
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .dark .cat-count-pill {
+    background: rgba(229,9,20,.15);
+    border-color: rgba(229,9,20,.3);
+  }
+
+  /* ── Shared row-hd / badge styles (mirror home.html) ── */
+  .row-hd  { display:flex; align-items:baseline; gap:10px; padding:0 0 .55rem; }
+  .row-ttl { font-size:clamp(.82rem,1.35vw,1.2rem); font-weight:700; color:#111827; }
+  .dark .row-ttl { color:#e5e5e5; }
+  .badge-label { font-size:.58rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em; padding:2px 7px; border-radius:2px; }
+  .bl-red   { background:#e50914; color:#fff; }
+  .bl-gold  { background:#f5a623; color:#000; }
+  .bl-green { background:#2dbd6e; color:#fff; }
+  .bl-blue  { background:#0070f3; color:#fff; }
+
+  /* ── Grid — identical to home.html ── */
+  .grid-s   { padding: 0 4% 2.5rem; }
+  .grid-wrap {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(6px, 1.2vw, 13px);
+  }
+  @media (min-width:480px)  { .grid-wrap { grid-template-columns: repeat(4,1fr); } }
+  @media (min-width:640px)  { .grid-wrap { grid-template-columns: repeat(5,1fr); } }
+  @media (min-width:900px)  { .grid-wrap { grid-template-columns: repeat(6,1fr); } }
+  @media (min-width:1200px) { .grid-wrap { grid-template-columns: repeat(7,1fr); } }
+
+  /* ── Movie card — identical to home.html gc / gc-* ── */
+  .gc { cursor:pointer; text-decoration:none; display:block; }
+  .gc-img {
+    position:relative; aspect-ratio:2/3; border-radius:4px;
+    overflow:hidden; background:#e5e7eb;
+    transition:transform .22s ease;
+  }
+  .dark .gc-img { background:#242424; }
+  .gc:hover .gc-img { transform:scale(1.05); }
+  .gc-img img {
+    width:100%; height:100%; object-fit:cover;
+    display:block; opacity:0; transition:opacity .3s;
+  }
+  .gc-img img.ld { opacity:1; }
+  .gc-ov {
+    position:absolute; inset:0;
+    background:linear-gradient(to top,rgba(0,0,0,.78) 0%,transparent 55%);
+    opacity:0; transition:opacity .22s;
+  }
+  .gc:hover .gc-ov { opacity:1; }
+  .gc-play {
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; transition:opacity .22s;
+  }
+  .gc:hover .gc-play { opacity:1; }
+  .gc-play-btn {
+    width:30px; height:30px; border-radius:50%;
+    background:rgba(255,255,255,.9);
+    display:flex; align-items:center; justify-content:center;
+    color:#000; font-size:.65rem; padding-left:2px;
+  }
+  .gc-ttl {
+    font-size:clamp(.58rem,.82vw,.73rem); color:#4b5563;
+    margin-top:5px; line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; transition:color .18s;
+  }
+  .dark .gc-ttl { color:#aaa; }
+  .gc:hover .gc-ttl { color:#111827; }
+  .dark .gc:hover .gc-ttl { color:#fff; }
+  .gc-sub { font-size:.58rem; color:#7c3aed; margin-top:2px; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+  .gc-yr  { font-size:.56rem; color:#9ca3af; margin-top:2px; }
+  .dark .gc-yr { color:#555; }
+
+  /* badges — identical to home.html */
+  .cbadge { position:absolute; font-size:.52rem; font-weight:800; padding:2px 5px; border-radius:2px; text-transform:uppercase; letter-spacing:.02em; }
+  .cbtl { top:5px; left:5px; }
+  .cbtr { top:5px; right:5px; }
+  .b-new  { background:#e50914; color:#fff; }
+  .b-ep   { background:#7c3aed; color:#fff; }
+  .b-done { background:#2dbd6e; color:#fff; }
+  .b-hd   { background:rgba(0,0,0,.55); color:#ccc; border:1px solid rgba(255,255,255,.18); }
+
+  /* shimmer skeleton */
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  .shim {
+    background:linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%);
+    background-size:200% 100%; animation:shimmer 1.5s ease infinite;
+  }
+  .dark .shim {
+    background:linear-gradient(90deg,#242424 25%,#2e2e2e 50%,#242424 75%);
+    background-size:200% 100%;
+  }
+
+  /* ── Pagination ── */
+  .pag-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: .5rem 4% 1rem;
+    flex-wrap: wrap;
+  }
+  .pag-btn {
+    display: flex; align-items: center; justify-content: center;
+    min-width: 34px; height: 34px; padding: 0 8px;
+    border-radius: 6px; text-decoration: none;
+    font-size: .75rem; font-weight: 600;
+    border: 1px solid rgba(0,0,0,.1);
+    background: #fff; color: #374151;
+    transition: background .18s, color .18s, border-color .18s;
+    white-space: nowrap;
+  }
+  .dark .pag-btn { background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.1); color:#ccc; }
+  .pag-btn:hover { border-color:#e50914; color:#e50914; }
+  .pag-btn.active { background:#e50914; color:#fff; border-color:#e50914; cursor:default; }
+  .pag-ellipsis { color:#9ca3af; font-size:.75rem; padding:0 2px; line-height:34px; }
+
+  /* jump-to-page */
+  .pag-jump {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    padding: .4rem 4% 2rem;
+    font-size: .7rem;
+    color: #6b7280;
+  }
+  .dark .pag-jump { color: #9ca3af; }
+  .pag-jump select {
+    padding: 4px 8px;
+    border-radius: 5px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: #fff;
+    color: #374151;
+    font-size: .7rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .dark .pag-jump select { background:#1f1f1f; border-color:rgba(255,255,255,.12); color:#e5e5e5; }
+  .pag-info { font-size:.63rem; color:#9ca3af; text-align:center; padding-bottom:1.5rem; }
+
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 4%;
+  }
+  .empty-state i { font-size:2.5rem; color:#d1d5db; display:block; margin-bottom:1rem; }
+  .dark .empty-state i { color:#374151; }
+  .empty-state h2 { font-size:1.1rem; font-weight:700; color:#374151; margin-bottom:.5rem; }
+  .dark .empty-state h2 { color:#d1d5db; }
+  .empty-state p { font-size:.8rem; color:#9ca3af; margin-bottom:1.5rem; }
+  .empty-back {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 22px; border-radius: 5px;
+    background: #e50914; color: #fff;
+    font-size: .8rem; font-weight: 700;
+    text-decoration: none; transition: opacity .18s;
+  }
+  .empty-back:hover { opacity: .85; }
+
+  /* ── Related categories ── */
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  @media (min-width:480px)  { .cat-grid { grid-template-columns: repeat(4,1fr); } }
+  @media (min-width:640px)  { .cat-grid { grid-template-columns: repeat(5,1fr); } }
+  @media (min-width:900px)  { .cat-grid { grid-template-columns: repeat(7,1fr); } }
+  @media (min-width:1200px) { .cat-grid { grid-template-columns: repeat(9,1fr); } }
+
+  .cat-tile {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:6px; padding:14px 8px 12px; border-radius:10px; text-decoration:none;
+    background:#fff; border:1px solid rgba(0,0,0,.08);
+    box-shadow:0 1px 3px rgba(0,0,0,.05);
+    transition:background .18s,transform .18s,box-shadow .18s;
+    text-align:center;
+  }
+  .dark .cat-tile { background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.1); box-shadow:none; }
+  .cat-tile:hover { background:#fef2f2; border-color:rgba(229,9,20,.3); transform:translateY(-3px); box-shadow:0 4px 12px rgba(229,9,20,.1); }
+  .dark .cat-tile:hover { background:rgba(229,9,20,.1); border-color:rgba(229,9,20,.35); }
+  .cat-icon { font-size:1.5rem; line-height:1; display:block; }
+  .cat-name { font-size:.64rem; font-weight:700; color:#1f2937; line-height:1.3; word-break:break-word; }
+  .dark .cat-name { color:#e5e7eb; }
+  .cat-count { font-size:.52rem; color:#6b7280; background:rgba(0,0,0,.04); padding:2px 6px; border-radius:20px; }
+  .dark .cat-count { background:rgba(255,255,255,.08); color:#9ca3af; }
+</style>
+
+<div class="w2d">
+
+  {# ── Breadcrumb + heading ── #}
+  <header class="cat-header">
+
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="{% url 'movies:home' %}"><i class="fas fa-home" aria-hidden="true"></i> Home</a>
+      <i class="fas fa-chevron-right breadcrumb-sep" aria-hidden="true"></i>
+      <span class="breadcrumb-current">{% if category %}{{ category.name }}{% else %}All Movies{% endif %}</span>
+    </nav>
+
+    <div class="cat-heading-row">
+      <h1 class="cat-heading">
+        {% if category %}
+          {% if 'nollywood' in category.name|lower %}🎭
+          {% elif 'hollywood' in category.name|lower %}🎬
+          {% elif 'korean' in category.name|lower %}🇰🇷
+          {% elif 'chinese' in category.name|lower %}🇨🇳
+          {% elif 'anime' in category.name|lower %}⛩️
+          {% elif 'thai' in category.name|lower %}🇹🇭
+          {% elif 'bollywood' in category.name|lower %}🎵
+          {% elif 'series' in category.name|lower or 'tv' in category.name|lower %}📺
+          {% elif 'horror' in category.name|lower %}👻
+          {% elif 'comedy' in category.name|lower %}😂
+          {% elif 'romance' in category.name|lower %}❤️
+          {% elif 'action' in category.name|lower %}💥
+          {% elif 'wrestling' in category.name|lower %}🏆
+          {% else %}🎬
+          {% endif %}
+          {{ category.name }}
+        {% else %}
+          🎬 All Movies
+        {% endif %}
+      </h1>
+      <span class="cat-count-pill">{{ page_obj.paginator.count }} title{{ page_obj.paginator.count|pluralize }}</span>
+      {% if page_obj.number > 1 %}
+      <span class="cat-count-pill" style="background:rgba(0,112,243,.1);color:#0070f3;border-color:rgba(0,112,243,.2);">
+        Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+      </span>
+      {% endif %}
+    </div>
+
+  </header>
+
+  {% if movies %}
+
+  {# ── Movie grid ── #}
+  <section class="grid-s" aria-label="{% if category %}{{ category.name }} movies{% else %}All movies{% endif %}">
+    <div class="row-hd">
+      <span class="row-ttl">
+        {% if category %}{{ category.name }}{% else %}All Movies{% endif %}
+      </span>
+      {% if page_obj.number == 1 %}
+      <span class="badge-label bl-red">Latest First</span>
+      {% else %}
+      <span class="badge-label bl-blue">Page {{ page_obj.number }}</span>
+      {% endif %}
+    </div>
+
+    <div class="grid-wrap">
+      {% for movie in movies %}
+      <a href="{{ movie.get_absolute_url }}"
+         class="gc"
+         title="{{ movie.title }}{% if movie.vi_year %} ({{ movie.vi_year }}){% endif %} – Free Download on Watch2D">
+        <div class="gc-img shim">
+          {% if movie.image_url %}
+          <img src="{{ movie.image_url }}"
+               alt="{{ movie.title }} poster"
+               loading="lazy"
+               width="300" height="450"
+               onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">
+          {% endif %}
+          <div class="gc-ov"></div>
+          <div class="gc-play"><div class="gc-play-btn"><i class="fas fa-play"></i></div></div>
+
+          {# Left badge: NEW → EP → DONE #}
+          {% if movie.created_at|is_recent %}
+            <span class="cbadge cbtl b-new">NEW</span>
+          {% elif movie.title_b and not movie.completed %}
+            <span class="cbadge cbtl b-ep">EP</span>
+          {% elif movie.completed %}
+            <span class="cbadge cbtl b-done"><i class="fas fa-check" style="font-size:.4rem;"></i> DONE</span>
+          {% endif %}
+
+          <span class="cbadge cbtr b-hd">HD</span>
+        </div>
+        <div class="gc-ttl">{{ movie.title }}</div>
+        {% if movie.title_b %}<div class="gc-sub">{{ movie.title_b }}</div>{% endif %}
+        {% if movie.vi_year %}<div class="gc-yr">{{ movie.vi_year }}</div>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ── Pagination ── #}
+  {% if is_paginated %}
+  <nav class="pag-wrap" aria-label="Page navigation">
+
+    {# First + Prev #}
+    {% if page_obj.number > 2 %}
+    <a href="?page=1" class="pag-btn" aria-label="First page">
+      <i class="fas fa-angle-double-left"></i>
+    </a>
+    {% endif %}
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="pag-btn" aria-label="Previous page">
+      <i class="fas fa-chevron-left"></i>
+    </a>
+    {% endif %}
+
+    {# Page numbers with ellipsis #}
+    {% for num in page_obj.paginator.page_range %}
+      {% if num == page_obj.number %}
+        <span class="pag-btn active" aria-current="page">{{ num }}</span>
+      {% elif num == 1 or num == page_obj.paginator.num_pages %}
+        <a href="?page={{ num }}" class="pag-btn">{{ num }}</a>
+      {% elif num == page_obj.number|add:"-2" or num == page_obj.number|add:"2" %}
+        <span class="pag-ellipsis">…</span>
+      {% elif num >= page_obj.number|add:"-1" and num <= page_obj.number|add:"1" %}
+        <a href="?page={{ num }}" class="pag-btn">{{ num }}</a>
+      {% endif %}
+    {% endfor %}
+
+    {# Next + Last #}
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="pag-btn" aria-label="Next page">
+      <i class="fas fa-chevron-right"></i>
+    </a>
+    {% endif %}
+    {% if page_obj.number < page_obj.paginator.num_pages|add:"-1" %}
+    <a href="?page={{ page_obj.paginator.num_pages }}" class="pag-btn" aria-label="Last page">
+      <i class="fas fa-angle-double-right"></i>
+    </a>
+    {% endif %}
+
+  </nav>
+
+  <p class="pag-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} &mdash; {{ page_obj.paginator.count }} total titles</p>
+
+  {# Jump to page — only useful when there are many pages #}
+  {% if page_obj.paginator.num_pages > 5 %}
+  <div class="pag-jump">
+    <label for="pageJump">Jump to page:</label>
+    <select id="pageJump" onchange="window.location.href='?page='+this.value" aria-label="Jump to page">
+      {% for num in page_obj.paginator.page_range %}
+      <option value="{{ num }}" {% if page_obj.number == num %}selected{% endif %}>Page {{ num }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  {% else %}
+
+  {# ── Empty state ── #}
+  <div class="empty-state" role="status">
+    <i class="fas fa-film" aria-hidden="true"></i>
+    <h2>No Movies Found</h2>
+    <p>
+      {% if category %}
+        There are no movies in the <strong>{{ category.name }}</strong> category yet.
+      {% else %}
+        No movies available at the moment.
+      {% endif %}
+    </p>
+    <a href="{% url 'movies:home' %}" class="empty-back">
+      <i class="fas fa-home" aria-hidden="true"></i> Back to Home
+    </a>
+  </div>
+
+  {% endif %}
+
+  {# ── Browse other categories ── #}
+  {% if categories %}
+  <section class="grid-s" aria-label="Browse other categories" style="padding-bottom:3rem;">
+    <div class="row-hd" style="padding-bottom:.8rem;">
+      <span class="row-ttl">Browse Other Categories</span>
+      <span class="badge-label bl-green">All Genres</span>
+    </div>
+    <div class="cat-grid">
+      {% for cat in categories %}
+      {% if not category or cat.id != category.id %}
+      <a href="{{ cat.get_absolute_url }}"
+         class="cat-tile"
+         title="{{ cat.name }} movies – Watch2D">
+        <span class="cat-icon" aria-hidden="true">
+          {% if 'nollywood' in cat.name|lower %}🎭
+          {% elif 'hollywood' in cat.name|lower %}🎬
+          {% elif 'korean' in cat.name|lower or 'kdrama' in cat.name|lower %}🇰🇷
+          {% elif 'chinese' in cat.name|lower %}🇨🇳
+          {% elif 'anime' in cat.name|lower %}⛩️
+          {% elif 'thai' in cat.name|lower %}🇹🇭
+          {% elif 'bollywood' in cat.name|lower %}🎵
+          {% elif 'series' in cat.name|lower or 'tv' in cat.name|lower %}📺
+          {% elif 'horror' in cat.name|lower %}👻
+          {% elif 'comedy' in cat.name|lower %}😂
+          {% elif 'romance' in cat.name|lower %}❤️
+          {% elif 'action' in cat.name|lower %}💥
+          {% elif 'wrestling' in cat.name|lower %}🏆
+          {% elif '18' in cat.name %}🔞
+          {% else %}🎬
+          {% endif %}
+        </span>
+        <span class="cat-name">{{ cat.name }}</span>
+      </a>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}

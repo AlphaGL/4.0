@@ -685,9 +685,16 @@ class HomeView(ListView):
 @method_decorator(cache_page(60 * 60 * 4), name='dispatch')  # 4 hours instead of 24
 class CategoryMoviesView(ListView):
     model = Movie
-    template_name = 'movies/movie_list.html'
+    template_name = 'movies/movie_list_by_cat.html'
     context_object_name = 'movies'
     paginate_by = 12
+
+    def get(self, request, *args, **kwargs):
+        self.category = get_object_or_404(Category, id=self.kwargs['cat_id'])
+        # If the slug in the URL doesn't match the canonical slug, redirect (301)
+        if self.kwargs.get('slug') != self.category.slug:
+            return redirect(self.category.get_absolute_url(), permanent=True)
+        return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
         self.category = get_object_or_404(Category, id=self.kwargs['cat_id'])
@@ -715,6 +722,15 @@ def old_movie_redirect(request, pk):
     """
     movie = get_object_or_404(Movie, pk=pk)
     return redirect(movie.get_absolute_url(), permanent=True)
+
+
+def old_category_redirect(request, cat_id):
+    """
+    Permanent (301) redirect from the legacy /category/<pk>/ URL to the new
+    canonical /category/<pk>/<slug>/ URL.
+    """
+    category = get_object_or_404(Category, pk=cat_id)
+    return redirect(category.get_absolute_url(), permanent=True)
 
 
 class MovieDetailView(DetailView):

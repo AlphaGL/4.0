@@ -194,7 +194,7 @@
           {% if movie.categories.all %}
             <div class="flex flex-wrap gap-1.5 mb-3">
               {% for cat in movie.categories.all %}
-                <a href="{% url 'movies:category_movies' cat.id %}"
+                <a href="{% url 'movies:category_movies' cat.id cat.slug %}"
                    class="px-2.5 py-0.5 bg-white/15 border border-white/20 rounded-full text-xs text-white/90 hover:bg-white/25 transition-all duration-200">
                   {{ cat.name }}
                 </a>

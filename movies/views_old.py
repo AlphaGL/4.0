@@ -537,7 +537,7 @@ class HomeView(ListView):
 @method_decorator(cache_page(60 * 60 * 4), name='dispatch')  # 4 hours instead of 24
 class CategoryMoviesView(ListView):
     model = Movie
-    template_name = 'movies/movie_list.html'
+    template_name = 'movies/movie_list_by_cat.html'
     context_object_name = 'movies'
     paginate_by = 12
 

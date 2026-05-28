@@ -6,7 +6,8 @@ from .views import (
     CategoryMoviesView, MovieDetailView,
     toggle_like, toggle_watchlist, SearchResultsView, ping_view, add_comment, add_reply,
     delete_comment, resolve_download_link, check_streamable, stream_proxy,
-    old_movie_redirect,  # ← handles legacy /movie/<pk>/ URLs (301 → slug URL)
+    old_movie_redirect,       # ← handles legacy /movie/<pk>/ URLs (301 → slug URL)
+    old_category_redirect,    # ← handles legacy /category/<pk>/ URLs (301 → slug URL)
 )
 
 app_name = 'movies'
@@ -14,7 +15,11 @@ app_name = 'movies'
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
 
-    path('category/<int:cat_id>/', CategoryMoviesView.as_view(), name='category_movies'),
+    path('category/<int:cat_id>/<slug:slug>/', CategoryMoviesView.as_view(), name='category_movies'),
+
+    # ── LEGACY redirect: /category/<pk>/ ─────────────────────────────────────
+    # Keeps all existing category links working with a permanent 301.
+    path('category/<int:cat_id>/', old_category_redirect, name='category_movies_legacy'),
 
     # ── NEW canonical URL:  /movie/<pk>/<slug>/  ──────────────────────────────
     # This is the SEO URL every new link and template should use.
