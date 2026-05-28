@@ -212,9 +212,13 @@ WHITENOISE_ALLOW_ALL_ORIGINS = True
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'Watch2D-cache',
-        'OPTIONS': {'MAX_ENTRIES': 1000}
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        # Render's /tmp is writable and persists for the life of the instance
+        'LOCATION': '/tmp/watch2d_cache',
+        'TIMEOUT': 300,           # default TTL: 5 min (views override per-key)
+        'OPTIONS': {
+            'MAX_ENTRIES': 3000,  # ~3 000 cache files max before oldest pruned
+        },
     }
 }
 
@@ -235,3 +239,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 WP_SITE_URL     = 'https://naijadeleys.com.ng'
 WP_USERNAME     = 'AlphaDev_'
 WP_APP_PASSWORD = 'scK9 fIaZ FUmY tDWo Mhqb rXbq'
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
+CRONJOBS = [
+    # Every 10 minutes — keeps Render free instance awake
+    ('*/10 * * * *', 'main.cron.keep_alive_ping'),
+]
+
+
+SITE_URL = 'https://watch2d.org'

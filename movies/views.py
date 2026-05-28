@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from .models import Movie, Category, Comment
 from .forms import MovieForm, CommentForm, DownloadLinkFormSet
-from django.db.models import Q, Prefetch
+from django.db.models import Q, Prefetch, Count
 from django.templatetags.static import static
 import random
 from django.http import JsonResponse
@@ -35,10 +35,72 @@ from django.db import models as django_models
 from django.http import StreamingHttpResponse
 import requests
 
+import re as _re
+import django.db.models as django_models
+ 
+# TTL constants  (add near the top of views.py with the other constants)
+MOVIES_HOME_CACHE_TTL = 60 * 5   # 5 minutes
+
 
 # Cache key constants
 SIDEBAR_CATEGORIES_CACHE_KEY = 'sidebar_categories_v2'
 CACHE_VERSION = 1
+
+
+
+
+def _build_movies_home_context():
+    """
+    Heavy, cacheable part of HomeView context.
+    Returns a plain dict — no request-specific data.
+    """
+    ctx = {}
+ 
+    # Blockbusters
+    ctx['blockbusters'] = list(
+        Movie.objects
+        .only('id', 'title', 'slug', 'image_url', 'created_at', 'views')
+        .filter(views__gte=1000)
+        .order_by('-views', '-created_at')[:12]
+    )
+ 
+    # Trending
+    ctx['trending'] = list(
+        Movie.objects
+        .only('id', 'title', 'slug', 'image_url', 'views', 'created_at')
+        .filter(views__gt=0)
+        .order_by('-views', '-created_at')[:24]
+    )
+ 
+    # Sidebar categories (already cached separately for 4 h)
+    ctx['categories'] = get_sidebar_categories()
+ 
+    # All categories — deduplicated
+    _STOP = _re.compile(
+        r'\b(movie|movies|film|films|tv|series|drama|show|shows|watch|free|hd|'
+        r'and|the|of|a|an)\b|[^a-z0-9 ]', _re.I
+    )
+    def _norm(name):
+        n = _re.sub(r'[^\w\s]', '', name.lower())
+        n = _STOP.sub(' ', n)
+        return ' '.join(n.split())
+ 
+    raw_cats = list(
+        Category.objects.annotate(
+            movie_count=django_models.Count('movies')
+        ).filter(movie_count__gt=0).order_by('-movie_count')
+    )
+    seen_keys = {}
+    deduped = []
+    for cat in raw_cats:
+        key = _norm(cat.name)
+        if key and key not in seen_keys:
+            seen_keys[key] = True
+            deduped.append(cat)
+    deduped.sort(key=lambda c: _re.sub(r'[^\w\s]', '', c.name).strip().lower())
+    ctx['all_categories'] = deduped
+ 
+    return ctx
 
 def get_sidebar_categories():
     """
@@ -94,10 +156,70 @@ def invalidate_sidebar_cache():
 def robots_txt(request):
     lines = [
         "User-agent: *",
-        "Disallow: /admin/",
-        "Sitemap: https://watch2d.net/sitemap.xml",
+        "",
+        "# Public pages",
+        "Allow: /$",
+        "Allow: /movie/",
+        "Allow: /movies/movie/",
+        "Allow: /movies/category/",
+        "Allow: /category/",
+        "Allow: /anime/",
+        "Allow: /manga/",
+        "Allow: /read/",
+        "Allow: /watch/",
+        "",
+        "# /movies/ homepage redirects to / — crawlers should use / directly",
+        "Disallow: /movies/$",
+        "",
+        "# /main/ redirects to / — no indexable content here",
+        "Disallow: /main/",
+        "",
+        "# Admin",
+        "Disallow: /watch2d/watch2d_admin/",
+        "",
+        "# Auth",
+        "Disallow: /accounts/",
+        "Disallow: /logout/",
+        "",
+        "# AJAX / API",
+        "Disallow: /ajax/",
+        "Disallow: /api/",
+        "Disallow: /resolve-download/",
+        "Disallow: /check-streamable/",
+        "Disallow: /stream/",
+        "Disallow: /access/",
+        "Disallow: /wp_auth_encrypt_ping/",
+        "",
+        "# Management",
+        "Disallow: /anime/management/",
+        "Disallow: /manga/management/",
+        "",
+        "# Action endpoints",
+        "Disallow: /movie/*/like/",
+        "Disallow: /movie/*/watchlist/",
+        "Disallow: /movie/*/comment/",
+        "Disallow: /comment/*/delete/",
+        "",
+        "# PWA internals",
+        "Disallow: /sw.js",
+        "Disallow: /offline.html",
+        "Disallow: /api/push-subscribe/",
+        "",
+        "# Assets",
+        "Disallow: /static/",
+        "Disallow: /media/",
+        "",
+        "# Search result pages (avoid crawling paginated/filtered duplicates)",
+        "Disallow: /movies/search/",
+        "Disallow: /anime/search/",
+        "Disallow: /manga/search/",
+        "",
+        "Sitemap: https://watch2d.org/sitemap.xml",
+        "",
+        "Crawl-delay: 2",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
+ 
 
 def custom_404_view(request, exception):
     """
@@ -567,121 +689,63 @@ def _extract_download_url(html, host):
 
     return None
 
-# @method_decorator(cache_page(60 * 60 * 4), name='dispatch')  # cache 4h
 class HomeView(ListView):
     model = Movie
     template_name = 'movies/home.html'
     context_object_name = 'movies'
     paginate_by = 12
-
+ 
     def get_queryset(self):
-        # Recently Uploaded = standalone movies only (not series).
-        # Exclude anything marked as a series, OR that has episode info (title_b).
         return (
             Movie.objects
-                 .only('id', 'title', 'image_url', 'created_at', 'title_b', 'vi_year')
-                 .filter(
-                     Q(is_series=False),
-                     Q(title_b__isnull=True) | Q(title_b=''),
-                 )
-                 .order_by('-created_at')
+            .only('id', 'title', 'slug', 'image_url', 'created_at', 'title_b', 'vi_year')
+            .filter(
+                Q(is_series=False),
+                Q(title_b__isnull=True) | Q(title_b=''),
+            )
+            .order_by('-created_at')
         )
-
+ 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # ── 0. Blockbusters — AUTO: top views >= 1 000, no manual flag needed ──
-        block_qs = (
-            Movie.objects
-                 .only('id', 'title', 'image_url', 'created_at', 'views')
-                 .filter(views__gte=1000)
-                 .order_by('-views', '-created_at')
-        )
-        context['blockbusters'] = block_qs[:12]
-
-        # ── 1. Trending Now (top 24 by all-time views > 0) ──
-        context['trending'] = (
-            Movie.objects
-                 .only('id', 'title', 'image_url', 'views', 'created_at')
-                 .filter(views__gt=0)
-                 .order_by('-views', '-created_at')[:24]
-        )
-
-        # ── 2. Sidebar categories (cached) ──
-        context['categories'] = get_sidebar_categories()
-
-        # ── 3. All categories for the "Browse by Category" grid at the bottom ──
-        # Deduplicate near-identical categories (e.g. "Hollywood", "Hollywood movie",
-        # "Hollywood movies") by grouping on a normalised key and keeping only the
-        # category with the highest movie count in each group.
-        import re as _re
-        _STOP = _re.compile(
-            r'\b(movie|movies|film|films|tv|series|drama|show|shows|watch|free|hd|'
-            r'and|the|of|a|an)\b|[^a-z0-9 ]', _re.I
-        )
-        def _norm(name):
-            n = _re.sub(r'[^\w\s]', '', name.lower())
-            n = _STOP.sub(' ', n)
-            return ' '.join(n.split())
-
-        raw_cats = list(
-            Category.objects.annotate(
-                movie_count=django_models.Count('movies')
-            ).filter(movie_count__gt=0).order_by('-movie_count')
-        )
-
-        # Group by normalised key; first entry (highest count) wins
-        seen_keys = {}
-        deduped = []
-        for cat in raw_cats:
-            key = _norm(cat.name)
-            if key and key not in seen_keys:
-                seen_keys[key] = True
-                deduped.append(cat)
-
-        # Re-sort alphabetically for display (strip leading emoji/symbols)
-        deduped.sort(key=lambda c: _re.sub(r'[^\w\s]', '', c.name).strip().lower())
-        context['all_categories'] = deduped
-
-        # ── 4. Ongoing series ──
-        # A series is ongoing when: is_series=True AND completed=False.
-        # Also catch older entries that may not have is_series set but have
-        # episode info (title_b) and are not yet marked completed.
+ 
+        # ── Cached heavy queries ──────────────────────────────────────────────
+        cached = cache.get('movies_home_ctx_v1')
+        if cached is None:
+            cached = _build_movies_home_context()
+            cache.set('movies_home_ctx_v1', cached, MOVIES_HOME_CACHE_TTL)
+        context.update(cached)
+ 
+        # ── Paginated sections (request-dependent, NOT cached) ───────────────
         ongoing_qs = (
             Movie.objects
-                 .only('id', 'title', 'title_b', 'image_url', 'title_b_updated_at', 'created_at')
-                 .filter(
-                     Q(is_series=True) | (Q(title_b__isnull=False) & ~Q(title_b='')),
-                     completed=False,
-                 )
-                 .order_by('-title_b_updated_at', '-created_at')
+            .only('id', 'title', 'slug', 'title_b', 'image_url',
+                  'title_b_updated_at', 'created_at')
+            .filter(
+                Q(is_series=True) | (Q(title_b__isnull=False) & ~Q(title_b='')),
+                completed=False,
+            )
+            .order_by('-title_b_updated_at', '-created_at')
         )
         context['ongoing_series'] = Paginator(ongoing_qs, 9).get_page(
             self.request.GET.get('ongoing_page', 1)
         )
-
-        # ── 5. Latest episodes row (horizontal scroll, same queryset) ──
-        # context['new_episodes'] = Paginator(ongoing_qs, 6).get_page(
-        #     self.request.GET.get('new_page', 1)
-        # )
-
-        # ── 6. Completed series ──
-        # A series is completed when: (is_series=True OR has episode info) AND completed=True.
-        comp_ser = (
+ 
+        comp_qs = (
             Movie.objects
-                 .only('id', 'title', 'title_b', 'image_url', 'title_b_updated_at', 'created_at')
-                 .filter(
-                     Q(is_series=True) | (Q(title_b__isnull=False) & ~Q(title_b='')),
-                     completed=True,
-                 )
-                 .order_by('-title_b_updated_at', '-created_at')
+            .only('id', 'title', 'slug', 'title_b', 'image_url',
+                  'title_b_updated_at', 'created_at')
+            .filter(
+                Q(is_series=True) | (Q(title_b__isnull=False) & ~Q(title_b='')),
+                completed=True,
+            )
+            .order_by('-title_b_updated_at', '-created_at')
         )
-        context['completed_series'] = Paginator(comp_ser, 9).get_page(
+        context['completed_series'] = Paginator(comp_qs, 9).get_page(
             self.request.GET.get('completed_page', 1)
         )
-
+ 
         return context
-
 @method_decorator(cache_page(60 * 60 * 4), name='dispatch')  # 4 hours instead of 24
 class CategoryMoviesView(ListView):
     model = Movie
