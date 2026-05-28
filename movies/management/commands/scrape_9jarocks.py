@@ -252,7 +252,7 @@ DOWNLOAD_KEYWORDS = [
 # ══════════════════════════════════════════════════════════════
 
 PLATFORM_LINKS = {
-    'telegram': 'https://t.me/Watch2D',
+    'telegram': 'https://t.me/+oFCiWwxKmT5jNDM8',
     'twitter':  'https://x.com/watch2download',
     'facebook': 'https://facebook.com/WATCH2D/',
     'website':  'https://watch2d.org',
@@ -437,6 +437,87 @@ def _detect_hashtags(movie):
     return tg, tw, tg
 
 
+
+# ══════════════════════════════════════════════════════════════
+# TELEGRAM POSTER
+# ══════════════════════════════════════════════════════════════
+
+def _post_movie_to_telegram(movie, is_new: bool):
+    try:
+        from django.conf import settings
+        from automation.telegram import send_photo, send_message
+
+        channel  = getattr(settings, 'TELEGRAM_MOVIES_CHANNEL', '')
+        site_url = getattr(settings, 'SITE_URL', 'https://watch2d.org')
+        if not channel:
+            return
+
+        url = f"{site_url}/movies/movie/{movie.pk}/"
+        tg_tags, _, _ = _detect_hashtags(movie)
+
+        if is_new:
+            emoji = "🎬" if not movie.is_series else "📺"
+            lines = [f"{emoji} <b>{movie.title}</b>", ""]
+
+            if movie.description:
+                lines += [f"{movie.description[:250]}...", ""]
+
+            cats = movie.categories.all()
+            if cats:
+                lines.append(f"🏷 <b>Genre:</b> {', '.join(c.name for c in cats[:4])}")
+
+            if movie.is_series:
+                status = "✅ Completed" if movie.completed else "🔄 Ongoing Series"
+                lines.append(f"📡 <b>Status:</b> {status}")
+
+            lines += [
+                "",
+                f"🔗 <a href='{url}'>▶️ CLICK HERE TO WATCH / DOWNLOAD</a>",
+                "",
+                tg_tags,
+                TELEGRAM_FOOTER,
+            ]
+
+            from automation.models import TelegramPost
+            TelegramPost.objects.get_or_create(
+                content_type='movie',
+                content_id=movie.id,
+                defaults={'content_title': movie.title, 'success': True},
+            )
+
+        else:
+            episode_label = movie.title_b or "New Episode"
+            lines = [
+                "🆕 <b>New Episode Available!</b>", "",
+                f"📺 <b>{movie.title}</b>",
+                f"🎬 <b>Episode:</b> {episode_label}",
+                "",
+                f"🔗 <a href='{url}'>▶️ Watch FREE Now</a>",
+                "",
+                tg_tags,
+                TELEGRAM_FOOTER,
+            ]
+
+            from automation.models import TelegramUpdate
+            TelegramUpdate.objects.get_or_create(
+                content_type='movie',
+                content_id=movie.id,
+                update_key=episode_label.strip(),
+                defaults={'content_title': movie.title, 'success': True},
+            )
+
+        caption = "\n".join(lines)
+        if movie.image_url:
+            send_photo(channel, movie.image_url, caption)
+        else:
+            send_message(channel, caption)
+
+        print(f"📢 Telegram: {'NEW' if is_new else 'UPDATE'} posted — {movie.title}")
+
+    except Exception as e:
+        print(f"⚠️ Telegram post failed (non-critical): {e}")
+
+
 # ══════════════════════════════════════════════════════════════
 # TWITTER POSTER
 # ══════════════════════════════════════════════════════════════
@@ -537,9 +618,9 @@ def _post_movie_to_facebook(movie, is_new: bool):
 
 def _post_to_all_platforms(movie, is_new: bool):
     # ⚠️  Telegram is DISABLED — uncomment below line when ready
-    # _post_movie_to_telegram(movie, is_new=is_new)
-    _post_movie_to_twitter(movie,  is_new=is_new)
-    # _post_movie_to_facebook(movie, is_new=is_new)
+    # _post_movie_to_twitter(movie,  is_new=is_new)
+    _post_movie_to_telegram(movie, is_new=is_new)
+    _post_movie_to_facebook(movie, is_new=is_new)
 
 
 # ══════════════════════════════════════════════════════════════

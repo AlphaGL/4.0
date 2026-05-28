@@ -297,7 +297,7 @@
 
           {# CTA buttons #}
           <div class="flex flex-wrap gap-2 mt-4">
-            {% if movie.download_links.exists or movie.download_url or movie.hls_manifest %}
+            <!-- {% if movie.download_links.exists or movie.download_url or movie.hls_manifest %}
               <button id="hero-watch-btn" onclick="activatePlayer()"
                       class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600
                              hover:from-green-400 hover:to-emerald-500 text-white rounded-full text-sm font-semibold
@@ -305,7 +305,7 @@
                 <i class="fas fa-play text-xs"></i>
                 <span id="watch-btn-label">{% if movie.completed %}Watch Series{% else %}Watch Now{% endif %}</span>
               </button>
-            {% endif %}
+            {% endif %} -->
             <button onclick="scrollToTrailer()"
                     class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white/15 border border-white/30
                            text-white rounded-full text-sm font-semibold hover:bg-white/25 transition-all duration-300 hover:scale-105">
@@ -425,7 +425,27 @@
               <i class="fas fa-download text-white"></i>
             </div>
           </div>
-          <h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1">Download Links</h2>
+          <div>
+            <a href="https://t.me/+oFCiWwxKmT5jNDM8l" target="_blank" rel="nofollow"
+                class="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-blue-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-full font-semibold transition-all duration-300 hover:scale-105 shadow-lg text-sm">
+              <i class="fas fa-external-link-alt mr-2"></i>Join Us On Telegram (Downloads Available)
+            </a>
+          </div>
+          <br>
+        {# Title block #}
+        <div class="mb-3">
+            <h3 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 leading-tight">
+              Download {{ movie.title }}
+              </h3>
+              {% if movie.title_b %}
+                <h4 class="text-sm text-gray-300 mb-2">{{ movie.title_b }}</h4>
+              {% endif %}
+              {% if movie.year %}
+                <span class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-0.5 rounded-full text-xs font-semibold shadow">
+                    {{ movie.year }}
+                </span>
+              {% endif %}
+        </div>
           <p class="text-gray-500 dark:text-gray-400 text-sm">Download for offline viewing</p>
         </div>
 

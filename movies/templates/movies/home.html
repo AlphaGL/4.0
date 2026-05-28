@@ -359,32 +359,38 @@
   </div>
   {% endif %} -->
 
-  {# ═══ LATEST EPISODES ROW ═══ #}
-  {% if new_episodes %}
-  <div class="row-s">
-    <div class="row-hd">
-      <span class="row-ttl">📺 Latest Episodes</span>
-      <span class="badge-label bl-blue">New</span>
+  {# ═══ ONGOING SERIES GRID ═══ #}
+  {% if ongoing_series %}
+  <div class="grid-s" id="ongoing-section">
+    <div class="row-hd" style="padding-left:0;padding-right:0;margin-bottom:.5rem;">
+      <span class="row-ttl">📡 Ongoing Series</span>
+      <span class="badge-label bl-blue">Updating</span>
+      <span style="margin-left:auto;font-size:.62rem;display:flex;align-items:center;gap:5px;color:#9ca3af;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#e50914;display:inline-block;animation:pulse-dot 2s infinite;"></span> Live Updates
+      </span>
     </div>
-    <div class="srow-wrap">
-      <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
-      <div class="srow">
-        {% for ep in new_episodes %}{% if ep.title_b and not "complete" in ep.title_b|lower %}
-        <a href="{% url 'movies:movie_detail' ep.pk %}" class="card">
-          <div class="card-img shim">
-            {% if ep.image_url %}<img src="{{ ep.image_url }}" alt="{{ ep.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
-            <div class="c-ov"></div>
-            <div class="c-play"><div class="c-play-btn"><i class="fas fa-play"></i></div></div>
-            <span class="cbadge cbtl b-ep">EP</span>
-            <span class="cbadge cbtr b-hd">HD</span>
-          </div>
-          <div class="card-ttl">{{ ep.title }}</div>
-          <div class="card-sub">{{ ep.title_b }}</div>
-        </a>
-        {% endif %}{% endfor %}
-      </div>
-      <button class="sarr sarr-r" onclick="doScroll(this,1)"><i class="fas fa-chevron-right"></i></button>
+    <div class="grid-wrap" id="ongoing-grid">
+      {% for series in ongoing_series %}
+      <a href="{% url 'movies:movie_detail' series.pk %}" class="gc">
+        <div class="gc-img shim">
+          {% if series.image_url %}<img src="{{ series.image_url }}" alt="{{ series.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
+          <div class="gc-ov"></div>
+          <div class="gc-play"><div class="gc-play-btn"><i class="fas fa-play"></i></div></div>
+          <span class="cbadge cbtl b-ep" style="font-size:.48rem;">EP</span>
+          <span class="cbadge cbtr b-hd" style="font-size:.48rem;">HD</span>
+        </div>
+        <div class="gc-ttl">{{ series.title }}</div>
+        {% if series.title_b %}<div class="gc-yr" style="color:#7c3aed;">{{ series.title_b }}</div>{% endif %}
+      </a>
+      {% endfor %}
     </div>
+    {% if ongoing_series.has_next %}
+    <div class="lm-wrap">
+      <button class="lm-btn" data-page="{{ ongoing_series.next_page_number }}" data-type="ongoing">
+        <i class="fas fa-plus"></i> Load More Ongoing Series
+      </button>
+    </div>
+    {% endif %}
   </div>
   {% endif %}
 
@@ -401,7 +407,6 @@
         {% elif 'thai' in category.name|lower %}🇹🇭
         {% elif 'bollywood' in category.name|lower %}🎵
         {% elif 'series' in category.name|lower %}📺
-        {% elif 'animation' in category.name|lower %}🎨
         {% else %}🎥
         {% endif %}
         {{ category.name }}
@@ -500,41 +505,6 @@
   </div>
   {% endif %}
 
-  {# ═══ ONGOING SERIES GRID ═══ #}
-  {% if ongoing_series %}
-  <div class="grid-s" id="ongoing-section">
-    <div class="row-hd" style="padding-left:0;padding-right:0;margin-bottom:.5rem;">
-      <span class="row-ttl">📡 Ongoing Series</span>
-      <span class="badge-label bl-blue">Updating</span>
-      <span style="margin-left:auto;font-size:.62rem;display:flex;align-items:center;gap:5px;color:#9ca3af;">
-        <span style="width:6px;height:6px;border-radius:50%;background:#e50914;display:inline-block;animation:pulse-dot 2s infinite;"></span> Live Updates
-      </span>
-    </div>
-    <div class="grid-wrap" id="ongoing-grid">
-      {% for series in ongoing_series %}
-      <a href="{% url 'movies:movie_detail' series.pk %}" class="gc">
-        <div class="gc-img shim">
-          {% if series.image_url %}<img src="{{ series.image_url }}" alt="{{ series.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
-          <div class="gc-ov"></div>
-          <div class="gc-play"><div class="gc-play-btn"><i class="fas fa-play"></i></div></div>
-          <span class="cbadge cbtl b-ep" style="font-size:.48rem;">EP</span>
-          <span class="cbadge cbtr b-hd" style="font-size:.48rem;">HD</span>
-        </div>
-        <div class="gc-ttl">{{ series.title }}</div>
-        {% if series.title_b %}<div class="gc-yr" style="color:#7c3aed;">{{ series.title_b }}</div>{% endif %}
-      </a>
-      {% endfor %}
-    </div>
-    {% if ongoing_series.has_next %}
-    <div class="lm-wrap">
-      <button class="lm-btn" data-page="{{ ongoing_series.next_page_number }}" data-type="ongoing">
-        <i class="fas fa-plus"></i> Load More Ongoing Series
-      </button>
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
-
   {# ═══ BROWSE BY CATEGORY GRID ═══ #}
   {% if all_categories %}
   <div class="grid-s" id="categories-section" style="padding-bottom:3rem;">
@@ -595,7 +565,7 @@
   {# ═══ FOOTER CTA ═══ #}
   <div class="footer-cta">
     <p>Thousands of HD movies, updated daily. 100% free.</p>
-    <a href="https://t.me/officialwatch2dchannel" class="footer-btn">
+    <a href="https://t.me/+oFCiWwxKmT5jNDM8l" class="footer-btn">
       <i class="fas fa-film"></i> DOWNLOAD FROM TELEGRAM CHANNEL
     </a>
   </div>

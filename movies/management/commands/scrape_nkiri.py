@@ -18,7 +18,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # ══════════════════════════════════════════════════════════════
 
 PLATFORM_LINKS = {
-    'telegram': 'https://t.me/Watch2D',
+    'telegram': 'https://t.me/+oFCiWwxKmT5jNDM8',
     'twitter':  'https://x.com/watch2download',
     'facebook': 'https://facebook.com/WATCH2D/',
     'website':  'https://watch2d.org',
@@ -423,7 +423,7 @@ def _post_movie_to_telegram(movie, is_new: bool):
 
             lines += [
                 "",
-                f"🔗 <a href='{url}'>▶️ CLICK HERE TO WATCH / DOWNLOAD</a>",
+                f"🔗 <a href='{url}'>▶️ Download FREE Now</a>",
                 "",
                 tg_tags,
                 TELEGRAM_FOOTER,
@@ -443,7 +443,7 @@ def _post_movie_to_telegram(movie, is_new: bool):
                 f"📺 <b>{movie.title}</b>",
                 f"🎬 <b>Episode:</b> {episode_label}",
                 "",
-                f"🔗 <a href='{url}'>▶️ Watch FREE Now</a>",
+                f"🔗 <a href='{url}'>▶️ Download FREE Now</a>",
                 "",
                 tg_tags,
                 TELEGRAM_FOOTER,
@@ -513,7 +513,7 @@ def _post_movie_to_twitter(movie, is_new: bool):
             tweet_text = (
                 f"🆕 {movie.title}\n"
                 f"New: {episode_label}\n\n"
-                f"▶️ Watch FREE → {url}\n\n"
+                f"▶️ Download FREE → {url}\n\n"
                 f"{tw_tags}{TWITTER_FOOTER}"
             )
 
@@ -603,7 +603,7 @@ def _post_movie_to_facebook(movie, is_new: bool):
 
             lines += [
                 "",
-                f"▶️ Watch FREE on Watch2D: {url}",
+                f"▶️ Download FREE on Watch2D: {url}",
                 "",
                 "💬 Tag a friend who needs to see this!",
                 "👍 Like & Share to spread the word!",
@@ -620,7 +620,7 @@ def _post_movie_to_facebook(movie, is_new: bool):
                 f"📺 {movie.title}",
                 f"🎬 Episode: {episode_label}",
                 "",
-                f"▶️ Watch FREE Now: {url}",
+                f"▶️ Download FREE Now: {url}",
                 "",
                 "💬 Tag a friend who watches this series!",
                 "👍 Like & Share so others don't miss out!",
@@ -657,7 +657,7 @@ def _post_movie_to_facebook(movie, is_new: bool):
 
 def _post_to_all_platforms(movie, is_new: bool):
     _post_movie_to_telegram(movie, is_new=is_new)
-    _post_movie_to_twitter(movie,  is_new=is_new)
+    # _post_movie_to_twitter(movie,  is_new=is_new)
     _post_movie_to_facebook(movie, is_new=is_new)
 
 

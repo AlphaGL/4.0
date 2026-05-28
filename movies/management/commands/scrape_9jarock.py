@@ -113,7 +113,7 @@ DOWNLOAD_KEYWORDS = [
 # ══════════════════════════════════════════════════════════════
 
 PLATFORM_LINKS = {
-    'telegram': 'https://t.me/Watch2D',
+    'telegram': 'https://t.me/+oFCiWwxKmT5jNDM8',
     'twitter':  'https://x.com/watch2download',
     'facebook': 'https://facebook.com/WATCH2D/',
     'website':  'https://watch2d.org',

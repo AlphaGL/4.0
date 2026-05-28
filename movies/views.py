@@ -500,14 +500,14 @@ class HomeView(ListView):
                  )
                  .order_by('-title_b_updated_at')
         )
-        context['ongoing_series'] = Paginator(ongoing_qs, 12).get_page(
+        context['ongoing_series'] = Paginator(ongoing_qs, 6).get_page(
             self.request.GET.get('ongoing_page', 1)
         )
  
         # ── 5. Latest episodes row (horizontal scroll, same queryset) ──
-        context['new_episodes'] = Paginator(ongoing_qs, 12).get_page(
-            self.request.GET.get('new_page', 1)
-        )
+        # context['new_episodes'] = Paginator(ongoing_qs, 6).get_page(
+        #     self.request.GET.get('new_page', 1)
+        # )
  
         # ── 6. Completed series ──
         comp_ser = (
@@ -518,7 +518,7 @@ class HomeView(ListView):
                  )
                  .order_by('-title_b_updated_at')
         )
-        context['completed_series'] = Paginator(comp_ser, 12).get_page(
+        context['completed_series'] = Paginator(comp_ser, 6).get_page(
             self.request.GET.get('completed_page', 1)
         )
  

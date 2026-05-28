@@ -18,7 +18,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # ══════════════════════════════════════════════════════════════
 
 PLATFORM_LINKS = {
-    'telegram': 'https://t.me/Watch2D',
+    'telegram': 'https://t.me/+oFCiWwxKmT5jNDM8',
     'twitter':  'https://x.com/Watch2D',
     'facebook': 'https://facebook.com/BigBrotherEntertainmentBlog',
     'website':  'https://watch2d.org',
