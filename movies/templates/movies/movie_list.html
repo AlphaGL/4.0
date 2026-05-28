@@ -52,7 +52,7 @@
       {
         "@type": "ListItem",
         "position": {{ forloop.counter0|add:1 }},
-        "url": "{{ request.build_absolute_uri|cut:request.get_full_path }}{% url 'movies:movie_detail' movie.pk %}"
+        "url": "{{ request.build_absolute_uri|cut:request.get_full_path }}{% url 'movies:movie_detail' movie.pk movie.slug %}"
       }{% if not forloop.last %},{% endif %}
       {% endfor %}
     ]
@@ -113,7 +113,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
       {% for movie in movies %}
         <div class="group">
-          <a href="{% url 'movies:movie_detail' movie.pk %}" class="block">
+          <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}" class="block">
             <div class="relative bg-gray-200 dark:bg-gray-800 rounded-xl overflow-hidden aspect-[3/4] group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105">
               {% if movie.image_url %}
                 {# Optimized Image Loading #}

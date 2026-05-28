@@ -1603,15 +1603,15 @@ class Command(BaseCommand):
 # python manage.py scrape_thenkiri --list-categories        # print all aliases and exit
 
 # # ── Category aliases ────────────────────────────────────────
-# python manage.py scrape_thenkiri --category hollywood     # International / Hollywood movies
-# python manage.py scrape_thenkiri --category kdrama        # Korean dramas (alias: korean)
+# python manage.py scrape_thenkiri --category hollywood --startpage 27     # International / Hollywood movies
+# python manage.py scrape_thenkiri --category kdrama --startpage 17        # Korean dramas (alias: korean)
 # python manage.py scrape_thenkiri --category korean_movie  # Korean movies
 # python manage.py scrape_thenkiri --category chinese       # Chinese movies + dramas
 # python manage.py scrape_thenkiri --category cdrama        # Chinese dramas only
 # python manage.py scrape_thenkiri --category bollywood     # Bollywood
 # python manage.py scrape_thenkiri --category philippine    # Philippine movies (alias: filipino)
 # python manage.py scrape_thenkiri --category k_variety     # K-Variety / reality shows
-# python manage.py scrape_thenkiri --category series        # TV Series
+# python manage.py scrape_thenkiri --category series --startpage 12      # TV Series
 # python manage.py scrape_thenkiri --category all           # everything (default)
 
 # # ── Page control ────────────────────────────────────────────

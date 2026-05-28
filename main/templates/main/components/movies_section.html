@@ -71,12 +71,12 @@
 
               {# CTA Buttons #}
               <div class="flex items-center gap-3 flex-wrap">
-                <a href="{% url 'movies:movie_detail' movie.pk %}"
+                <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}"
                    class="inline-flex items-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-full text-white font-bold transition-colors shadow-xl">
                   <i class="fas fa-download"></i>
                   <span>Download</span>
                 </a>
-                <a href="{% url 'movies:movie_detail' movie.pk %}"
+                <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}"
                    class="inline-flex items-center gap-3 px-5 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full text-white font-semibold transition-colors border border-white/30">
                   <i class="fas fa-info-circle"></i>
                   <span>More Info</span>
@@ -148,7 +148,7 @@
   {% if extra_featured %}
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
     {% for movie in extra_featured %}
-    <a href="{% url 'movies:movie_detail' movie.pk %}"
+    <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}"
        class="group flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-2xl hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700">
       <div class="relative w-20 lg:w-24 aspect-[2/3] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0 shadow-md">
         <img src="{{ movie.image_url }}"
@@ -189,7 +189,7 @@
     </h3>
     <div class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
       {% for movie in trending_movies %}
-      <a href="{% url 'movies:movie_detail' movie.pk %}"
+      <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}"
          class="group flex-shrink-0 w-36 lg:w-40 snap-start">
         <div class="relative aspect-[2/3] rounded-2xl overflow-hidden bg-gray-200 dark:bg-gray-700 mb-2 shadow-lg group-hover:shadow-2xl transition-shadow">
           <img src="{{ movie.image_url }}"
@@ -228,7 +228,7 @@
     </h3>
     <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 lg:gap-4">
       {% for movie in latest_movies %}
-      <a href="{% url 'movies:movie_detail' movie.pk %}" class="group">
+      <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}" class="group">
         <div class="relative aspect-[2/3] rounded-xl lg:rounded-2xl overflow-hidden bg-gray-200 dark:bg-gray-700 mb-1.5 shadow-md group-hover:shadow-xl transition-shadow">
           <img src="{{ movie.image_url }}"
                alt="{{ movie.title }}"

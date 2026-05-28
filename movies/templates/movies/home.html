@@ -310,7 +310,7 @@
       <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
       <div class="srow">
         {% for movie in blockbusters %}
-        <a href="{% url 'movies:movie_detail' movie.pk %}" class="card">
+        <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}" class="card">
           <div class="card-img shim">
             {% if movie.image_url %}<img src="{{ movie.image_url }}" alt="{{ movie.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
             <div class="c-ov"></div>
@@ -338,7 +338,7 @@
       <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
       <div class="srow">
         {% for movie in trending %}
-        <a href="{% url 'movies:movie_detail' movie.pk %}" class="card">
+        <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}" class="card">
           <div class="card-img shim">
             {% if movie.image_url %}<img src="{{ movie.image_url }}" alt="{{ movie.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
             <div class="c-ov"></div>
@@ -417,7 +417,7 @@
       <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
       <div class="srow">
         {% for movie in category.latest_movies %}
-        <a href="{% url 'movies:movie_detail' movie.pk %}" class="card">
+        <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}" class="card">
           <div class="card-img shim">
             {% if movie.image_url %}<img src="{{ movie.image_url }}" alt="{{ movie.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
             <div class="c-ov"></div>
@@ -447,7 +447,7 @@
     </div>
     <div class="grid-wrap" id="recent-grid">
       {% for movie in movies %}
-      <a href="{% url 'movies:movie_detail' movie.pk %}" class="gc">
+      <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}" class="gc">
         <div class="gc-img shim">
           {% if movie.image_url %}<img src="{{ movie.image_url }}" alt="{{ movie.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
           <div class="gc-ov"></div>

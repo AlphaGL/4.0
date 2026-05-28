@@ -32,6 +32,10 @@ import requests
 import re
 from django.db import models as django_models
 
+from django.http import StreamingHttpResponse
+import requests
+
+
 # Cache key constants
 SIDEBAR_CATEGORIES_CACHE_KEY = 'sidebar_categories_v2'
 CACHE_VERSION = 1
@@ -400,6 +404,118 @@ def _fetch_html(url):
         return None
 
 
+@require_GET
+def stream_proxy(request):
+    """
+    Range-aware streaming proxy.
+
+    Flow:
+      1. Receives a landing URL (e.g. downloadwella.com link)
+      2. Resolves it to a fresh direct file URL using the same logic as download
+      3. Opens a connection to that URL, forwarding any Range header from the browser
+      4. Streams the response bytes back to the browser chunk by chunk
+
+    This means:
+      - The file never touches your disk
+      - Seeking works (if the source server supports range requests)
+      - The link is always freshly resolved so expiry is not an issue
+      - Works for .mkv, .mp4, .avi — whatever the source serves
+    """
+    landing_url = request.GET.get('url', '').strip()
+    if not landing_url:
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'No URL provided'}, status=400)
+
+    # ── Step 1: Resolve the landing URL to a fresh direct URL ────────────────
+    from urllib.parse import urlparse, urlunparse
+    parsed = urlparse(landing_url)
+    host = parsed.netloc.lower()
+    lower = landing_url.lower()
+
+    direct_exts = ('.mp4', '.mkv', '.webm', '.avi', '.mov')
+    already_direct = '?pt=' in lower or any(lower.endswith(ext) for ext in direct_exts)
+
+    if already_direct:
+        direct_url = landing_url
+    elif 'sabishares.com' in host and 'preview' in parsed.query:
+        direct_url = urlunparse(parsed._replace(query='', fragment=''))
+    elif 'downloadwella.com' in host:
+        resolved, _ = _resolve_downloadwella(landing_url, parsed)
+        direct_url = resolved if resolved else landing_url
+    elif 'mylulutv.com' in host or 'kissorgrab.com' in host:
+        direct_url = landing_url
+    else:
+        # Generic: fetch page and extract
+        html, _ = _fetch_html_safe(landing_url)
+        extracted = _extract_download_url(html, host) if html else None
+        direct_url = extracted if extracted else landing_url
+
+    # ── Step 2: Forward range header from browser (enables seeking) ──────────
+    headers = {
+        'User-Agent': (
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+            'AppleWebKit/537.36 (KHTML, like Gecko) '
+            'Chrome/124.0.0.0 Safari/537.36'
+        ),
+        'Referer': landing_url,
+        'Accept': '*/*',
+    }
+
+    range_header = request.META.get('HTTP_RANGE')
+    if range_header:
+        headers['Range'] = range_header
+
+    # ── Step 3: Open connection to the source (stream=True = no full download) ─
+    try:
+        upstream = requests.get(
+            direct_url,
+            headers=headers,
+            stream=True,
+            timeout=20,
+            allow_redirects=True,
+        )
+    except Exception as e:
+        from django.http import HttpResponse
+        return HttpResponse(f'Failed to connect to source: {e}', status=502)
+
+    # ── Step 4: Build the streaming response ─────────────────────────────────
+    content_type = upstream.headers.get('Content-Type', 'video/mp4')
+
+    # Detect mkv and set correct MIME type
+    if direct_url.lower().endswith('.mkv') or 'mkv' in content_type:
+        content_type = 'video/x-matroska'
+
+    def generate():
+        try:
+            for chunk in upstream.iter_content(chunk_size=1024 * 512):  # 512 KB chunks
+                if chunk:
+                    yield chunk
+        finally:
+            upstream.close()
+
+    status_code = upstream.status_code  # 206 for range, 200 for full
+
+    response = StreamingHttpResponse(
+        generate(),
+        status=status_code,
+        content_type=content_type,
+    )
+
+    # Forward relevant headers from upstream so browser can seek properly
+    for header in ('Content-Length', 'Content-Range', 'Accept-Ranges'):
+        value = upstream.headers.get(header)
+        if value:
+            response[header] = value
+
+    # If source didn't declare Accept-Ranges, add it ourselves optimistically
+    if 'Accept-Ranges' not in upstream.headers:
+        response['Accept-Ranges'] = 'bytes'
+
+    # Allow embedding in the video player
+    response['Access-Control-Allow-Origin'] = '*'
+
+    return response
+
 def _extract_download_url(html, host):
     """
     Extract the real download/stream URL from page HTML.
@@ -557,6 +673,18 @@ class CategoryMoviesView(ListView):
         return context
 
 
+def old_movie_redirect(request, pk):
+    """
+    Permanent (301) redirect from the legacy /movie/<pk>/ URL to the new
+    canonical /movie/<pk>/<slug>/ URL.
+
+    This keeps all 20K existing links working while Google transfers ranking
+    power to the new SEO-friendly addresses.
+    """
+    movie = get_object_or_404(Movie, pk=pk)
+    return redirect(movie.get_absolute_url(), permanent=True)
+
+
 class MovieDetailView(DetailView):
     model = Movie
     template_name = 'movies/movie_detail.html'
@@ -568,13 +696,31 @@ class MovieDetailView(DetailView):
         )
 
     def get_object(self, queryset=None):
-        obj = super().get_object(queryset=queryset)
+        # Look up by pk only — slug is checked separately for canonical redirect.
+        # Using pk keeps the query fast even with 20K+ posts.
+        if queryset is None:
+            queryset = self.get_queryset()
+        obj = get_object_or_404(queryset, pk=self.kwargs['pk'])
 
         # ✅ Increment views count
         Movie.objects.filter(pk=obj.pk).update(views=F('views') + 1)
-        obj.refresh_from_db(fields=['views'])  # Refresh the object so views count updates
+        obj.refresh_from_db(fields=['views'])
 
         return obj
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        # ── Canonical slug enforcement ────────────────────────────────────────
+        # If someone arrives with the wrong slug (e.g. an old cached link or a
+        # manually-typed URL), redirect them permanently to the correct one so
+        # there is only ever ONE canonical URL per movie.
+        url_slug = kwargs.get('slug', '')
+        if url_slug != self.object.slug:
+            return redirect(self.object.get_absolute_url(), permanent=True)
+
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

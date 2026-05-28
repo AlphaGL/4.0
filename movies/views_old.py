@@ -27,7 +27,10 @@ from django.db.models import F
 
 # Add these imports at the top of views.py
 from django.template.loader import render_to_string
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
+import requests
+import re
+from django.db import models as django_models
 
 # Cache key constants
 SIDEBAR_CATEGORIES_CACHE_KEY = 'sidebar_categories_v2'
@@ -41,9 +44,14 @@ def get_sidebar_categories():
     if not categories:
         target_categories = [
             'Nollywood movies',
-            'Korean drama', 
+            'Korean drama',
             'Hollywood movies',
-            'Bollywood movies'
+            'Bollywood movies',
+            'Anime',
+            'Chinese drama',
+            'Thai drama',
+            'Series',
+            'Animation',
         ]
         
         categories_qs = Category.objects.filter(
@@ -57,7 +65,6 @@ def get_sidebar_categories():
                 to_attr='latest_movies'
             )
         )
-        
         
         # Order categories as specified
         category_order = {name: i for i, name in enumerate(target_categories)}
@@ -97,6 +104,349 @@ def custom_404_view(request, exception):
 def ping_view(request):
     return JsonResponse({"status": "OK"})
 
+
+# Hosts whose URLs play directly in the browser video player
+STREAMABLE_HOSTS = [
+    'mylulutv.com',
+    'kissorgrab.com',
+    'ma27b.kissorgrab.com',
+]
+
+# Hosts that require manual redirect — cannot stream directly
+MANUAL_HOSTS = [
+    'ww1.sabishares.com',
+    'downloadwella.com',
+    'meetdownload.com',
+]
+
+
+@require_GET
+def check_streamable(request):
+    """
+    Returns whether a URL is directly streamable or needs manual redirect.
+    Called by frontend to decide whether to show/hide the stream player.
+    """
+    url = request.GET.get('url', '').strip()
+    if not url:
+        return JsonResponse({'streamable': False, 'reason': 'no_url'})
+
+    from urllib.parse import urlparse
+    host = urlparse(url).netloc.lower()
+    lower = url.lower()
+
+    # Already a direct resolved file
+    direct_exts = ('.mp4', '.mkv', '.webm', '.avi', '.mov')
+    if any(lower.endswith(ext) for ext in direct_exts) or '?pt=' in lower:
+        return JsonResponse({'streamable': True, 'reason': 'direct_file'})
+
+    # sabishares.com/file/?preview → direct after stripping ?preview
+    if 'sabishares.com' in host and '/file/' in lower and 'preview' in lower:
+        return JsonResponse({'streamable': True, 'reason': 'sabishares_preview'})
+
+    # Known streamable hosts
+    if any(h in host for h in STREAMABLE_HOSTS):
+        return JsonResponse({'streamable': True, 'reason': 'known_streamable_host'})
+
+    # Known landing-page hosts
+    if any(h in host for h in MANUAL_HOSTS):
+        return JsonResponse({'streamable': False, 'reason': 'landing_page_host'})
+
+    # Unknown — optimistically try
+    return JsonResponse({'streamable': True, 'reason': 'unknown'})
+
+
+@require_GET
+def resolve_download_link(request):
+    """
+    Server-side proxy. Handles all known link formats:
+      1. sabishares.com ?preview  -> strip ?preview = direct URL
+      2. ww1.sabishares.com       -> fetch page, extract ?pt= token from JS
+      3. meetdownload.com         -> fetch page, extract kissorgrab.com/dl/ URL
+      4. downloadwella.com        -> POST form (op=download2) to get direct URL
+      5. mylulutv.com             -> already streamable, return as-is
+    Add ?debug=1 (staff only) to see full diagnostic output.
+    """
+    landing_url = request.GET.get('url', '').strip()
+    debug = request.GET.get('debug') == '1' and request.user.is_staff
+
+    if not landing_url:
+        return JsonResponse({'error': 'No URL provided'}, status=400)
+
+    from urllib.parse import urlparse, urlunparse
+    parsed = urlparse(landing_url)
+    host = parsed.netloc.lower()
+    lower = landing_url.lower()
+
+    # 1. sabishares.com ?preview — the URL itself (minus ?preview) IS the download
+    if 'sabishares.com' in host and 'preview' in parsed.query:
+        direct = urlunparse(parsed._replace(query='', fragment=''))
+        if debug:
+            return JsonResponse({'method': 'sabishares_preview', 'download_url': direct})
+        return JsonResponse({'download_url': direct})
+
+    # Already a resolved direct URL
+    direct_exts = ('.mp4', '.mkv', '.webm', '.avi', '.mov', '.zip', '.rar')
+    if '?pt=' in lower or any(lower.endswith(ext) for ext in direct_exts):
+        return JsonResponse({'download_url': landing_url})
+
+    # mylulutv.com — direct, return as-is
+    if 'mylulutv.com' in host:
+        return JsonResponse({'download_url': landing_url})
+
+    # 4. downloadwella.com — POST form
+    if 'downloadwella.com' in host:
+        result, dbg = _resolve_downloadwella(landing_url, parsed, debug)
+        if result:
+            if debug:
+                return JsonResponse({'method': 'downloadwella_post', 'download_url': result, 'debug': dbg})
+            return JsonResponse({'download_url': result})
+        if debug:
+            return JsonResponse({'method': 'downloadwella_failed', 'fallback': landing_url, 'debug': dbg})
+        return JsonResponse({'download_url': landing_url})
+
+    # 2 & 3. ww1.sabishares.com / meetdownload.com — fetch page + parse
+    html, fetch_err = _fetch_html_safe(landing_url)
+    if not html:
+        if debug:
+            return JsonResponse({'method': 'fetch_failed', 'error': fetch_err, 'fallback': landing_url})
+        return JsonResponse({'download_url': landing_url})
+
+    download_url = _extract_download_url(html, host)
+    if download_url:
+        if debug:
+            return JsonResponse({'method': 'html_extract', 'download_url': download_url, 'html_length': len(html)})
+        return JsonResponse({'download_url': download_url})
+
+    if debug:
+        return JsonResponse({
+            'method': 'extract_failed',
+            'fallback': landing_url,
+            'html_length': len(html),
+            'cloudflare_block': 'cf-browser-verification' in html or 'Checking your browser' in html,
+            'has_pt_token': '?pt=' in html,
+            'has_kissorgrab': 'kissorgrab' in html,
+            'html_snippet': html[:3000],
+        })
+    return JsonResponse({'download_url': landing_url})
+
+
+def _resolve_downloadwella(landing_url, parsed, debug=False):
+    """
+    downloadwella.com: POST op=download2 to get real download URL.
+    File code = first path segment: /w2osk0e4fg0c/File.mkv.html -> w2osk0e4fg0c
+    Returns (url_or_None, debug_dict).
+    """
+    dbg = {}
+    try:
+        path_parts = [p for p in parsed.path.split('/') if p]
+        if not path_parts:
+            return None, {'error': 'no_path_parts'}
+        file_code = path_parts[0]
+        dbg['file_code'] = file_code
+
+        scraper = _get_scraper()
+        base = f"{parsed.scheme}://{parsed.netloc}"
+
+        get_resp = scraper.get(landing_url, timeout=12)
+        dbg['get_status'] = get_resp.status_code
+
+        post_data = {
+            'op': 'download2',
+            'id': file_code,
+            'rand': '',
+            'referer': '',
+            'method_free': '',
+            'method_premium': '',
+        }
+        resp = scraper.post(base + '/', data=post_data, timeout=15,
+                            headers={'Referer': landing_url})
+        html = resp.text
+        dbg['post_status'] = resp.status_code
+        dbg['post_html_length'] = len(html)
+        if debug:
+            dbg['post_html_snippet'] = html[:2000]
+
+        # location.href with file extension
+        m = re.search(
+            r"location\.href\s*=\s*[\x27\x22]"
+            r"(https?://[^\x27\x22]+\.(?:mp4|mkv|webm|avi|zip|rar)[^\x27\x22]*)[\x27\x22]",
+            html, re.IGNORECASE
+        )
+        if m:
+            dbg['pattern'] = 'location_href_ext'
+            return m.group(1), dbg
+
+        # location.href with CDN/kissorgrab path
+        m = re.search(r"location\.href\s*=\s*[\x27\x22]"
+                      r"(https?://[^\x27\x22]{30,})[\x27\x22]", html)
+        if m:
+            url = m.group(1)
+            if any(x in url.lower() for x in ['/dl/', 'kissorgrab', 'cdn']):
+                dbg['pattern'] = 'location_href_cdn'
+                return url, dbg
+
+        # href with file extension
+        m = re.search(
+            r'href=["\x27]((https?://)[^"\x27?\s]{10,}\.(?:mp4|mkv|webm|avi|zip|rar))["\x27]',
+            html, re.IGNORECASE
+        )
+        if m:
+            dbg['pattern'] = 'href_ext'
+            return m.group(1), dbg
+
+        dbg['error'] = 'no_pattern_matched'
+        return None, dbg
+
+    except Exception as e:
+        return None, {'exception': str(e)}
+
+
+def _fetch_html_safe(url):
+    """Fetch page HTML. Returns (html_or_None, error_string)."""
+    try:
+        scraper = _get_scraper()
+        resp = scraper.get(url, timeout=15, allow_redirects=True)
+        return resp.text, None
+    except Exception as e1:
+        try:
+            headers = {
+                'User-Agent': (
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                    'AppleWebKit/537.36 (KHTML, like Gecko) '
+                    'Chrome/124.0.0.0 Safari/537.36'
+                ),
+                'Accept-Language': 'en-US,en;q=0.9',
+            }
+            resp = requests.get(url, headers=headers, timeout=12, allow_redirects=True)
+            return resp.text, None
+        except Exception as e2:
+            return None, f"cloudscraper: {e1} | requests: {e2}"
+
+
+def _extract_download_url(html, host):
+    """Extract real download URL from fetched page HTML."""
+
+    # ww1.sabishares.com — ?pt= token inside jQuery .html("...<a href='...?pt=...'>...")
+    # The token is hardcoded in the page JS, just needs a direct regex match
+    m = re.search(r"href='(https?://[^']+\?pt=[^']+)'", html)
+    if m: return m.group(1)
+
+    m = re.search(r'href="(https?://[^"]+\?pt=[^"]+)"', html)
+    if m: return m.group(1)
+
+    # Any string containing ?pt= (catches it inside .html() JS calls too)
+    m = re.search(r"[\x27\x22]((https?://)[^\x27\x22]{5,}\?pt=[^\x27\x22]{10,})[\x27\x22]", html)
+    if m: return m.group(1)
+
+    # meetdownload.com — location.href = 'https://ma27b.kissorgrab.com/dl/...'
+    # This URL is inside a <div class="bezende"> hidden offscreen
+    m = re.search(r"location\.href\s*=\s*'(https?://[^']{20,})'", html)
+    if m:
+        url = m.group(1)
+        if any(x in url.lower() for x in ['/dl/', 'kissorgrab', '.mkv', '.mp4', '.avi']):
+            return url
+
+    m = re.search(r'location\.href\s*=\s*"(https?://[^"]{20,})"', html)
+    if m:
+        url = m.group(1)
+        if any(x in url.lower() for x in ['/dl/', 'kissorgrab', '.mkv', '.mp4', '.avi']):
+            return url
+
+    # window.location with file extension
+    m = re.search(
+        r"window\.location(?:\.href)?\s*=\s*[\x27\x22]"
+        r"(https?://[^\x27\x22]+\.(?:mp4|mkv|webm|avi|zip|rar)[^\x27\x22]*)[\x27\x22]",
+        html, re.IGNORECASE
+    )
+    if m: return m.group(1)
+
+    # Direct file URL in any JS string
+    m = re.search(
+        r"[\x27\x22](https?://[^\x27\x22?\s]{10,}\.(?:mp4|mkv|webm|avi|zip|rar))[\x27\x22]",
+        html, re.IGNORECASE
+    )
+    if m: return m.group(1)
+
+    return None
+
+
+def _get_scraper():
+    """Return a cloudscraper instance, fall back to a requests Session."""
+    try:
+        import cloudscraper
+        return cloudscraper.create_scraper(
+            browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False}
+        )
+    except Exception:
+        session = requests.Session()
+        session.headers.update({
+            'User-Agent': (
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                'AppleWebKit/537.36 (KHTML, like Gecko) '
+                'Chrome/124.0.0.0 Safari/537.36'
+            ),
+            'Accept-Language': 'en-US,en;q=0.9',
+        })
+        return session
+
+
+def _fetch_html(url):
+    """GET a page using cloudscraper (Cloudflare bypass), fall back to requests."""
+    try:
+        scraper = _get_scraper()
+        resp = scraper.get(url, timeout=15, allow_redirects=True)
+        return resp.text
+    except Exception:
+        return None
+
+
+def _extract_download_url(html, host):
+    """
+    Extract the real download/stream URL from page HTML.
+    Covers ww1.sabishares.com (?pt= inside jQuery html() call)
+    and meetdownload.com (location.href in onclick JS).
+    """
+    # ── ww1.sabishares.com: ?pt= token inside jQuery .html("...") ────────────
+    # e.g. $('.download-timer').html("<a ... href='https://...?pt=...'>...")
+    m = re.search(
+        r"\.html\(['\"].*?href=[\\'\"]+(https?://[^'\"\\]+\?pt=[^'\"\\]+)[\\'\"]",
+        html, re.DOTALL
+    )
+    if m: return m.group(1)
+
+    # Simpler fallback: any href with ?pt= anywhere in the page
+    m = re.search(r"href=['\"]?(https?://[^'\">\s]+\?pt=[^'\">\s]+)['\"]?", html)
+    if m: return m.group(1)
+
+    # ── meetdownload.com: location.href = 'https://ma27b.kissorgrab.com/dl/...' ─
+    m = re.search(
+        r"location\.href\s*=\s*['\"]"
+        r"(https?://[^'\"]{20,})['\"]",
+        html
+    )
+    if m:
+        url = m.group(1)
+        # Make sure it's not an ad/tracker URL — must look like a file path
+        if any(ext in url.lower() for ext in ['/dl/', '.mkv', '.mp4', '.avi', '.zip']):
+            return url
+
+    # ── Generic: window.location with file extension ──────────────────────────
+    m = re.search(
+        r"window\.location(?:\.href)?\s*=\s*['\"]"
+        r"(https?://[^'\"]+\.(?:mp4|mkv|webm|avi|zip|rar)[^'\"]*)['\"]",
+        html, re.IGNORECASE
+    )
+    if m: return m.group(1)
+
+    # ── Generic: any direct file URL in JS strings ────────────────────────────
+    m = re.search(
+        r"[\x27\x22](https?://[^\x27\x22?\s]{10,}\.(?:mp4|mkv|webm|avi|zip|rar))[\x27\x22]",
+        html, re.IGNORECASE
+    )
+    if m: return m.group(1)
+
+    return None
+
 # @method_decorator(cache_page(60 * 60 * 4), name='dispatch')  # cache 4h
 class HomeView(ListView):
     model = Movie
@@ -105,65 +455,84 @@ class HomeView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        # only standalone movies (no title_b)
+        # Recently Uploaded = standalone movies only (not series).
+        # Exclude anything marked as a series, OR that has episode info (title_b).
         return (
             Movie.objects
-                 .only('id', 'title', 'image_url', 'created_at', 'title_b')
-                 .filter(Q(title_b__isnull=True) | Q(title_b=''))
+                 .only('id', 'title', 'image_url', 'created_at', 'title_b', 'vi_year')
+                 .filter(
+                     Q(is_series=False),
+                     Q(title_b__isnull=True) | Q(title_b=''),
+                 )
                  .order_by('-created_at')
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # 0. Blockbusters (flagged in admin)
+        # ── 0. Blockbusters — AUTO: top views >= 1 000, no manual flag needed ──
         block_qs = (
             Movie.objects
-                 .only('id', 'title', 'image_url', 'created_at')
-                 .filter(is_blockbuster=True)
-                 .order_by('-created_at')
+                 .only('id', 'title', 'image_url', 'created_at', 'views')
+                 .filter(views__gte=1000)
+                 .order_by('-views', '-created_at')
         )
-        context['blockbusters'] = block_qs[:12]  # first 12
+        context['blockbusters'] = block_qs[:12]
 
-        # 1. Trending Now (all‑time most viewed)
+        # ── 1. Trending Now (top 24 by all-time views > 0) ──
         context['trending'] = (
             Movie.objects
                  .only('id', 'title', 'image_url', 'views', 'created_at')
                  .filter(views__gt=0)
-                 .order_by('-views', '-created_at')[:12]  # top 6
+                 .order_by('-views', '-created_at')[:24]
         )
 
-        # 2. Sidebar categories
+        # ── 2. Sidebar categories (cached) ──
         context['categories'] = get_sidebar_categories()
 
-        # 3. New episodes (non-completed series)
-        new_eps = (
+        # ── 3. All categories for the "Browse by Category" grid at the bottom ──
+        context['all_categories'] = Category.objects.annotate(
+            movie_count=django_models.Count('movies')
+        ).filter(movie_count__gt=0).order_by('name')
+
+        # ── 4. Ongoing series ──
+        # A series is ongoing when: is_series=True AND completed=False.
+        # Also catch older entries that may not have is_series set but have
+        # episode info (title_b) and are not yet marked completed.
+        ongoing_qs = (
             Movie.objects
-                 .only('id', 'title', 'title_b', 'image_url', 'title_b_updated_at')
+                 .only('id', 'title', 'title_b', 'image_url', 'title_b_updated_at', 'created_at')
                  .filter(
-                     Q(title_b__isnull=False), ~Q(title_b=''), Q(completed=False)
+                     Q(is_series=True) | (Q(title_b__isnull=False) & ~Q(title_b='')),
+                     completed=False,
                  )
-                 .order_by('-title_b_updated_at')
+                 .order_by('-title_b_updated_at', '-created_at')
         )
-        context['new_episodes'] = Paginator(new_eps, 12).get_page(
-            self.request.GET.get('new_page', 1)
+        context['ongoing_series'] = Paginator(ongoing_qs, 6).get_page(
+            self.request.GET.get('ongoing_page', 1)
         )
 
-        # 4. Completed series
+        # ── 5. Latest episodes row (horizontal scroll, same queryset) ──
+        # context['new_episodes'] = Paginator(ongoing_qs, 6).get_page(
+        #     self.request.GET.get('new_page', 1)
+        # )
+
+        # ── 6. Completed series ──
+        # A series is completed when: (is_series=True OR has episode info) AND completed=True.
         comp_ser = (
             Movie.objects
-                 .only('id', 'title', 'title_b', 'image_url', 'title_b_updated_at')
+                 .only('id', 'title', 'title_b', 'image_url', 'title_b_updated_at', 'created_at')
                  .filter(
-                     Q(title_b__isnull=False), ~Q(title_b=''), Q(completed=True)
+                     Q(is_series=True) | (Q(title_b__isnull=False) & ~Q(title_b='')),
+                     completed=True,
                  )
-                 .order_by('-title_b_updated_at')
+                 .order_by('-title_b_updated_at', '-created_at')
         )
-        context['completed_series'] = Paginator(comp_ser, 12).get_page(
+        context['completed_series'] = Paginator(comp_ser, 6).get_page(
             self.request.GET.get('completed_page', 1)
         )
 
         return context
-
 
 @method_decorator(cache_page(60 * 60 * 4), name='dispatch')  # 4 hours instead of 24
 class CategoryMoviesView(ListView):
@@ -176,7 +545,7 @@ class CategoryMoviesView(ListView):
         self.category = get_object_or_404(Category, id=self.kwargs['cat_id'])
         # Show all movies in this category, newest first - optimized query
         return Movie.objects.select_related().only(
-            'id', 'title', 'image_url', 'created_at', 'description'
+            'id', 'title', 'image_url', 'created_at', 'description', 'vi_year'
         ).filter(categories=self.category).order_by('-created_at')
 
     def get_context_data(self, **kwargs):
@@ -209,7 +578,7 @@ class MovieDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        movie = self.get_object()
+        movie = context['object']  # already fetched — don't call get_object() again (causes double view-count)
         request = self.request
         user = request.user
 
@@ -220,7 +589,7 @@ class MovieDetailView(DetailView):
         context['is_liked'] = user.is_authenticated and user in liked_users
         context['is_watchlisted'] = user.is_authenticated and user in watchlisted_users
         
-        # Updated comments query - only top-level comments with replies prefetched
+        # Top-level comments with replies prefetched
         context['comments'] = movie.comments.filter(
             parent__isnull=True
         ).select_related('user').prefetch_related(
@@ -229,13 +598,20 @@ class MovieDetailView(DetailView):
         
         context['comment_form'] = CommentForm()
 
-        # Related movies
-        related_movies = Movie.objects.select_related().only(
-            'id', 'title', 'image_url', 'created_at'
-        ).filter(
-            categories__in=movie.categories.all()
-        ).exclude(id=movie.id).distinct().order_by('?')[:12]
-        
+        # Related movies — by shared category; fall back to recent movies if none match
+        movie_categories = movie.categories.all()
+        if movie_categories.exists():
+            related_movies = Movie.objects.only(
+                'id', 'title', 'image_url', 'created_at'
+            ).filter(
+                categories__in=movie_categories
+            ).exclude(id=movie.id).distinct().order_by('?')[:12]
+        else:
+            # Movie has no categories — show 12 most recent as fallback
+            related_movies = Movie.objects.only(
+                'id', 'title', 'image_url', 'created_at'
+            ).exclude(id=movie.id).order_by('-created_at')[:12]
+
         context['related_movies'] = related_movies
 
         # Cached sidebar

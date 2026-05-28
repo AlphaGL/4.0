@@ -146,7 +146,7 @@
             {# CTA Buttons #}
             {# FIX 5: centre buttons on mobile #}
             <div class="flex items-center justify-center sm:justify-start gap-2.5 sm:gap-3 lg:gap-4">
-              <a href="{% url 'movies:movie_detail' movie.pk %}"
+              <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}"
                  class="flex items-center gap-2
                         px-4 sm:px-8 lg:px-10
                         py-2 sm:py-3 lg:py-4
@@ -159,7 +159,7 @@
                 <i class="fas fa-download text-xs sm:text-sm lg:text-base"></i>
                 <span>Download</span>
               </a>
-              <a href="{% url 'movies:movie_detail' movie.pk %}"
+              <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}"
                  class="flex items-center gap-2
                         px-4 sm:px-8 lg:px-10
                         py-2 sm:py-3 lg:py-4
@@ -306,7 +306,7 @@
   {# Movie Grid — filterable #}
   <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-3 lg:gap-4" id="latestMoviesGrid">
     {% for movie in latest_movies %}
-    <a href="{% url 'movies:movie_detail' movie.pk %}"
+    <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}"
        class="group movie-card"
        data-category="{% for cat in movie.categories.all %}{{ cat.name|lower }} {% endfor %}">
       <div class="relative aspect-[2/3] rounded-lg sm:rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 mb-1 sm:mb-1.5 shadow-md group-hover:shadow-xl transition-shadow">
@@ -345,7 +345,7 @@
   </div>
   <div class="flex gap-3 sm:gap-4 overflow-x-auto pb-3 scrollbar-hide snap-x snap-mandatory">
     {% for movie in trending_movies %}
-    <a href="{% url 'movies:movie_detail' movie.pk %}"
+    <a href="{% url 'movies:movie_detail' movie.pk movie.slug %}"
        class="group flex-shrink-0 w-28 sm:w-36 lg:w-44 snap-start">
       <div class="relative aspect-[2/3] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg group-hover:shadow-2xl transition-shadow">
         <img src="{{ movie.image_url }}"

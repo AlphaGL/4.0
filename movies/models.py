@@ -3,6 +3,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
+from django.utils.text import slugify
+
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -10,28 +12,36 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+
 class Movie(models.Model):
     title = models.CharField(max_length=200, unique=True)
-    title_b = models.CharField(max_length=200, blank=True, null=True, help_text="Stores new episode info")
+    slug  = models.SlugField(max_length=250, unique=True, blank=True,
+                             help_text="Auto-generated from title. Used in SEO URLs.")
+    title_b = models.CharField(max_length=200, blank=True, null=True,
+                               help_text="Stores new episode info")
     title_b_updated_at = models.DateTimeField(null=True, blank=True)
-    is_series = models.BooleanField(default=False)
-    completed = models.BooleanField(default=False, help_text="Mark if series is complete")
+    is_series  = models.BooleanField(default=False)
+    completed  = models.BooleanField(default=False, help_text="Mark if series is complete")
     description = models.TextField(blank=True)
-    video_url = models.URLField("Video/Embed URL", max_length=500)
+    video_url   = models.URLField("Video/Embed URL", max_length=500)
     download_url = models.URLField("Download URL", blank=True, null=True, max_length=500)
-    image_url = models.URLField("Cover Image URL", blank=True, null=True, max_length=500)
-    categories = models.ManyToManyField(Category, blank=True, related_name='movies')
-    added_by = models.ForeignKey(User, null=True, blank=True,
-                                 on_delete=models.SET_NULL,
-                                 help_text="If user-submitted, the submitting user")
+    image_url    = models.URLField("Cover Image URL", blank=True, null=True, max_length=500)
+    categories   = models.ManyToManyField(Category, blank=True, related_name='movies')
+    added_by     = models.ForeignKey(
+        User, null=True, blank=True,
+        on_delete=models.SET_NULL,
+        help_text="If user-submitted, the submitting user"
+    )
     created_at = models.DateTimeField(default=timezone.now)
-    scraped = models.BooleanField(default=False,
-                                  help_text="True if movie was scraped from external API")
+    scraped    = models.BooleanField(default=False,
+                                     help_text="True if movie was scraped from external API")
 
     # Social relations
-    liked_by = models.ManyToManyField(User, related_name='liked_movies', blank=True)
-    is_blockbuster = models.BooleanField(default=False,
-                                  help_text="Legacy flag — blockbusters are now auto-computed by views (>=1000)")
+    liked_by       = models.ManyToManyField(User, related_name='liked_movies', blank=True)
+    is_blockbuster = models.BooleanField(
+        default=False,
+        help_text="Legacy flag — blockbusters are now auto-computed by views (>=1000)"
+    )
     watchlisted_by = models.ManyToManyField(User, related_name='watchlist_movies', blank=True)
     views = models.PositiveIntegerField(default=0)
 
@@ -47,17 +57,39 @@ class Movie(models.Model):
     vi_filesize = models.CharField(max_length=30,  blank=True, default='', help_text="e.g. 102 MB")
     vi_subtitle = models.CharField(max_length=60,  blank=True, default='', help_text="e.g. English")
 
+    def _generate_unique_slug(self):
+        """
+        Build a slug from the title and append a numeric suffix if a collision
+        exists, e.g. "the-film-2025-2".
+        """
+        base = slugify(self.title)
+        slug = base
+        n = 1
+        qs = Movie.objects.exclude(pk=self.pk)
+        while qs.filter(slug=slug).exists():
+            n += 1
+            slug = f"{base}-{n}"
+        return slug
+
+    def save(self, *args, **kwargs):
+        # Only generate slug if the field is blank (first save, or blank override).
+        # This preserves manually-set slugs and never rewrites an existing one.
+        if not self.slug:
+            self.slug = self._generate_unique_slug()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.title
 
     def get_absolute_url(self):
-        return reverse('movies:movie_detail', args=[str(self.pk)])
+        # Canonical URL: /movie/<id>/<slug>/
+        return reverse('movies:movie_detail', args=[str(self.pk), self.slug])
 
 
 class DownloadLink(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='download_links')
     label = models.CharField(max_length=255, blank=True)
-    url = models.URLField()
+    url   = models.URLField()
 
     def __str__(self):
         return f"{self.label or 'Link'} – {self.url}"
@@ -65,19 +97,20 @@ class DownloadLink(models.Model):
 
 # PWA models
 class PWAInstallation(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    user       = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     user_agent = models.TextField()
     installed_at = models.DateTimeField(auto_now_add=True)
-    platform = models.CharField(max_length=50)
+    platform   = models.CharField(max_length=50)
 
     class Meta:
         db_table = 'pwa_installations'
 
+
 class PushSubscription(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    endpoint = models.URLField()
+    user      = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    endpoint  = models.URLField()
     p256dh_key = models.TextField()
-    auth_key = models.TextField()
+    auth_key  = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
@@ -85,23 +118,27 @@ class PushSubscription(models.Model):
         db_table = 'push_subscriptions'
         unique_together = ('user', 'endpoint')
 
+
 class OfflineAction(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    user        = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     action_type = models.CharField(max_length=50)
     action_data = models.JSONField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    synced = models.BooleanField(default=False)
+    created_at  = models.DateTimeField(auto_now_add=True)
+    synced      = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'offline_actions'
 
 
 class Comment(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', null=True, blank=True)
-    guest_name = models.CharField(max_length=100, blank=True, null=True, help_text="Name for anonymous comments")
-    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='comments')
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='replies', null=True, blank=True)
-    content = models.TextField()
+    user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments',
+                                   null=True, blank=True)
+    guest_name = models.CharField(max_length=100, blank=True, null=True,
+                                  help_text="Name for anonymous comments")
+    movie  = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='comments')
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='replies',
+                               null=True, blank=True)
+    content    = models.TextField()
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
