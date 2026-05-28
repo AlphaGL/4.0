@@ -5,17 +5,6 @@
   <div class="mx-3 mb-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50">
     <div class="grid grid-cols-4 gap-0 px-2">
 
-      {# Home #}
-      <a href="{% url 'main:home' %}"
-         class="flex flex-col items-center justify-center py-3 transition-all relative group
-                {% if request.path == '/' %}text-blue-600 dark:text-blue-400{% else %}text-gray-500 dark:text-gray-400{% endif %}">
-        <div class="w-10 h-10 flex items-center justify-center rounded-xl mb-0.5 transition-all
-                    {% if request.path == '/' %}bg-blue-100 dark:bg-blue-900/30{% else %}group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50{% endif %}">
-          <i class="fas fa-house text-base"></i>
-        </div>
-        <span class="text-[9px] font-semibold">Home</span>
-      </a>
-
       {# Movies #}
       <a href="{% url 'movies:home' %}"
          class="flex flex-col items-center justify-center py-3 transition-all relative group
@@ -56,16 +45,6 @@
 {# Desktop Side Navigation #}
 <nav id="desktopNav" class="hidden lg:block fixed left-6 top-1/2 -translate-y-1/2 z-50 transition-transform duration-300">
   <div class="flex flex-col gap-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-3xl p-3 shadow-2xl border border-gray-200/50 dark:border-gray-700/50">
-
-    {# Home #}
-    <a href="{% url 'main:home' %}"
-       class="group relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all
-              {% if request.path == '/' %}bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105{% endif %}">
-      <i class="fas fa-house text-xl"></i>
-      <span class="absolute left-full ml-4 px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap shadow-xl scale-90 group-hover:scale-100">
-        Home
-      </span>
-    </a>
 
     {# Movies #}
     <a href="{% url 'movies:home' %}"
