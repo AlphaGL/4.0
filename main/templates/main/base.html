@@ -21,9 +21,11 @@
   <link rel="apple-touch-icon" sizes="512x512" href="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgGDg63ESTUKkQx6xcxK4dBd8LDkHo5VjiLkh1drq5WGGSG1dLVGQdwY7eXuVQ6Rxtz2mVSkcVvK7f7pFk5_4UVQc8uuX5HI_2J5IUZxR7uhvdmjxb-LEBmqR7zDjqiwjJVSmzv1fKtAt6nHr0EiDAMNPTNMq1yUnkdcMsA_9Z4Dasfc8bxJ0pnFLwafJk/s320/logo%20(3).png">
   
   {# SEO Meta Tags #}
-  <title>{% block title %}Watch2D - Movies, Anime, Manga & APK Downloads{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}Watch2D - Your ultimate entertainment hub. Stream movies, watch anime, read manga, and download premium APKs - all in one place!{% endblock %}" />
-  <meta name="keywords" content="{% block meta_keywords %}Watch2D, movies, anime, manga, APK downloads, entertainment, streaming{% endblock %}" />
+  <title>{% block title %}Watch2D — HD Movies, Anime & Manga Online{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Watch2D — your ultimate entertainment hub. Download HD movies, watch the latest anime series, and read manga online — all free in one place.{% endblock %}" />
+  <meta name="keywords" content="{% block meta_keywords %}Watch2D, HD movies download, watch anime online, read manga online, free movies streaming, latest anime episodes, manga chapters{% endblock %}" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://watch2d.org{{ request.path }}" />
   
   {# Favicon #}
   <link rel="icon" type="image/png" href="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgGDg63ESTUKkQx6xcxK4dBd8LDkHo5VjiLkh1drq5WGGSG1dLVGQdwY7eXuVQ6Rxtz2mVSkcVvK7f7pFk5_4UVQc8uuX5HI_2J5IUZxR7uhvdmjxb-LEBmqR7zDjqiwjJVSmzv1fKtAt6nHr0EiDAMNPTNMq1yUnkdcMsA_9Z4Dasfc8bxJ0pnFLwafJk/s320/logo%20(3).png" />
@@ -804,16 +806,6 @@
           <span class="font-semibold">Manga</span>
         </a>
         
-        <a href="{% url 'pc_games:game_list' %}" class="flex items-center space-x-2 px-4 py-2 rounded-xl hover:bg-white/50 dark:hover:bg-gray-700/50 transition-all">
-          <i class="fas fa-gamepad text-blue-600"></i>
-          <span class="font-semibold">PC Games</span>
-        </a>
-        
-        <a href="{% url 'apk_store:home' %}" class="flex items-center space-x-2 px-4 py-2 rounded-xl hover:bg-white/50 dark:hover:bg-gray-700/50 transition-all">
-          <i class="fas fa-mobile-alt text-green-500"></i>
-          <span class="font-semibold">Mobile</span>
-        </a>
-
         {# Desktop Search Bar #}
         <div class="relative ml-2" id="desktopSearchWrapper">
           <form action="{% url 'movies:home' %}" method="get" class="flex items-center">
@@ -874,7 +866,7 @@
             Watch2D
           </h3>
           <p class="text-gray-400 mb-4">
-            Your all-in-one entertainment platform. Stream movies, watch anime, read manga, and download premium APKs.
+            Your all-in-one entertainment hub. Download HD movies, watch anime, and read manga — all free in one place.
           </p>
             {# Social & Contact #}
             <div class="space-y-4">
@@ -905,7 +897,6 @@
             <li><a href="{% url 'movies:home' %}" class="hover:text-white transition-colors">Movies</a></li>
             <li><a href="{% url 'anime:list' %}" class="hover:text-white transition-colors">Anime</a></li>
             <li><a href="{% url 'manga:list' %}" class="hover:text-white transition-colors">Manga</a></li>
-            <li><a href="{% url 'apk_store:home' %}" class="hover:text-white transition-colors">Mobile</a></li>
           </ul>
         </div>
       </div>
@@ -1001,9 +992,6 @@
           </a>
           <a href="{% url 'manga:list' %}" class="px-3 py-1.5 bg-pink-50 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 rounded-full text-xs font-semibold">
             <i class="fas fa-book mr-1"></i>Manga
-          </a>
-          <a href="{% url 'apk_store:home' %}" class="px-3 py-1.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-semibold">
-            <i class="fas fa-mobile-alt mr-1"></i>APKs
           </a>
         </div>
       </div>

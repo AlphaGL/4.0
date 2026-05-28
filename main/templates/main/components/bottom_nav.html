@@ -1,164 +1,66 @@
 {% load static %}
 
-{# Mobile Bottom Navigation - Collapsible iOS Style #}
+{# Mobile Bottom Navigation #}
 <nav id="bottomNav" class="lg:hidden fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 safe-area-bottom">
   <div class="mx-3 mb-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50">
-    <div class="grid grid-cols-7 gap-0 px-2">
-      
+    <div class="grid grid-cols-4 gap-0 px-2">
+
       {# Home #}
-      <a href="{% url 'main:home' %}" 
-         class="flex flex-col items-center justify-center py-2.5 transition-all relative group
-                {% if request.path == '/' %}
-                  text-blue-600 dark:text-blue-400
-                {% else %}
-                  text-gray-500 dark:text-gray-400
-                {% endif %}">
+      <a href="{% url 'main:home' %}"
+         class="flex flex-col items-center justify-center py-3 transition-all relative group
+                {% if request.path == '/' %}text-blue-600 dark:text-blue-400{% else %}text-gray-500 dark:text-gray-400{% endif %}">
         <div class="w-10 h-10 flex items-center justify-center rounded-xl mb-0.5 transition-all
-                    {% if request.path == '/' %}
-                      bg-blue-100 dark:bg-blue-900/30 scale-100
-                    {% else %}
-                      group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50
-                    {% endif %}">
+                    {% if request.path == '/' %}bg-blue-100 dark:bg-blue-900/30{% else %}group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50{% endif %}">
           <i class="fas fa-house text-base"></i>
         </div>
-        <span class="text-[9px] font-semibold mt-0.5">Home</span>
+        <span class="text-[9px] font-semibold">Home</span>
       </a>
 
       {# Movies #}
-      <a href="{% url 'movies:home' %}" 
-         class="flex flex-col items-center justify-center py-2.5 transition-all relative group
-                {% if 'movies' in request.path %}
-                  text-blue-600 dark:text-blue-400
-                {% else %}
-                  text-gray-500 dark:text-gray-400
-                {% endif %}">
+      <a href="{% url 'movies:home' %}"
+         class="flex flex-col items-center justify-center py-3 transition-all relative group
+                {% if 'movies' in request.path %}text-blue-600 dark:text-blue-400{% else %}text-gray-500 dark:text-gray-400{% endif %}">
         <div class="w-10 h-10 flex items-center justify-center rounded-xl mb-0.5 transition-all
-                    {% if 'movies' in request.path %}
-                      bg-blue-100 dark:bg-blue-900/30 scale-100
-                    {% else %}
-                      group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50
-                    {% endif %}">
+                    {% if 'movies' in request.path %}bg-blue-100 dark:bg-blue-900/30{% else %}group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50{% endif %}">
           <i class="fas fa-film text-base"></i>
         </div>
-        <span class="text-[9px] font-semibold mt-0.5">Movies</span>
+        <span class="text-[9px] font-semibold">Movies</span>
       </a>
-            
+
       {# Anime #}
-      <a href="{% url 'anime:list' %}" 
-         class="flex flex-col items-center justify-center py-2.5 transition-all relative group
-                {% if 'anime' in request.path %}
-                  text-purple-600 dark:text-purple-400
-                {% else %}
-                  text-gray-500 dark:text-gray-400
-                {% endif %}">
+      <a href="{% url 'anime:list' %}"
+         class="flex flex-col items-center justify-center py-3 transition-all relative group
+                {% if 'anime' in request.path %}text-purple-600 dark:text-purple-400{% else %}text-gray-500 dark:text-gray-400{% endif %}">
         <div class="w-10 h-10 flex items-center justify-center rounded-xl mb-0.5 transition-all
-                    {% if 'anime' in request.path %}
-                      bg-purple-100 dark:bg-purple-900/30 scale-100
-                    {% else %}
-                      group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50
-                    {% endif %}">
+                    {% if 'anime' in request.path %}bg-purple-100 dark:bg-purple-900/30{% else %}group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50{% endif %}">
           <i class="fas fa-play-circle text-base"></i>
         </div>
-        <span class="text-[9px] font-semibold mt-0.5">Anime</span>
+        <span class="text-[9px] font-semibold">Anime</span>
       </a>
 
-    {# Manga #}
-      <a href="{% url 'manga:list' %}" 
-         class="flex flex-col items-center justify-center py-2.5 transition-all relative group
-                {% if 'manga' in request.path %}
-                  text-pink-600 dark:text-pink-400
-                {% else %}
-                  text-gray-500 dark:text-gray-400
-                {% endif %}">
+      {# Manga #}
+      <a href="{% url 'manga:list' %}"
+         class="flex flex-col items-center justify-center py-3 transition-all relative group
+                {% if 'manga' in request.path %}text-pink-600 dark:text-pink-400{% else %}text-gray-500 dark:text-gray-400{% endif %}">
         <div class="w-10 h-10 flex items-center justify-center rounded-xl mb-0.5 transition-all
-                    {% if 'manga' in request.path %}
-                      bg-pink-100 dark:bg-pink-900/30 scale-100
-                    {% else %}
-                      group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50
-                    {% endif %}">
+                    {% if 'manga' in request.path %}bg-pink-100 dark:bg-pink-900/30{% else %}group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50{% endif %}">
           <i class="fas fa-book text-base"></i>
         </div>
-        <span class="text-[9px] font-semibold mt-0.5">Manga</span>
+        <span class="text-[9px] font-semibold">Manga</span>
       </a>
 
-
-      {# PC Games #}
-      <a href="{% url 'pc_games:game_list' %}" 
-         class="flex flex-col items-center justify-center py-2.5 transition-all relative group
-                {% if 'pc-games' in request.path or 'pc_games' in request.path %}
-                  text-indigo-600 dark:text-indigo-400
-                {% else %}
-                  text-gray-500 dark:text-gray-400
-                {% endif %}">
-        <div class="w-10 h-10 flex items-center justify-center rounded-xl mb-0.5 transition-all
-                    {% if 'pc-games' in request.path or 'pc_games' in request.path %}
-                      bg-indigo-100 dark:bg-indigo-900/30 scale-100
-                    {% else %}
-                      group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50
-                    {% endif %}">
-          <i class="fas fa-gamepad text-base"></i>
-        </div>
-        <span class="text-[9px] font-semibold mt-0.5">Games</span>
-      </a>
-
-      {# News - NEW with notification badge #}
-      <a href="{% url 'news:home' %}" 
-         class="flex flex-col items-center justify-center py-2.5 transition-all relative group
-                {% if 'news' in request.path %}
-                  text-red-600 dark:text-red-400
-                {% else %}
-                  text-gray-500 dark:text-gray-400
-                {% endif %}">
-        <div class="relative w-10 h-10 flex items-center justify-center rounded-xl mb-0.5 transition-all
-                    {% if 'news' in request.path %}
-                      bg-red-100 dark:bg-red-900/30 scale-100
-                    {% else %}
-                      group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50
-                    {% endif %}">
-          <i class="fas fa-newspaper text-base"></i>
-          <!-- Notification Badge -->
-          <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-[8px] font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">
-            !
-          </span>
-        </div>
-        <span class="text-[9px] font-semibold mt-0.5">News</span>
-      </a>
-
-      {# Apps #}
-      <a href="{% url 'apk_store:home' %}" 
-         class="flex flex-col items-center justify-center py-2.5 transition-all relative group
-                {% if 'apk' in request.path %}
-                  text-green-600 dark:text-green-400
-                {% else %}
-                  text-gray-500 dark:text-gray-400
-                {% endif %}">
-        <div class="w-10 h-10 flex items-center justify-center rounded-xl mb-0.5 transition-all
-                    {% if 'apk' in request.path %}
-                      bg-green-100 dark:bg-green-900/30 scale-100
-                    {% else %}
-                      group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50
-                    {% endif %}">
-          <i class="fas fa-mobile-alt text-base"></i>
-        </div>
-        <span class="text-[9px] font-semibold mt-0.5">Apps</span>
-      </a>
-      
     </div>
   </div>
 </nav>
 
-{# Desktop Side Navigation - Collapsible Floating Sidebar #}
+{# Desktop Side Navigation #}
 <nav id="desktopNav" class="hidden lg:block fixed left-6 top-1/2 -translate-y-1/2 z-50 transition-transform duration-300">
   <div class="flex flex-col gap-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-3xl p-3 shadow-2xl border border-gray-200/50 dark:border-gray-700/50">
-    
+
     {# Home #}
-    <a href="{% url 'main:home' %}" 
+    <a href="{% url 'main:home' %}"
        class="group relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all
-              {% if request.path == '/' %}
-                bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30
-              {% else %}
-                text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105
-              {% endif %}">
+              {% if request.path == '/' %}bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105{% endif %}">
       <i class="fas fa-house text-xl"></i>
       <span class="absolute left-full ml-4 px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap shadow-xl scale-90 group-hover:scale-100">
         Home
@@ -166,13 +68,9 @@
     </a>
 
     {# Movies #}
-    <a href="{% url 'movies:home' %}" 
+    <a href="{% url 'movies:home' %}"
        class="group relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all
-              {% if 'movies' in request.path %}
-                bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30
-              {% else %}
-                text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105
-              {% endif %}">
+              {% if 'movies' in request.path %}bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105{% endif %}">
       <i class="fas fa-film text-xl"></i>
       <span class="absolute left-full ml-4 px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap shadow-xl scale-90 group-hover:scale-100">
         Movies
@@ -180,13 +78,9 @@
     </a>
 
     {# Anime #}
-    <a href="{% url 'anime:list' %}" 
+    <a href="{% url 'anime:list' %}"
        class="group relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all
-              {% if 'anime' in request.path %}
-                bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30
-              {% else %}
-                text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105
-              {% endif %}">
+              {% if 'anime' in request.path %}bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105{% endif %}">
       <i class="fas fa-play-circle text-xl"></i>
       <span class="absolute left-full ml-4 px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap shadow-xl scale-90 group-hover:scale-100">
         Anime
@@ -194,70 +88,18 @@
     </a>
 
     {# Manga #}
-    <a href="{% url 'manga:list' %}" 
+    <a href="{% url 'manga:list' %}"
        class="group relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all
-              {% if 'manga' in request.path %}
-                bg-gradient-to-br from-pink-500 to-pink-600 text-white shadow-lg shadow-pink-500/30
-              {% else %}
-                text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105
-              {% endif %}">
+              {% if 'manga' in request.path %}bg-gradient-to-br from-pink-500 to-pink-600 text-white shadow-lg shadow-pink-500/30{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105{% endif %}">
       <i class="fas fa-book text-xl"></i>
       <span class="absolute left-full ml-4 px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap shadow-xl scale-90 group-hover:scale-100">
         Manga
       </span>
     </a>
 
-    {# PC Games #}
-    <a href="{% url 'pc_games:game_list' %}" 
-       class="group relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all
-              {% if 'pc-games' in request.path or 'pc_games' in request.path %}
-                bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30
-              {% else %}
-                text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105
-              {% endif %}">
-      <i class="fas fa-gamepad text-xl"></i>
-      <span class="absolute left-full ml-4 px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap shadow-xl scale-90 group-hover:scale-100">
-        PC Games
-      </span>
-    </a>
-
-    {# News - NEW with notification badge #}
-    <a href="{% url 'news:home' %}" 
-       class="group relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all
-              {% if 'news' in request.path %}
-                bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30
-              {% else %}
-                text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105
-              {% endif %}">
-      <div class="relative">
-        <i class="fas fa-newspaper text-xl"></i>
-        <!-- Notification Badge -->
-        <span class="absolute -top-2 -right-2 w-3 h-3 bg-red-600 rounded-full shadow-lg animate-pulse"></span>
-      </div>
-      <span class="absolute left-full ml-4 px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap shadow-xl scale-90 group-hover:scale-100">
-        News
-      </span>
-    </a>
-    
-    
-    {# Apps & Games #}
-    <a href="{% url 'apk_store:home' %}" 
-       class="group relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all
-              {% if 'apk' in request.path %}
-                bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30
-              {% else %}
-                text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105
-              {% endif %}">
-      <i class="fas fa-mobile-alt text-xl"></i>
-      <span class="absolute left-full ml-4 px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap shadow-xl scale-90 group-hover:scale-100">
-        Apps & Games
-      </span>
-    </a>
-  
-    
     {# Divider #}
     <div class="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent my-1"></div>
-    
+
     {# Scroll to Top #}
     <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})"
             class="group relative flex items-center justify-center w-14 h-14 rounded-2xl text-gray-600 dark:text-gray-400 hover:bg-gradient-to-br hover:from-gray-500 hover:to-gray-600 hover:text-white transition-all hover:scale-105 hover:shadow-lg">
@@ -266,50 +108,24 @@
         Back to Top
       </span>
     </button>
+
   </div>
 </nav>
 
-{# Spacer for mobile bottom nav - now dynamic #}
+{# Spacer for mobile bottom nav #}
 <div id="navSpacer" class="lg:hidden h-20 transition-all duration-300"></div>
 
 <style>
-  /* Safe area support for devices with notches/home indicators */
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
-    .safe-area-bottom {
-      padding-bottom: env(safe-area-inset-bottom);
-    }
+    .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
   }
-  
-  /* Smooth scroll behavior */
-  html {
-    scroll-behavior: smooth;
-  }
-  
-  /* Prevent layout shift */
-  nav a, nav button {
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  /* Hide nav when scrolling down */
-  .nav-hidden {
-    transform: translateY(calc(100% + 1rem));
-  }
-
-  /* Reduce spacer when nav is hidden */
-  .spacer-collapsed {
-    height: 0 !important;
-  }
-
-  /* Desktop sidebar auto-hide */
-  .desktop-nav-hidden {
-    transform: translateX(-120%) translateY(-50%);
-  }
-
-  /* Add left padding to body content on desktop to avoid sidebar overlap */
+  html { scroll-behavior: smooth; }
+  nav a, nav button { -webkit-tap-highlight-color: transparent; }
+  .nav-hidden { transform: translateY(calc(100% + 1rem)); }
+  .spacer-collapsed { height: 0 !important; }
+  .desktop-nav-hidden { transform: translateX(-120%) translateY(-50%); }
   @media (min-width: 1024px) {
-    body {
-      padding-left: 120px;
-    }
+    body { padding-left: 120px; }
   }
 </style>
 
@@ -318,78 +134,32 @@
   (function() {
     const bottomNav = document.getElementById('bottomNav');
     const navSpacer = document.getElementById('navSpacer');
-    
     if (!bottomNav || !navSpacer) return;
-    
-    let lastScroll = 0;
-    let isNavVisible = true;
-    let scrollTimeout;
-    
-    // Throttle scroll events for better performance
+    let lastScroll = 0, isNavVisible = true;
     function throttle(func, wait) {
       let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          clearTimeout(timeout);
-          func(...args);
-        };
+      return function(...args) {
         clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
+        timeout = setTimeout(() => func(...args), wait);
       };
     }
-    
     const handleScroll = throttle(function() {
-      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-      
-      // Don't hide nav at the very top
-      if (currentScroll <= 50) {
-        if (!isNavVisible) {
-          bottomNav.classList.remove('nav-hidden');
-          navSpacer.classList.remove('spacer-collapsed');
-          isNavVisible = true;
-        }
+      const cur = window.pageYOffset || document.documentElement.scrollTop;
+      if (cur <= 50) {
+        if (!isNavVisible) { bottomNav.classList.remove('nav-hidden'); navSpacer.classList.remove('spacer-collapsed'); isNavVisible = true; }
         return;
       }
-      
-      // Scrolling down
-      if (currentScroll > lastScroll && isNavVisible && currentScroll > 100) {
-        bottomNav.classList.add('nav-hidden');
-        navSpacer.classList.add('spacer-collapsed');
-        isNavVisible = false;
-      } 
-      // Scrolling up
-      else if (currentScroll < lastScroll && !isNavVisible) {
-        bottomNav.classList.remove('nav-hidden');
-        navSpacer.classList.remove('spacer-collapsed');
-        isNavVisible = true;
+      if (cur > lastScroll && isNavVisible && cur > 100) {
+        bottomNav.classList.add('nav-hidden'); navSpacer.classList.add('spacer-collapsed'); isNavVisible = false;
+      } else if (cur < lastScroll && !isNavVisible) {
+        bottomNav.classList.remove('nav-hidden'); navSpacer.classList.remove('spacer-collapsed'); isNavVisible = true;
       }
-      
-      lastScroll = currentScroll <= 0 ? 0 : currentScroll;
+      lastScroll = cur <= 0 ? 0 : cur;
     }, 100);
-    
-    // Listen to scroll events
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
-    // Show nav on tap/click anywhere on the page when hidden
-    document.addEventListener('click', function(e) {
-      if (!isNavVisible && !bottomNav.contains(e.target)) {
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-          bottomNav.classList.remove('nav-hidden');
-          navSpacer.classList.remove('spacer-collapsed');
-          isNavVisible = true;
-        }, 100);
-      }
-    });
-    
-    // Always show nav when reaching bottom of page
     window.addEventListener('scroll', function() {
-      if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
-        if (!isNavVisible) {
-          bottomNav.classList.remove('nav-hidden');
-          navSpacer.classList.remove('spacer-collapsed');
-          isNavVisible = true;
-        }
+      if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100 && !isNavVisible) {
+        bottomNav.classList.remove('nav-hidden'); navSpacer.classList.remove('spacer-collapsed'); isNavVisible = true;
       }
     }, { passive: true });
   })();
@@ -397,76 +167,34 @@
   // Auto-hide desktop navigation on scroll
   (function() {
     const desktopNav = document.getElementById('desktopNav');
-    
     if (!desktopNav) return;
-    
-    let lastScroll = 0;
-    let isNavVisible = true;
-    let hideTimeout;
-    
+    let lastScroll = 0, isNavVisible = true, hideTimeout;
     function throttle(func, wait) {
       let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          clearTimeout(timeout);
-          func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
+      return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func(...args), wait); };
     }
-    
     const handleDesktopScroll = throttle(function() {
-      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-      
-      // Don't hide nav at the very top
-      if (currentScroll <= 50) {
-        if (!isNavVisible) {
-          desktopNav.classList.remove('desktop-nav-hidden');
-          isNavVisible = true;
-        }
+      const cur = window.pageYOffset || document.documentElement.scrollTop;
+      if (cur <= 50) {
+        if (!isNavVisible) { desktopNav.classList.remove('desktop-nav-hidden'); isNavVisible = true; }
         return;
       }
-      
-      // Scrolling down - hide after a delay
-      if (currentScroll > lastScroll && isNavVisible && currentScroll > 200) {
+      if (cur > lastScroll && isNavVisible && cur > 200) {
         clearTimeout(hideTimeout);
-        hideTimeout = setTimeout(() => {
-          desktopNav.classList.add('desktop-nav-hidden');
-          isNavVisible = false;
-        }, 1000); // Hide after 1 second of scrolling down
-      } 
-      // Scrolling up - show immediately
-      else if (currentScroll < lastScroll && !isNavVisible) {
-        desktopNav.classList.remove('desktop-nav-hidden');
-        isNavVisible = true;
+        hideTimeout = setTimeout(() => { desktopNav.classList.add('desktop-nav-hidden'); isNavVisible = false; }, 1000);
+      } else if (cur < lastScroll && !isNavVisible) {
+        desktopNav.classList.remove('desktop-nav-hidden'); isNavVisible = true;
       }
-      
-      lastScroll = currentScroll <= 0 ? 0 : currentScroll;
+      lastScroll = cur <= 0 ? 0 : cur;
     }, 100);
-    
     window.addEventListener('scroll', handleDesktopScroll, { passive: true });
-    
-    // Show on hover near left edge
     document.addEventListener('mousemove', function(e) {
-      if (e.clientX < 150 && !isNavVisible) {
-        desktopNav.classList.remove('desktop-nav-hidden');
-        isNavVisible = true;
-      }
+      if (e.clientX < 150 && !isNavVisible) { desktopNav.classList.remove('desktop-nav-hidden'); isNavVisible = true; }
     });
-    
-    // Show nav when reaching bottom of page
     window.addEventListener('scroll', function() {
-      if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
-        if (!isNavVisible) {
-          desktopNav.classList.remove('desktop-nav-hidden');
-          isNavVisible = true;
-        }
+      if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100 && !isNavVisible) {
+        desktopNav.classList.remove('desktop-nav-hidden'); isNavVisible = true;
       }
     }, { passive: true });
   })();
 </script>
-
-
-
-<!-- test comment -->

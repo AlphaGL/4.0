@@ -20,8 +20,6 @@ sitemaps = {
     'movies': mastermap(),
     'anime': AnimeSitemap(),      # Add
     'manga': MangaSitemap(),      # Add
-    'apks': APKSitemap(),         # Add
-    'pc_games': PCGamesSitemap(), # Add
 }
 
 # =============================================================================
@@ -33,22 +31,17 @@ urlpatterns = [
     path('watch2d/watch2d_admin/admin/', admin.site.urls),
     
     # ⭐ UNIFIED HOMEPAGE (Main app) - Now includes PWA URLs
-    path('', include('main.urls')),
+    path('main/', include('main.urls')),
     
     # 🎬 Movies App (has its own home page at /movies/)
-    path('movies/', include(('movies.urls', 'movies'), namespace='movies')),
+    path('', include(('movies.urls', 'movies'), namespace='movies')),
     
     # 🎭 Anime App
     path('anime/', include('anime.urls')),
     
     # 📚 Manga App  
     path('manga/', include('manga.urls')),
-    
-    # 📱 APK Store App
-    path('apk_store/', include('apk_store.urls')),
 
-    # 💻 Pc games
-    path('pc_games/', include('pc_games.urls')),
     
     # Authentication
     path('logout/', LogoutView.as_view(), name='logout'),
@@ -58,7 +51,6 @@ urlpatterns = [
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='sitemap'),
     path("robots.txt", robots_txt),
 
-    path('news/', include('news.urls')),
     
     # PWA URLs are now handled by main.urls (included above with path('', include('main.urls')))
 ]
