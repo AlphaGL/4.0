@@ -455,17 +455,21 @@ class HomeView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        # only standalone movies (no title_b)
+        # Recently Uploaded = standalone movies only (not series).
+        # Exclude anything marked as a series, OR that has episode info (title_b).
         return (
             Movie.objects
                  .only('id', 'title', 'image_url', 'created_at', 'title_b', 'vi_year')
-                 .filter(Q(title_b__isnull=True) | Q(title_b=''))
+                 .filter(
+                     Q(is_series=False),
+                     Q(title_b__isnull=True) | Q(title_b=''),
+                 )
                  .order_by('-created_at')
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
- 
+
         # ── 0. Blockbusters — AUTO: top views >= 1 000, no manual flag needed ──
         block_qs = (
             Movie.objects
@@ -474,7 +478,7 @@ class HomeView(ListView):
                  .order_by('-views', '-created_at')
         )
         context['blockbusters'] = block_qs[:12]
- 
+
         # ── 1. Trending Now (top 24 by all-time views > 0) ──
         context['trending'] = (
             Movie.objects
@@ -482,46 +486,52 @@ class HomeView(ListView):
                  .filter(views__gt=0)
                  .order_by('-views', '-created_at')[:24]
         )
- 
+
         # ── 2. Sidebar categories (cached) ──
         context['categories'] = get_sidebar_categories()
- 
+
         # ── 3. All categories for the "Browse by Category" grid at the bottom ──
         context['all_categories'] = Category.objects.annotate(
             movie_count=django_models.Count('movies')
         ).filter(movie_count__gt=0).order_by('name')
- 
-        # ── 4. Ongoing series (grid section — has title_b, not completed) ──
+
+        # ── 4. Ongoing series ──
+        # A series is ongoing when: is_series=True AND completed=False.
+        # Also catch older entries that may not have is_series set but have
+        # episode info (title_b) and are not yet marked completed.
         ongoing_qs = (
             Movie.objects
-                 .only('id', 'title', 'title_b', 'image_url', 'title_b_updated_at')
+                 .only('id', 'title', 'title_b', 'image_url', 'title_b_updated_at', 'created_at')
                  .filter(
-                     Q(title_b__isnull=False), ~Q(title_b=''), Q(completed=False)
+                     Q(is_series=True) | (Q(title_b__isnull=False) & ~Q(title_b='')),
+                     completed=False,
                  )
-                 .order_by('-title_b_updated_at')
+                 .order_by('-title_b_updated_at', '-created_at')
         )
         context['ongoing_series'] = Paginator(ongoing_qs, 6).get_page(
             self.request.GET.get('ongoing_page', 1)
         )
- 
+
         # ── 5. Latest episodes row (horizontal scroll, same queryset) ──
         # context['new_episodes'] = Paginator(ongoing_qs, 6).get_page(
         #     self.request.GET.get('new_page', 1)
         # )
- 
+
         # ── 6. Completed series ──
+        # A series is completed when: (is_series=True OR has episode info) AND completed=True.
         comp_ser = (
             Movie.objects
-                 .only('id', 'title', 'title_b', 'image_url', 'title_b_updated_at')
+                 .only('id', 'title', 'title_b', 'image_url', 'title_b_updated_at', 'created_at')
                  .filter(
-                     Q(title_b__isnull=False), ~Q(title_b=''), Q(completed=True)
+                     Q(is_series=True) | (Q(title_b__isnull=False) & ~Q(title_b='')),
+                     completed=True,
                  )
-                 .order_by('-title_b_updated_at')
+                 .order_by('-title_b_updated_at', '-created_at')
         )
         context['completed_series'] = Paginator(comp_ser, 6).get_page(
             self.request.GET.get('completed_page', 1)
         )
- 
+
         return context
 
 @method_decorator(cache_page(60 * 60 * 4), name='dispatch')  # 4 hours instead of 24

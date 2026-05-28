@@ -1,7 +1,7 @@
 """
 scrape_nkiri_wp.py
 ==================
-Django management command that scrapes thenkiri.ng and publishes
+Django management command that scrapes naijavault.com and publishes
 DIRECTLY to WordPress — zero DB interaction, zero social posting.
 
 Usage:
@@ -23,12 +23,11 @@ from urllib.parse import urlparse, unquote
 import time
 import base64
 
-
 # ══════════════════════════════════════════════════════════════
 # SCRAPER CONSTANTS
 # ══════════════════════════════════════════════════════════════
 
-SOURCE_API_URL = 'https://thenkiri.ng/wp-json/wp/v2/posts/'
+SOURCE_API_URL = 'https://naijavault.com/wp-json/wp/v2/posts/'
 
 KNOWN_DOWNLOAD_DOMAINS = [
     'dl.downloadwella.com.ng', 'archive.org', 'mega.nz', 'drive.google.com',
@@ -68,7 +67,7 @@ def extract_real_download_link(url: str) -> str:
                     "AppleWebKit/537.36 (KHTML, like Gecko) "
                     "Chrome/120.0.0.0 Safari/537.36"
                 ),
-                "Referer":    "https://thenkiri.ng/",
+                "Referer":    "https://naijavault.com/",
                 "Accept":     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             }
             try:
@@ -199,17 +198,25 @@ def _map_to_naijadeleys_category(cat_name: str) -> str:
     if any(x in c for x in ('entertainment', 'celebrity', 'gossip', 'news')):
         return 'Entertainment'
 
-    # Everything else — Thai, Chinese, Japanese drama, Bollywood, Spanish,
-    # South African, other foreign movies/series, etc.
-    return 'Foreign'
+    # Unrecognised — return '' so the caller can apply the right fallback
+    # (Movie for standalone films, Drama for series)
+    return ''
 
 
-def _wp_get_or_create_category(cat_name: str, headers: dict, wp_base: str) -> int | None:
+def _wp_get_or_create_category(cat_name: str, headers: dict, wp_base: str,
+                               is_series: bool = False) -> int | None:
     """
     Resolve cat_name → NaijaDeleys fixed category → WP category ID.
     NEVER creates a new category on the target site.
+
+    Fallback when category is unrecognised:
+      - Series → 'Drama'
+      - Movie  → 'Movie'
     """
     mapped = _map_to_naijadeleys_category(cat_name)
+    if not mapped:
+        mapped = 'Drama' if is_series else 'Movie'
+        print(f"    ℹ️  '{cat_name}' unrecognised → fallback to '{mapped}'")
     key    = mapped.strip().lower()
 
     if key in _wp_category_cache:
@@ -279,30 +286,34 @@ def _wp_find_existing_post(title: str, headers: dict, wp_base: str) -> dict | No
     The `title` argument is the *base* title produced by clean_title_parts,
     e.g. "Tyler Perry's Zatima S04" or "Avatar (2009)".
     """
+    # Strip (Complete)/(Completed) so bare season base is used for lookup
+    search_title = re.sub(r'\s*\(Complet(?:e|ed)\)\s*$', '', title, flags=re.IGNORECASE).strip()
+
     try:
         r = requests.get(
             f'{wp_base}/wp-json/wp/v2/posts',
-            params={'search': title, 'per_page': 10, 'status': 'any'},
+            params={'search': search_title, 'per_page': 10, 'status': 'any'},
             headers=headers, timeout=10,
         )
         if r.status_code != 200:
             return None
 
-        title_lower = title.strip().lower()
+        search_lower = search_title.strip().lower()
+        title_lower  = title.strip().lower()
         for post in r.json():
             rendered = BeautifulSoup(
                 post['title']['rendered'], 'html.parser'
             ).get_text().strip().lower()
 
-            # Exact match
-            if rendered == title_lower:
+            # Exact match (full or stripped)
+            if rendered in (title_lower, search_lower):
                 print(f"    🔎 WP duplicate found (exact): {post['title']['rendered']}")
                 return post
 
             # Starts-with match — stored title begins with our base title
             # e.g. stored = "zatima s04 (episode 14 added) | tv series"
             #      base   = "tyler perry's zatima s04"
-            if rendered.startswith(title_lower):
+            if rendered.startswith(search_lower):
                 print(f"    🔎 WP duplicate found (prefix): {post['title']['rendered']}")
                 return post
 
@@ -315,191 +326,277 @@ def _build_wp_content(title: str, title_b: str, description: str,
                       meta_info: dict, image_url: str, video_url: str,
                       download_links: list, is_series: bool) -> str:
     """
-    Build the HTML body for the WordPress post.
+    Build the HTML body for a WordPress post that exactly matches the
+    NaijaDeleys manual-post design (Jannah theme).
 
-    Layout:
-      1. Featured image (poster) — shown at very top
-      2. Video information block (emoji rows, dark card with left border)
-      3. Trailer embed
-      4. Episode badge (series only)
-      5. Synopsis
-      6. Download buttons (NaijaDeleys yellow)
-      7. SEO keyword paragraph (hidden)
+    Layout — identical to what is produced when posting manually:
+      1.  DOWNLOAD heading  (bold, e.g. "DOWNLOAD The Boroughs Season 1 (2026) Complete | Free DOWNLOAD Mp4")
+      2.  Description paragraph(s)
+      3.  VIDEO INFORMATION  blockquote-style card  (Filesize · Duration · IMDb · Title · Year …)
+      4.  TRAILER / WATCH heading  +  YouTube iframe embed
+      5.  Download buttons:
+            Series → one green-outlined "EPISODE N" button per link
+            Movie  → one green-outlined "DOWNLOAD HERE" button
+      6.  VLC / MX Player tip box  (yellow-bordered, matches manual style)
+      7.  Hidden SEO keyword paragraph
+
+    NOTE: WhatsApp/Telegram channel buttons, the Notice box, and the
+    FAST DOWNLOAD button are all injected automatically by WordPress
+    (Ad Inserter / theme hooks) — they must NOT be added here.
     """
     parts = []
-    C_YELLOW = '#F9C300'   # NaijaDeleys brand yellow
-    C_DARK   = '#141414'   # dark bg
-    C_CARD   = '#1a1a1a'   # card bg
-    C_LIGHT  = '#f5f5f5'   # light text
-    C_MUTED  = '#aaaaaa'   # muted text
-    C_RED    = '#e50914'   # accent red (synopsis heading only)
-    C_BORDER = '#00c853'   # green left border on info card (like reference image)
 
-    year    = meta_info.get('year', '')
-    genre   = meta_info.get('genre', '')
-    country = meta_info.get('country', '')
-
-    # ── 1. Featured image at top ─────────────────────────────────────────
+    # ── 0. FEATURED IMAGE inline (top of post body) ──────────────────────
+    # Embed the poster directly in content so it appears right at the top,
+    # below any Ad Inserter buttons, matching the screenshot layout.
     if image_url:
+        _img_alt = re.sub(r'\s*\(\d{4}\)\s*$', '', title).strip()
         parts.append(
-            f'<div style="text-align:center;margin:0 0 24px 0;">'
-            f'<img src="{image_url}" alt="{title}" '
-            f'style="max-width:100%;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.6);" />'
-            f'</div>'
+            f'<p style="text-align:center;">'
+            f'<img decoding="async" src="{image_url}" alt="{_img_alt}" '
+            f'style="max-width:100%;height:auto;border-radius:8px;" />'
+            f'</p>'
         )
 
-    # ── 2. Video Information block ───────────────────────────────────────
-    # Emoji map for each field (like the reference images)
-    INFO_FIELDS = [
-        ('title',    '🎬', 'Title'),
-        ('year',     '📅', 'Year'),
-        ('genre',    '🎭', 'Genre'),
-        ('duration', '⏱',  'Duration'),
-        ('type',     '📺', 'Type'),
-        ('country',  '🌍', 'Country'),
-        ('stars',    '⭐', 'Stars'),
-        ('language', '🗣',  'Language'),
-        ('subtitle', '📝', 'Subtitle Language'),
-        ('source',   '💿', 'Source'),
-        ('imdb',     '🔗', 'IMDB'),
-    ]
-    # Always inject title & type into meta_info if not already there
-    display_meta = dict(meta_info)
-    if 'title' not in display_meta:
-        display_meta['title'] = title
-    if 'type' not in display_meta:
-        display_meta['type'] = 'TV Series' if is_series else 'Movie'
+    # ── Pull metadata fields ─────────────────────────────────────────────
+    year           = meta_info.get('year',           '').strip()
+    genre          = meta_info.get('genre',          '').strip()
+    country        = meta_info.get('country',        '').strip()
+    lang           = meta_info.get('language',       '').strip()
+    stars          = meta_info.get('stars',          '').strip()
+    dur            = meta_info.get('duration',       '').strip()
+    sub            = meta_info.get('subtitle',       '').strip()
+    imdb           = meta_info.get('imdb',           '').strip()
+    filesize       = meta_info.get('filesize',       '').strip()
+    total_episodes = meta_info.get('total_episodes', '').strip()
+    status         = meta_info.get('status',         '').strip()
+    content_type   = meta_info.get('type',           'TV Series' if is_series else 'Movie').strip()
 
-    rows_html = ''
-    for key, emoji, label in INFO_FIELDS:
-        val = display_meta.get(key, '').strip()
-        if not val:
-            continue
-        # IMDB — make it a clickable link
-        if key == 'imdb':
-            val_html = (
-                f'<a href="{val}" target="_blank" rel="nofollow noopener" '
-                f'style="color:{C_YELLOW};text-decoration:none;">{val}</a>'
-            )
-        else:
-            val_html = f'<span style="color:{C_LIGHT};">{val}</span>'
+    # Clean title — strip trailing "(YYYY)" for display only
+    _title_clean = re.sub(r'\s*\(\d{4}\)\s*$', '', title).strip()
 
-        rows_html += (
-            f'<div style="padding:7px 0;border-bottom:1px solid #2a2a2a;">'
-            f'<span style="font-size:15px;">{emoji}</span> '
-            f'<strong style="color:{C_MUTED};font-size:13px;">{label}:</strong> '
-            f'{val_html}'
-            f'</div>'
+    # Build the human-readable "complete" suffix for series headings
+    # e.g. "Season 1 (2026) Complete" or just "(2026)"
+    _is_nollywood = any(
+        x in (genre + ' ' + country).lower()
+        for x in ('nollywood', 'nigerian', 'nigeria')
+    )
+
+    # ── 1. DOWNLOAD HEADING ──────────────────────────────────────────────
+    # Series:  "DOWNLOAD The Boroughs Season 1 (2026) Complete | Free DOWNLOAD Mp4"
+    # Movie:   "DOWNLOAD Omo Ghetto The Saga (2026) | Free DOWNLOAD Mp4"
+    if is_series:
+        # Detect "complete" flag from title or status
+        _is_complete = bool(
+            re.search(r'\b(complete[d]?)\b', title, re.IGNORECASE)
+            or (status and 'complete' in status.lower())
         )
+        _complete_str = ' Complete' if _is_complete else ''
+        _yr_str       = f' ({year})'  if year else ''
+        dl_heading    = f'DOWNLOAD {_title_clean}{_yr_str}{_complete_str} | Free DOWNLOAD Mp4'
+    else:
+        # For movies: always add year in parens unless it's already part of the clean title
+        _yr_str    = f' ({year})' if year else ''
+        dl_heading = f'DOWNLOAD {_title_clean}{_yr_str} | Free DOWNLOAD Mp4'
 
-    if rows_html:
-        parts.append(
-            f'<div style="background:{C_CARD};border-left:4px solid {C_BORDER};'
-            f'border-radius:8px;padding:16px 20px;margin:0 0 24px 0;">'
-            f'<h3 style="color:{C_YELLOW};font-size:13px;font-weight:700;'
-            f'text-transform:uppercase;letter-spacing:1px;margin:0 0 12px 0;">'
-            f'📋 VIDEO INFORMATION</h3>'
-            + rows_html +
-            '</div>'
-        )
+    parts.append(f'<p><strong>{dl_heading}</strong></p>')
 
-    # ── 3. Trailer embed ─────────────────────────────────────────────────
-    if video_url:
-        parts.append(
-            '<div style="position:relative;padding-bottom:56.25%;height:0;'
-            f'overflow:hidden;margin:0 0 24px 0;border-radius:10px;background:{C_DARK};">'
-            f'<iframe src="{video_url}" frameborder="0" allowfullscreen loading="lazy" '
-            'title="Official Trailer" '
-            'style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:10px;">'
-            '</iframe></div>'
-        )
-
-    # ── 4. Episode badge (series only) ───────────────────────────────────
-    if title_b and is_series:
-        parts.append(
-            f'<div style="display:inline-flex;align-items:center;gap:8px;'
-            f'background:{C_YELLOW};color:#000;padding:8px 18px;'
-            f'border-radius:20px;font-weight:700;font-size:14px;'
-            f'letter-spacing:.4px;margin:0 0 20px 0;">'
-            f'<span>&#9654;</span> Now Available: {title_b}</div>'
-        )
-
-    # ── 5. Synopsis ──────────────────────────────────────────────────────
+    # ── 2. DESCRIPTION ───────────────────────────────────────────────────
     if description:
-        label = 'Series Synopsis' if is_series else 'Movie Synopsis'
+        # Nollywood movies often have a branded intro line; keep as-is.
+        for para in description.split('\n'):
+            para = para.strip()
+            if para:
+                parts.append(f'<p>{para}</p>')
+
+    # ── 3. VIDEO INFORMATION CARD ────────────────────────────────────────
+    # Rendered as a Jannah blockquote ("<p>" inside a <blockquote>) so it
+    # gets the theme's native left-accent styling — exactly like the manual post.
+    #
+    # Field order matches the screenshots:
+    #   Series: Filesize · Duration · Imdb · Title · Year · Type · Country · Language · Genre · Stars · Total Episodes · Status · Subtitle
+    #   Movie:  Genre · Stars · Release Date · Runtime  (simpler card)
+
+    if is_series:
+        # Full metadata card — series style (The Boroughs screenshots)
+        info_lines = []
+        if filesize:        info_lines.append(f'Filesize: {filesize}')
+        if dur:             info_lines.append(f'Duration: {dur}')
+        if imdb:
+            info_lines.append(f'Imdb: \u2013<a href="{imdb}" target="_blank" rel="nofollow noopener">{imdb}</a>')
+        # Always include Title
+        info_lines.append(f'Title: {_title_clean}')
+        if year:            info_lines.append(f'Year: {year}')
+        if content_type:    info_lines.append(f'Type: {content_type}')
+        if country:         info_lines.append(f'Country: {country}')
+        if lang:            info_lines.append(f'Language: {lang}')
+        if genre:           info_lines.append(f'Genre: {genre}')
+        if stars:           info_lines.append(f'Stars: {stars}')
+        if total_episodes:  info_lines.append(f'Total Episodes: {total_episodes}')
+        if status:          info_lines.append(f'Status:{status}')
+        if sub:             info_lines.append(f'Subtitle: {sub}')
+    else:
+        # Compact card — movie style (Omo Ghetto screenshots)
+        info_lines = []
+        if genre:    info_lines.append(f'Genre: {genre}')
+        if stars:    info_lines.append(f'Stars: {stars}')
+        if year:     info_lines.append(f'Release Date: {year}')
+        if dur:      info_lines.append(f'Runtime: {dur}')
+        # Add remaining fields if present
+        if country:  info_lines.append(f'Country: {country}')
+        if lang:     info_lines.append(f'Language: {lang}')
+        if sub:      info_lines.append(f'Subtitle: {sub}')
+        if imdb:
+            info_lines.append(f'Imdb: \u2013<a href="{imdb}" target="_blank" rel="nofollow noopener">{imdb}</a>')
+
+    if info_lines:
+        inner = '<br />\n'.join(info_lines)
+        parts.append(f'<blockquote><p>{inner}</p></blockquote>')
+
+    # ── 4. TRAILER / WATCH HEADING + EMBED ──────────────────────────────
+    # Series use "TRAILER", movies use "WATCH" (matches screenshots exactly).
+    if video_url:
+        section_head = 'TRAILER' if is_series else 'WATCH'
+        parts.append(f'<p><strong>{section_head}</strong></p>')
+
+        # Convert a YouTube watch URL to embed URL if needed
+        yt_match = re.search(
+            r'(?:youtube\.com/watch\?v=|youtu\.be/)([\w\-]{11})', video_url
+        )
+        if yt_match:
+            embed_url = f'https://www.youtube.com/embed/{yt_match.group(1)}'
+        else:
+            embed_url = video_url  # already an embed or non-YT source
+
         parts.append(
-            f'<div style="background:{C_DARK};border-radius:10px;'
-            f'padding:18px 20px;margin:0 0 20px 0;">'
-            f'<h3 style="color:{C_RED};font-size:14px;font-weight:700;'
-            f'text-transform:uppercase;letter-spacing:.8px;margin:0 0 10px 0;">'
-            f'{label}</h3>'
-            f'<p style="color:{C_LIGHT};font-size:15px;line-height:1.7;margin:0;">'
-            f'{description}</p>'
-            f'</div>'
+            f'<p><iframe class="BLOG_video_class" src="{embed_url}" '
+            f'width="780" height="439" allowfullscreen="allowfullscreen"></iframe></p>'
         )
 
-    # ── 6. VLC / MX Player recommendation box ───────────────────────────
+    # ── 5. VLC / MX PLAYER TIP ───────────────────────────────────────────
+    # Exact HTML copied from your live manual posts (Omukade / The Boroughs).
     parts.append(
-        '<div style="background:#fffbe6;border:2px solid #F9C300;border-radius:8px;'
-        'padding:14px 18px;margin:0 0 16px 0;font-size:14px;line-height:1.7;color:#222;">'
-        '<strong style="color:#cc0000;">Highly Recommended!</strong> '
-        '<strong style="color:#F9C300;background:#222;padding:1px 6px;border-radius:4px;">VLC or MX Player</strong>'
-        ' app to watch this video (no audio or video issues).<br>'
-        'It Also supports subtitle if stated on the post (Subtitle: English).<br>'
-        '<strong style="color:#cc0000;">How to download from this site —</strong> '
-        '<a href="https://t.me/naijadeleyschannel/8" target="_blank" rel="noopener" '
-        'style="color:#1a73e8;font-weight:700;text-decoration:none;">Click HERE!</a>'
+        '<div style="background:#fff9e6; border:2px solid #ffd700; padding:10px 12px; '
+        'margin:15px 0; border-radius:12px; font-family:Arial; line-height:1.5; text-align:left;">'
+        '<span style="color:#8b4513; font-weight:bold; font-size:14px;">Highly Recommended!</span> '
+        '<span style="color:#ff0000; font-weight:bold; font-size:14px;">VLC or MX Player</span> '
+        '<span style="color:#5d4037; font-size:14px;">use app to watch this video (no audio or video issues).</span><br />'
+        '<span style="color:#5d4037; font-size:14px;">It Also supports subtitle if stated on the post (Subtitle: English).</span><br />'
+        '<span style="color:#8b4513; font-weight:bold; font-size:14px;">How to download from this site &#8212;</span> '
+        '<a href="https://t.me/naijadeleyschannel/8" '
+        'style="color:#0056b3; font-weight:900; text-decoration:none; font-size:14px;">Click HERE!</a>'
         '</div>'
     )
 
-    # ── 7. Download buttons (NaijaDeleys YELLOW) ─────────────────────────
+    # ── 6. DOWNLOAD BUTTONS ───────────────────────────────────────────────
+    # Exact HTML from your live manual posts:
+    #   Series → individual green-outlined "EPISODE N" buttons (The Boroughs style)
+    #   Movie  → single "DOWNLOAD HERE" green-outlined button (Omukade style)
+    # Each button is wrapped in its own <div style="margin-bottom:8px;">
     if download_links:
-        section_label = 'Download Episodes' if is_series else 'Download Movie'
-        parts.append(
-            f'<div style="background:{C_DARK};border-radius:10px;'
-            f'padding:18px 20px;margin:0 0 20px 0;">'
-            f'<h3 style="color:{C_YELLOW};font-size:14px;font-weight:700;'
-            f'text-transform:uppercase;letter-spacing:.8px;margin:0 0 14px 0;">'
-            f'&#11015; {section_label}</h3>'
-            '<div style="display:flex;flex-wrap:wrap;gap:10px;">'
-        )
-        for i, dl in enumerate(download_links, 1):
-            label = dl.get('label') or (f'Episode {i}' if is_series else f'Download {i}')
-            url   = dl['url']
-            # Alternate: solid yellow / outlined yellow
-            if i % 2 == 1:
-                btn_style = (
-                    f'background:{C_YELLOW};color:#000;border:2px solid {C_YELLOW};'
+        if is_series:
+            # Series: one div per button, left-aligned block
+            parts.append('<div style="text-align: left; font-family: Arial; margin-top: 10px;">')
+            for i, dl in enumerate(download_links, 1):
+                raw_label = dl.get('label', '').strip()
+                url       = dl['url']
+                ep_match  = re.search(r'episode\s*(\d+)', raw_label, re.IGNORECASE)
+                btn_label = f'EPISODE {ep_match.group(1)}' if ep_match else f'EPISODE {i}'
+                # Check if this is a ZIP link
+                if 'zip' in url.lower() or 'zip' in raw_label.lower():
+                    _season_match = re.search(r's(\d+)', title, re.IGNORECASE)
+                    _season_num = _season_match.group(1) if _season_match else '1'
+                    btn_label = f'DOWNLOAD ZIP SEASON {_season_num}'
+                parts.append(
+                    f'<div style="margin-bottom: 8px;">'
+                    f'<a style="display: inline-flex; align-items: center; background: #fff; '
+                    f'border: 3px solid #28a745; color: #28a745; padding: 6px 15px; '
+                    f'text-decoration: none; font-weight: 900; border-radius: 6px; '
+                    f'box-shadow: 0 3px 8px rgba(0,0,0,.5); text-transform: uppercase; font-size: 13px;" '
+                    f'href="{url}">'
+                    f'<img decoding="async" style="width: 16px; margin-right: 8px;" '
+                    f'src="https://img.icons8.com/material-sharp/24/28a745/download.png" />'
+                    f'{btn_label}</a>'
+                    f'</div>'
                 )
-            else:
-                btn_style = (
-                    f'background:transparent;color:{C_YELLOW};border:2px solid {C_YELLOW};'
-                )
+            parts.append('</div>')
+        else:
+            # Movie: single DOWNLOAD HERE button (Omukade style)
+            url = download_links[0]['url']
             parts.append(
-                f'<a href="{url}" target="_blank" rel="nofollow noopener" '
-                f'style="display:inline-flex;align-items:center;gap:6px;{btn_style}'
-                f'padding:10px 20px;border-radius:6px;text-decoration:none;'
-                f'font-weight:700;font-size:13px;letter-spacing:.3px;'
-                f'transition:opacity .2s;">&#11015; {label}</a>'
+                '<div style="text-align:left; margin:10px 0 15px; font-family:Arial;">'
+                f'<a href="{url}" '
+                'style="display:inline-flex; align-items:center; background:#fff; '
+                'border:3px solid #28a745; color:#28a745; padding:8px 18px; '
+                'text-decoration:none; font-weight:900; border-radius:6px; '
+                'box-shadow:0 3px 10px rgba(0,0,0,.5); text-transform:uppercase; font-size:14px;">'
+                '<img decoding="async" '
+                'src="https://img.icons8.com/material-sharp/24/28a745/download.png" '
+                'style="width:18px; height:18px; margin-right:10px;">'
+                '  DOWNLOAD HERE'
+                '</a>'
+                '</div>'
             )
-        parts.append('</div></div>')
+            # If there are additional links beyond the first, render them too
+            for dl in download_links[1:]:
+                url = dl['url']
+                parts.append(
+                    '<div style="text-align:left; margin:10px 0 15px; font-family:Arial;">'
+                    f'<a href="{url}" '
+                    'style="display:inline-flex; align-items:center; background:#fff; '
+                    'border:3px solid #28a745; color:#28a745; padding:8px 18px; '
+                    'text-decoration:none; font-weight:900; border-radius:6px; '
+                    'box-shadow:0 3px 10px rgba(0,0,0,.5); text-transform:uppercase; font-size:14px;">'
+                    '<img decoding="async" '
+                    'src="https://img.icons8.com/material-sharp/24/28a745/download.png" '
+                    'style="width:18px; height:18px; margin-right:10px;">'
+                    '  DOWNLOAD HERE'
+                    '</a>'
+                    '</div>'
+                )
 
-    # ── 8. SEO keyword paragraph (visually hidden, screen-reader friendly) ─
-    kind     = 'series' if is_series else 'movie'
-    seo_bits = [f'Download {title}']
-    if year:
-        seo_bits.append(f'{title} {year}')
-    if genre:
-        for g in genre.split(','):
-            g = g.strip()
-            if g:
-                seo_bits.append(f'{g} {kind}')
-    if country:
-        seo_bits.append(f'{country} {kind}')
+    # ── 7. SEO KEYWORD PARAGRAPH (hidden) ────────────────────────────────
+    _title_no_yr = re.sub(r'\s*\(\d{4}\)\s*$', '', title).strip()
+    yr_str       = f' ({year})' if year else ''
+    base_yr      = f'{_title_no_yr}{yr_str}'
+
+    ep_label = ''
     if title_b and is_series:
-        seo_bits.append(f'{title} {title_b}')
-    seo_bits.append(f'{title} download free')
-    seo_text = ', '.join(seo_bits) + '.'
+        ep_m = re.search(r'(episode\s*\d+)', title_b, re.IGNORECASE)
+        if ep_m:
+            ep_label = ep_m.group(1).title()
+
+    season_label = ''
+    if is_series:
+        s_m = re.search(r'\bS(\d{1,2})\b', title, re.IGNORECASE)
+        if s_m:
+            season_label = f'Season {int(s_m.group(1))}'
+        else:
+            s_m2 = re.search(r'Season\s*(\d{1,2})', title, re.IGNORECASE)
+            if s_m2:
+                season_label = f'Season {int(s_m2.group(1))}'
+
+    seas_str = f' {season_label}' if season_label else ''
+    ep_str   = f' {ep_label}'     if ep_label     else ''
+
+    if is_series:
+        seo_text = (
+            f'Download {base_yr}{seas_str}{ep_str} mp4 mkv, '
+            f'latest Tv Series {base_yr}{seas_str} 720p 480p, '
+            f'{base_yr}{seas_str}{ep_str} Tv Series Download.'
+        )
+    elif _is_nollywood:
+        seo_text = (
+            f'Download {base_yr} mp4 mkv, '
+            f'latest Nollywood movie {base_yr} 720p 480p, '
+            f'{base_yr} Nollywood movie Download.'
+        )
+    else:
+        seo_text = (
+            f'Download {base_yr} mp4 mkv, '
+            f'latest Hollywood movie {base_yr} 720p 480p, '
+            f'{base_yr} Hollywood movie Download.'
+        )
 
     parts.append(
         f'<p style="font-size:1px;color:transparent;line-height:1;'
@@ -709,9 +806,9 @@ def _post_to_wordpress(
     Create or update a WordPress post for this title.
 
     Title format:
-      - Series:  "Tyler Perry's Zatima S04 (Episode 14 Added)"
+      - Series:  "Tyler Perry's Zatima S04 (Episode 14 Added) | Download TV Series"
       - Movie:   "Orí: Rebirth (2025)"
-      No pipe suffix — categories handle grouping inside WordPress.
+      No pipe suffix on movies — categories handle grouping inside WordPress.
 
     Excerpt:
       - Series:  "Episode 14 Added"  (the episode badge)
@@ -745,20 +842,30 @@ def _post_to_wordpress(
         # Resolve category IDs on target WP site
         cat_ids = []
         for cat_name in categories:
-            cid = _wp_get_or_create_category(cat_name.strip(), headers, wp_base)
+            cid = _wp_get_or_create_category(cat_name.strip(), headers, wp_base, is_series=is_series)
             if cid:
                 cat_ids.append(cid)
 
         # ── Title & excerpt ──────────────────────────────────────────────
-        # Series: "Show S01 (Episode 14 Added)"
-        # Movie:  "Movie Title (2025)"   ← title already contains the year
+        # Series: "Show S01 (Episode 14 Added) | Download TV Series"
+        # Movie:  "Movie Title (2025)"
+        mapped_cat_name = _map_to_naijadeleys_category(categories[0]) if categories else ''
+        if not mapped_cat_name:
+            mapped_cat_name = 'Drama' if is_series else ''
         if is_series and title_b:
-            full_title = f'{title} ({title_b})'
+            pipe_suffix = f' | Download {mapped_cat_name}' if mapped_cat_name else ''
+            full_title = f'{title} ({title_b}){pipe_suffix}'
         else:
-            full_title = title   # movies: title already looks like "Orí: Rebirth (2025)"
+            full_title = title
 
-        # Excerpt: episode badge for series, synopsis for movies
-        excerpt_text = title_b if (is_series and title_b) else description
+        # Excerpt: combine episode/complete badge + description
+        _has_episode   = bool(re.search(r'episode\s*\d+', title_b or '', re.IGNORECASE))
+        _is_comp_badge = bool(re.search(r'complet', title_b or '', re.IGNORECASE))
+        if is_series and (_has_episode or _is_comp_badge):
+            _badge = title_b.strip()
+            excerpt_text = f"{_badge} — {description}" if description else _badge
+        else:
+            excerpt_text = description
 
         existing_post = _wp_find_existing_post(title, headers, wp_base)
 
@@ -849,7 +956,7 @@ def _post_to_wordpress(
 # ══════════════════════════════════════════════════════════════
 
 class Command(BaseCommand):
-    help = 'Scrape thenkiri.ng and publish directly to WordPress (no DB, no social media)'
+    help = 'Scrape naijavault.com and publish directly to WordPress (no DB, no social media)'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -1031,18 +1138,20 @@ class Command(BaseCommand):
                 # Source site embeds a <p> with lines like:
                 #   Genre: Drama, Comedy\nStars: Actor 1, Actor 2\nYear: 2026\n…
                 # We extract these for display in the info table and SEO tags.
-                SKIP_KEYS = {'filesize', 'duration', 'imdb', 'status', 'subtitle', 'type'}
+                # Nothing is skipped — we keep ALL fields (filesize, duration,
+                # imdb, status, subtitle, type, total_episodes …) so the info
+                # card in _build_wp_content can display them just like a manual post.
                 meta_info: dict = {}
                 for p in soup.find_all('p'):
                     raw = p.get_text(separator='\n').strip()
-                    if any(k in raw.lower() for k in ('genre', 'stars', 'filesize')):
+                    if any(k in raw.lower() for k in ('genre', 'stars', 'filesize', 'title')):
                         for line in raw.splitlines():
                             if ':' not in line:
                                 continue
                             key, _, val = line.partition(':')
                             key = key.strip().lower().replace(' ', '_')
                             val = val.strip(' \u2013-\u2014').strip()
-                            if val and key not in SKIP_KEYS:
+                            if val:
                                 meta_info[key] = val
                         break
                 if meta_info:
@@ -1084,7 +1193,7 @@ class Command(BaseCommand):
                     if media_id:
                         try:
                             img_res = scraper.get(
-                                f"https://thenkiri.ng/wp-json/wp/v2/media/{media_id}",
+                                f"https://naijavault.com/wp-json/wp/v2/media/{media_id}",
                                 headers=api_headers, timeout=10,
                             )
                             img_res.raise_for_status()
@@ -1099,7 +1208,7 @@ class Command(BaseCommand):
                 for cat_id in item.get('categories', []):
                     try:
                         r = scraper.get(
-                            f"https://thenkiri.ng/wp-json/wp/v2/categories/{cat_id}",
+                            f"https://naijavault.com/wp-json/wp/v2/categories/{cat_id}",
                             headers=api_headers, timeout=10,
                         )
                         r.raise_for_status()
