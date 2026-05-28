@@ -259,10 +259,10 @@
       <p class="hero-desc">{{ hero.description|truncatewords:28 }}</p>
       {% endif %}
       <div class="hero-btns">
-        <a href="{% url 'movies:movie_detail' hero.pk %}" class="hbtn hbtn-white">
+        <a href="{% url 'movies:movie_detail' hero.pk hero.slug %}" class="hbtn hbtn-white">
           <i class="fas fa-play"></i> Download
         </a>
-        <a href="{% url 'movies:movie_detail' hero.pk %}" class="hbtn hbtn-dark">
+        <a href="{% url 'movies:movie_detail' hero.pk hero.slug %}" class="hbtn hbtn-dark">
           <i class="fas fa-info-circle"></i> More Info
         </a>
       </div>
@@ -371,7 +371,7 @@
     </div>
     <div class="grid-wrap" id="ongoing-grid">
       {% for series in ongoing_series %}
-      <a href="{% url 'movies:movie_detail' series.pk %}" class="gc">
+      <a href="{% url 'movies:movie_detail' series.pk series.slug %}" class="gc">
         <div class="gc-img shim">
           {% if series.image_url %}<img src="{{ series.image_url }}" alt="{{ series.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
           <div class="gc-ov"></div>
@@ -483,7 +483,7 @@
     </div>
     <div class="grid-wrap" id="series-grid">
       {% for series in completed_series %}
-      <a href="{% url 'movies:movie_detail' series.pk %}" class="gc">
+      <a href="{% url 'movies:movie_detail' series.pk series.slug %}" class="gc">
         <div class="gc-img shim">
           {% if series.image_url %}<img src="{{ series.image_url }}" alt="{{ series.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
           <div class="gc-ov"></div>
