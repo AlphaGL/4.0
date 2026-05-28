@@ -237,40 +237,151 @@
 
 <div class="w2d">
 
-  {# ═══ HERO ═══ #}
-  {% with hero=blockbusters.0 %}
-  {% if hero %}
-  <section class="hero">
-    <div class="hero-bg" style="position:absolute;inset:0;">
-      <img src="{{ hero.image_url }}" alt="{{ hero.title }}" loading="eager" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-    </div>
-    <div class="hero-vignette-t"></div>
-    <div class="hero-vignette-l"></div>
-    <div class="hero-vignette-b"></div>
-    <div class="hero-content">
-      <div class="hero-pills">
-        <span class="pill pill-red">HD</span>
-        {% for cat in hero.categories.all|slice:":2" %}
-        <span class="pill pill-glass">{{ cat.name }}</span>
-        {% endfor %}
+  {# ═══ HERO SLIDESHOW ═══ #}
+  {% if blockbusters %}
+
+  {# The section keeps the exact same .hero sizing CSS already defined above.      #}
+  {# All slides are stacked via position:absolute inside it.                       #}
+  {# Only the active slide's bg-image and content are visible (opacity transition).#}
+  <section class="hero" id="heroSlider" style="overflow:hidden;">
+
+    {% for hero in blockbusters %}
+    <div class="hs-slide{% if forloop.first %} hs-active{% endif %}"
+         style="position:absolute;inset:0;opacity:{% if forloop.first %}1{% else %}0{% endif %};transition:opacity .8s ease;z-index:{% if forloop.first %}2{% else %}1{% endif %};">
+      {# Background image #}
+      <img src="{{ hero.image_url }}"
+           alt="{{ hero.title }}"
+           loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+           style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;">
+      <div class="hero-vignette-t"></div>
+      <div class="hero-vignette-l"></div>
+      <div class="hero-vignette-b"></div>
+      <div class="hero-content">
+        <div class="hero-pills">
+          <span class="pill pill-red">HD</span>
+          {% for cat in hero.categories.all|slice:":2" %}
+          <span class="pill pill-glass">{{ cat.name }}</span>
+          {% endfor %}
+        </div>
+        <h1 class="hero-title">{{ hero.title }}</h1>
+        {% if hero.description %}
+        <p class="hero-desc">{{ hero.description|truncatewords:28 }}</p>
+        {% endif %}
+        <div class="hero-btns">
+          <a href="{{ hero.get_absolute_url }}" class="hbtn hbtn-white">
+            <i class="fas fa-play"></i> Download
+          </a>
+          <a href="{{ hero.get_absolute_url }}" class="hbtn hbtn-dark">
+            <i class="fas fa-info-circle"></i> More Info
+          </a>
+        </div>
       </div>
-      <h1 class="hero-title">{{ hero.title }}</h1>
-      {% if hero.description %}
-      <p class="hero-desc">{{ hero.description|truncatewords:28 }}</p>
-      {% endif %}
-      <div class="hero-btns">
-        <a href="{% url 'movies:movie_detail' hero.pk hero.slug %}" class="hbtn hbtn-white">
-          <i class="fas fa-play"></i> Download
-        </a>
-        <a href="{% url 'movies:movie_detail' hero.pk hero.slug %}" class="hbtn hbtn-dark">
-          <i class="fas fa-info-circle"></i> More Info
-        </a>
-      </div>
     </div>
+    {% endfor %}
+
+    {# Prev / Next arrows #}
+    <button onclick="hsPrev()" aria-label="Previous"
+            style="position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:10;
+                   width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.3);
+                   background:rgba(0,0,0,.4);color:#fff;cursor:pointer;font-size:.85rem;
+                   display:flex;align-items:center;justify-content:center;transition:background .2s;">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <button onclick="hsNext()" aria-label="Next"
+            style="position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:10;
+                   width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.3);
+                   background:rgba(0,0,0,.4);color:#fff;cursor:pointer;font-size:.85rem;
+                   display:flex;align-items:center;justify-content:center;transition:background .2s;">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+
+    {# Dot indicators #}
+    <div id="hsDots"
+         style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+                z-index:10;display:flex;gap:6px;align-items:center;">
+      {% for hero in blockbusters %}
+      <button onclick="hsGoTo({{ forloop.counter0 }})"
+              aria-label="Slide {{ forloop.counter }}"
+              style="width:{% if forloop.first %}20px{% else %}7px{% endif %};height:7px;
+                     border-radius:4px;border:none;cursor:pointer;padding:0;
+                     background:{% if forloop.first %}#fff{% else %}rgba(255,255,255,.4){% endif %};
+                     transition:all .3s ease;"></button>
+      {% endfor %}
+    </div>
+
+    {# Progress bar #}
+    <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.1);z-index:10;">
+      <div id="hsBar" style="height:100%;width:0%;background:#e50914;transition:width 6s linear;"></div>
+    </div>
+
   </section>
+
+  <script>
+  (function(){
+    var DELAY = 6000;
+    var slider  = document.getElementById('heroSlider');
+    var slides  = slider.querySelectorAll('.hs-slide');
+    var dots    = document.getElementById('hsDots').querySelectorAll('button');
+    var bar     = document.getElementById('hsBar');
+    var cur     = 0;
+    var total   = slides.length;
+    var timer   = null;
+    if (total < 2) return;   // single slide — no need for controls
+
+    function activate(idx) {
+      // hide old
+      slides[cur].style.opacity  = '0';
+      slides[cur].style.zIndex   = '1';
+      dots[cur].style.width      = '7px';
+      dots[cur].style.background = 'rgba(255,255,255,.4)';
+
+      cur = (idx + total) % total;
+
+      // show new
+      slides[cur].style.opacity  = '1';
+      slides[cur].style.zIndex   = '2';
+      dots[cur].style.width      = '20px';
+      dots[cur].style.background = '#fff';
+
+      // restart progress bar
+      bar.style.transition = 'none';
+      bar.style.width = '0%';
+      bar.offsetWidth; // force reflow
+      bar.style.transition = 'width ' + DELAY + 'ms linear';
+      bar.style.width = '100%';
+    }
+
+    function startAuto() {
+      clearInterval(timer);
+      timer = setInterval(function(){ activate(cur + 1); }, DELAY);
+    }
+
+    // pause on hover
+    slider.addEventListener('mouseenter', function(){ clearInterval(timer); });
+    slider.addEventListener('mouseleave', function(){ startAuto(); });
+
+    // touch swipe
+    var tx = 0;
+    slider.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; clearInterval(timer); }, {passive:true});
+    slider.addEventListener('touchend',   function(e){
+      var dx = e.changedTouches[0].clientX - tx;
+      if (Math.abs(dx) > 40) activate(cur + (dx < 0 ? 1 : -1));
+      startAuto();
+    }, {passive:true});
+
+    window.hsNext  = function(){ clearInterval(timer); activate(cur+1); startAuto(); };
+    window.hsPrev  = function(){ clearInterval(timer); activate(cur-1); startAuto(); };
+    window.hsGoTo  = function(i){ clearInterval(timer); activate(i);    startAuto(); };
+
+    // kick off
+    bar.style.transition = 'width ' + DELAY + 'ms linear';
+    bar.style.width = '100%';
+    startAuto();
+  })();
+  </script>
+
   {% else %}
   <section class="hero" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e0f2fe 0%,#f0fdf4 100%);">
-    <div class="dark" style="display:none;"></div>
     <style>.dark .hero-fallback{background:linear-gradient(135deg,#0a0a14 0%,#1a0808 100%)!important;}</style>
     <div class="hero-fallback" style="text-align:center;padding:0 20px;max-width:600px;">
       <h1 class="hero-title" style="font-size:clamp(1.6rem,4vw,3rem);margin-bottom:12px;">Watch &amp; Download<br>Free HD Movies</h1>
@@ -281,7 +392,6 @@
     </div>
   </section>
   {% endif %}
-  {% endwith %}
 
   {# ═══ TICKER ═══ #}
   {% if blockbusters %}

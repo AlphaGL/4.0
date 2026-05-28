@@ -46,21 +46,25 @@ def get_sidebar_categories():
     """
     categories = cache.get(SIDEBAR_CATEGORIES_CACHE_KEY, version=CACHE_VERSION)
     if not categories:
+        # Names matched case-insensitively so "Tv series" / "TV Series" both work.
+        # We pick the category with the MOST movies for each slot.
         target_categories = [
-            'Nollywood movies',
-            'Korean drama',
             'Hollywood movies',
-            'Bollywood movies',
-            'Anime',
-            'Chinese drama',
-            'Thai drama',
-            'Series',
-            'Animation',
+            # 'Nollywood movies',
+            'Korean drama',
+            'TV Series',
         ]
-        
-        categories_qs = Category.objects.filter(
-            name__in=target_categories
-        ).prefetch_related(
+
+        from django.db.models import Count as _Count, Q as _Q
+        import functools as _ft, operator as _op
+
+        # Build a case-insensitive OR filter across all target names
+        name_filter = _ft.reduce(
+            _op.or_,
+            [_Q(name__iexact=name) for name in target_categories]
+        )
+
+        categories_qs = Category.objects.filter(name_filter).prefetch_related(
             Prefetch(
                 'movies',
                 queryset=Movie.objects.select_related().only(
@@ -70,10 +74,10 @@ def get_sidebar_categories():
             )
         )
         
-        # Order categories as specified
-        category_order = {name: i for i, name in enumerate(target_categories)}
+        # Order categories as specified (case-insensitive lookup)
+        category_order = {name.lower(): i for i, name in enumerate(target_categories)}
         categories_list = [cat for cat in categories_qs if cat.latest_movies]
-        categories_list.sort(key=lambda cat: category_order.get(cat.name, 999))
+        categories_list.sort(key=lambda cat: category_order.get(cat.name.lower(), 999))
         
         # Cache for 4 hours
         cache.set(SIDEBAR_CATEGORIES_CACHE_KEY, categories_list, 60 * 60 * 4, version=CACHE_VERSION)
@@ -607,9 +611,37 @@ class HomeView(ListView):
         context['categories'] = get_sidebar_categories()
 
         # ── 3. All categories for the "Browse by Category" grid at the bottom ──
-        context['all_categories'] = Category.objects.annotate(
-            movie_count=django_models.Count('movies')
-        ).filter(movie_count__gt=0).order_by('name')
+        # Deduplicate near-identical categories (e.g. "Hollywood", "Hollywood movie",
+        # "Hollywood movies") by grouping on a normalised key and keeping only the
+        # category with the highest movie count in each group.
+        import re as _re
+        _STOP = _re.compile(
+            r'\b(movie|movies|film|films|tv|series|drama|show|shows|watch|free|hd|'
+            r'and|the|of|a|an)\b|[^a-z0-9 ]', _re.I
+        )
+        def _norm(name):
+            n = _re.sub(r'[^\w\s]', '', name.lower())
+            n = _STOP.sub(' ', n)
+            return ' '.join(n.split())
+
+        raw_cats = list(
+            Category.objects.annotate(
+                movie_count=django_models.Count('movies')
+            ).filter(movie_count__gt=0).order_by('-movie_count')
+        )
+
+        # Group by normalised key; first entry (highest count) wins
+        seen_keys = {}
+        deduped = []
+        for cat in raw_cats:
+            key = _norm(cat.name)
+            if key and key not in seen_keys:
+                seen_keys[key] = True
+                deduped.append(cat)
+
+        # Re-sort alphabetically for display (strip leading emoji/symbols)
+        deduped.sort(key=lambda c: _re.sub(r'[^\w\s]', '', c.name).strip().lower())
+        context['all_categories'] = deduped
 
         # ── 4. Ongoing series ──
         # A series is ongoing when: is_series=True AND completed=False.
@@ -624,7 +656,7 @@ class HomeView(ListView):
                  )
                  .order_by('-title_b_updated_at', '-created_at')
         )
-        context['ongoing_series'] = Paginator(ongoing_qs, 6).get_page(
+        context['ongoing_series'] = Paginator(ongoing_qs, 9).get_page(
             self.request.GET.get('ongoing_page', 1)
         )
 
@@ -644,7 +676,7 @@ class HomeView(ListView):
                  )
                  .order_by('-title_b_updated_at', '-created_at')
         )
-        context['completed_series'] = Paginator(comp_ser, 6).get_page(
+        context['completed_series'] = Paginator(comp_ser, 9).get_page(
             self.request.GET.get('completed_page', 1)
         )
 
