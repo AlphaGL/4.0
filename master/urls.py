@@ -35,6 +35,9 @@ urlpatterns = [
     
     # 🎬 Movies App (has its own home page at /movies/)
     path('', include(('movies.urls', 'movies'), namespace='movies')),
+
+    # 🎬 Movies App (has its own home page at /movies/)
+    path('movies/', include(('movies.urls', 'movies'), namespace='movies')),
     
     # 🎭 Anime App
     path('anime/', include('anime.urls')),
