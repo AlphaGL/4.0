@@ -40,3 +40,5 @@ reportlab==4.0.9
 
 # Telegram file uploader (supports up to 2 GB uploads)
 telethon==1.36.0
+
+django-redis

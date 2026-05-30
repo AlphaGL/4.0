@@ -44,7 +44,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install telethon
+          pip install telethon django-redis
 
       # ── 4. Write .env file from GitHub Secrets ────────────────
       #    Every key in your .env becomes a GitHub Secret.
