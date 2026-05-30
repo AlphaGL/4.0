@@ -37,3 +37,6 @@ python-dateutil==2.9.0.post0
 
 # PDF generation (MISSING - ADD THIS)
 reportlab==4.0.9
+
+# Telegram file uploader (supports up to 2 GB uploads)
+telethon==1.36.0

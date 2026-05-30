@@ -11,6 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='your-secret-key-here')
 DEBUG = config('DEBUG', default=False, cast=bool)
+# DEBUG = True
 
 ALLOWED_HOSTS = [
     'watch2d.vercel.app',
@@ -121,6 +122,32 @@ TELEGRAM_ANIME_CHANNEL  = config('TELEGRAM_ANIME_CHANNEL', default='')
 TELEGRAM_MANGA_CHANNEL  = config('TELEGRAM_MANGA_CHANNEL', default='')
 
 # ============================================================
+# TELETHON — Private file upload channel
+# Same Telegram account as above, but uploads files directly
+# to a separate private channel via MTProto (supports up to 2 GB).
+#
+# How to get TELETHON_API_ID and TELETHON_API_HASH:
+#   1. Go to https://my.telegram.org
+#   2. Log in with your Telegram phone number
+#   3. Click "API development tools"
+#   4. Create an app (any name) → copy api_id and api_hash
+#
+# How to get TELETHON_PRIVATE_CHANNEL:
+#   1. Open https://web.telegram.org
+#   2. Open your private channel
+#   3. Copy the number from the URL (include the -100 prefix)
+#      e.g. https://web.telegram.org/k/#-1001234567890
+#          → TELETHON_PRIVATE_CHANNEL=-1001234567890
+#
+# One-time login (run this ONCE on your server):
+#   python manage.py scrape_thenkiri --telethon-login
+# ============================================================
+TELETHON_API_ID          = config('TELETHON_API_ID',          default=0,        cast=int)
+TELETHON_API_HASH        = config('TELETHON_API_HASH',        default='')
+TELETHON_SESSION_NAME    = config('TELETHON_SESSION_NAME',    default='uploader')
+TELETHON_PRIVATE_CHANNEL = config('TELETHON_PRIVATE_CHANNEL', default=0,        cast=int)
+
+# ============================================================
 # TWITTER / X (OAuth 2.0)
 # ============================================================
 TWITTER_CLIENT_ID     = config('TWITTER_CLIENT_ID',     default='')
@@ -210,17 +237,37 @@ WHITENOISE_USE_FINDERS = True
 WHITENOISE_MANIFEST_STRICT = False
 WHITENOISE_ALLOW_ALL_ORIGINS = True
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        # Render's /tmp is writable and persists for the life of the instance
-        'LOCATION': '/tmp/watch2d_cache',
-        'TIMEOUT': 300,           # default TTL: 5 min (views override per-key)
-        'OPTIONS': {
-            'MAX_ENTRIES': 3000,  # ~3 000 cache files max before oldest pruned
-        },
+_REDIS_URL = config('REDIS_URL', default='')
+
+if _REDIS_URL and _REDIS_URL not in ('', 'redis://localhost:6379/0'):
+    # ── Redis Cloud (or any real Redis) ──────────────────────────────
+    # Requires:  pip install django-redis
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': _REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                # Silently ignore Redis errors — app keeps working if Redis goes down
+                'IGNORE_EXCEPTIONS': True,
+            },
+            'TIMEOUT': 300,
+        }
     }
-}
+    SESSION_ENGINE      = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+else:
+    # ── Fallback: file-based cache (local dev / no Redis configured) ──
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': '/tmp/watch2d_cache',
+            'TIMEOUT': 300,
+            'OPTIONS': {
+                'MAX_ENTRIES': 3000,
+            },
+        }
+    }
 
 CACHE_CONTROL_MAX_AGE = 31536000
 OFFLINE_URL = '/offline.html'
@@ -240,8 +287,8 @@ WP_SITE_URL     = 'https://naijadeleys.com.ng'
 WP_USERNAME     = 'AlphaDev_'
 WP_APP_PASSWORD = 'scK9 fIaZ FUmY tDWo Mhqb rXbq'
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-SESSION_CACHE_ALIAS = 'default'
+# SESSION_ENGINE and SESSION_CACHE_ALIAS are set inside the CACHES block above
+# (only applied when a real Redis URL is configured)
 
 CRONJOBS = [
     # Every 10 minutes — keeps Render free instance awake

@@ -1,0 +1,123 @@
+name: Scrape Thenkiri + Upload to Telegram
+
+# ── When this runs ────────────────────────────────────────────
+# Automatically: every 6 hours
+# Manually: go to Actions tab → "Run workflow" button
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # every 6 hours  (change to '0 */3 * * *' for every 3 hours)
+  workflow_dispatch:         # lets you trigger it manually from the GitHub Actions tab
+    inputs:
+      category:
+        description: 'Category to scrape (hollywood / kdrama / series / all / etc)'
+        required: false
+        default: 'all'
+      upload_files:
+        description: 'Upload files to private Telegram channel?'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300    # 5-hour limit per run (GitHub max is 6 hours)
+
+    steps:
+
+      # ── 1. Checkout your repo ─────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Set up Python ──────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # ── 3. Install dependencies ───────────────────────────────
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install telethon
+
+      # ── 4. Write .env file from GitHub Secrets ────────────────
+      #    Every key in your .env becomes a GitHub Secret.
+      #    The workflow writes them back into a .env file so
+      #    your Django settings.py / python-decouple can read them.
+      - name: Create .env file
+        run: |
+          cat > .env << 'ENVEOF'
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          DEBUG=False
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          REDIS_URL=${{ secrets.REDIS_URL }}
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_MOVIES_CHANNEL=${{ secrets.TELEGRAM_MOVIES_CHANNEL }}
+          TELEGRAM_ANIME_CHANNEL=${{ secrets.TELEGRAM_ANIME_CHANNEL }}
+          TELEGRAM_MANGA_CHANNEL=${{ secrets.TELEGRAM_MANGA_CHANNEL }}
+          TWITTER_CLIENT_ID=${{ secrets.TWITTER_CLIENT_ID }}
+          TWITTER_CLIENT_SECRET=${{ secrets.TWITTER_CLIENT_SECRET }}
+          TWITTER_REFRESH_TOKEN=${{ secrets.TWITTER_REFRESH_TOKEN }}
+          FB_PAGE_ID=${{ secrets.FB_PAGE_ID }}
+          FB_ACCESS_TOKEN=${{ secrets.FB_ACCESS_TOKEN }}
+          SITE_URL=${{ secrets.SITE_URL }}
+          TELETHON_API_ID=${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH=${{ secrets.TELETHON_API_HASH }}
+          TELETHON_SESSION_NAME=uploader
+          TELETHON_PRIVATE_CHANNEL=${{ secrets.TELETHON_PRIVATE_CHANNEL }}
+          ENVEOF
+
+      # ── 5. Restore Telethon session from secret ───────────────
+      #    The session file is stored as a base64 string in
+      #    TELETHON_SESSION_B64 secret.  We decode it back to a
+      #    .session file here so Telethon can log in automatically
+      #    without asking for a phone number.
+      - name: Restore Telethon session
+        run: |
+          echo "${{ secrets.TELETHON_SESSION_B64 }}" | base64 --decode > uploader.session
+          echo "✅ Telethon session restored ($(wc -c < uploader.session) bytes)"
+
+      # ── 6. Run the scraper ────────────────────────────────────
+      - name: Run scraper
+        run: |
+          CATEGORY="${{ github.event.inputs.category || 'all' }}"
+          UPLOAD="${{ github.event.inputs.upload_files || 'true' }}"
+
+          CMD="python manage.py scrape_thenkiri --category $CATEGORY --max-pages 3"
+
+          if [ "$UPLOAD" = "true" ]; then
+            CMD="$CMD --upload-files"
+          fi
+
+          echo "▶️  Running: $CMD"
+          $CMD
+
+      # ── 7. Confirm temp folder is empty (safety check) ────────
+      - name: Verify temp files cleaned up
+        if: always()
+        run: |
+          TEMP_DIR="/tmp/tg_uploads"
+          if [ -d "$TEMP_DIR" ]; then
+            COUNT=$(ls "$TEMP_DIR" | wc -l)
+            SIZE=$(du -sh "$TEMP_DIR" 2>/dev/null | cut -f1)
+            echo "Temp folder: $COUNT file(s), $SIZE"
+            if [ "$COUNT" -gt "0" ]; then
+              echo "⚠️  Leftover temp files found — cleaning up"
+              rm -rf "$TEMP_DIR"/*
+            else
+              echo "✅ Temp folder is clean"
+            fi
+          else
+            echo "✅ No temp folder created"
+          fi
+
+      # ── 8. Show disk usage at end of run ──────────────────────
+      - name: Show final disk usage
+        if: always()
+        run: df -h /
