@@ -799,99 +799,142 @@ def resolve_direct_link(landing_url: str, session: requests.Session) -> str | No
     Follow a downloadwella.com (or similar) landing page and return
     the actual direct download URL.
 
+    Strategy:
+      1. Return immediately if already a direct/resolved link
+      2. Fetch landing page with cloudscraper (bypasses bot detection)
+         and parse the HTML for the ?pt= token link using multiple patterns
+      3. Follow redirects — downloadwella sometimes redirects directly
+         to the file after a short delay
+
+    NOTE: We intentionally skip calling the Django website resolver
+    (watch2d.org/movies/resolve-download/) because the Render free tier
+    may be sleeping and cause a 15-second timeout every single movie.
+    Cloudscraper on the raw landing page is faster and more reliable
+    when running on a GitHub Actions / VPS server.
+
     Returns the resolved URL string, or None if resolution fails.
     """
     url_lower = landing_url.lower()
+    direct_exts = ('.mp4', '.mkv', '.avi', '.mov', '.webm', '.zip', '.rar')
 
-    # Already a direct link — contains ?pt= token
+    # ── Already resolved ───────────────────────────────────────
     if '?pt=' in url_lower:
         return landing_url
 
-    # sabishares.com/file/ with ?preview removed = direct link
+    # sabishares.com/file/?preview → strip query = direct link
     try:
         u = urlparse(landing_url)
-        if 'sabishares.com' in u.hostname and '/file/' in u.path and 'preview' in u.query:
-            from urllib.parse import urlencode, parse_qs
+        if u.hostname and 'sabishares.com' in u.hostname and '/file/' in u.path and 'preview' in u.query:
             return f"{u.scheme}://{u.netloc}{u.path}"
     except Exception:
         pass
 
-    # Known direct file extensions (not a landing page)
-    direct_exts = ('.mp4', '.mkv', '.avi', '.mov', '.zip', '.rar')
+    # Plain direct file extension (not a landing page host)
     is_ext = any(url_lower.endswith(e) or (e + '?') in url_lower for e in direct_exts)
     if is_ext and 'downloadwella.com' not in url_lower and 'sabishares.com/file/' not in url_lower:
         return landing_url
 
-    # ── Fetch the landing page and extract the ?pt= link ──────
     print(f"      🔗 Resolving landing page: {landing_url[:80]}…")
 
-    # Strategy 1: Try our own Django resolve-download view first
-    # (same endpoint movie_detail.html calls via /movies/resolve-download/)
-    try:
-        from django.conf import settings as _s
-        site_url = getattr(_s, 'SITE_URL', 'http://localhost:8000').rstrip('/')
-        res = requests.get(
-            f"{site_url}/movies/resolve-download/",
-            params={'url': landing_url},
-            timeout=15,
-        )
-        data = res.json()
-        if data.get('download_url'):
-            print(f"      ✅ Resolved via Django view")
-            return data['download_url']
-    except Exception as e:
-        print(f"      ⚠️  Django resolver failed: {e}")
+    # ── Fetch with cloudscraper (handles Cloudflare / bot checks) ──
+    for attempt in range(2):
+        try:
+            scraper = cloudscraper.create_scraper(
+                browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False}
+            )
+            resp = scraper.get(landing_url, timeout=25, allow_redirects=True)
+            html  = resp.text
+            final = resp.url
 
-    # Strategy 2: Fetch the landing page HTML directly and parse it
-    # (mirrors extractDownloadUrl() in movie_detail.html)
-    try:
-        resp = session.get(landing_url, timeout=20, allow_redirects=True)
-        html = resp.text
+            # ── Check if the redirect chain led to a direct file ──
+            if '?pt=' in final or any(final.lower().endswith(e) for e in direct_exts):
+                print(f"      ✅ Resolved via redirect chain")
+                return final
 
-        # Pattern 1: href containing ?pt= token (most common on downloadwella)
-        m = re.search(
-            r'href=[\'"]?(https?://[^\'">\s]+\?pt=[^\'">\s]+)[\'"]?',
-            html
-        )
-        if m:
-            print(f"      ✅ Resolved via HTML href pattern")
-            return m[1]
+            # ── Pattern 1: href with ?pt= token ───────────────────
+            # e.g. <a href="https://cdn.downloadwella.com/dl/file.mkv?pt=TOKEN">
+            m = re.search(
+                r'href=[\'"]?(https?://[^\'">\s]+\?pt=[^\'">\s]+)[\'"]?',
+                html
+            )
+            if m:
+                print(f"      ✅ Resolved via href ?pt= pattern")
+                return m[1]
 
-        # Pattern 2: .html(... href='URL?pt=...')  (jQuery pattern)
-        m = re.search(
-            r'\.html\(["\'].*?href=[\'"](https?://[^\'">\s]+\?pt=[^\'">\s]+)[\'"]',
-            html
-        )
-        if m:
-            print(f"      ✅ Resolved via jQuery HTML pattern")
-            return m[1]
+            # ── Pattern 2: jQuery .html() injection ───────────────
+            # e.g. $(...).html('...<a href="URL?pt=TOKEN">...')
+            m = re.search(
+                r'\.html\s*\(\s*["\'].*?href=[\'"](https?://[^\'">\s]+\?pt=[^\'">\s]+)[\'"]',
+                html, re.DOTALL
+            )
+            if m:
+                print(f"      ✅ Resolved via jQuery html() pattern")
+                return m[1]
 
-        # Pattern 3: location.href redirect to a download path
-        m = re.search(
-            r'location\.href\s*=\s*[\'"]((https?://)[^\'"]{20,})[\'"]',
-            html
-        )
-        if m and re.search(r'/dl/|\.mkv|\.mp4|\.avi|\.zip', m[1], re.IGNORECASE):
-            print(f"      ✅ Resolved via location.href pattern")
-            return m[1]
+            # ── Pattern 3: JS string assignment with ?pt= ─────────
+            # e.g. var url = "https://...?pt=TOKEN";
+            m = re.search(
+                r'[=:(,\s][\'\"](https?://[^\'">\s]+\?pt=[^\'">\s]+)[\'"]',
+                html
+            )
+            if m:
+                print(f"      ✅ Resolved via JS variable pattern")
+                return m[1]
 
-        # Pattern 4: direct file URL in HTML
-        m = re.search(
-            r'[\'\"](https?://[^\'"?\s]{10,}\.(?:mp4|mkv|webm|avi|zip|rar))[\'"]',
-            html, re.IGNORECASE
-        )
-        if m:
-            print(f"      ✅ Resolved via direct file URL pattern")
-            return m[1]
+            # ── Pattern 4: location.href = download path ──────────
+            m = re.search(
+                r'location\.href\s*=\s*[\'"]((https?://)[^\'"]{20,})[\'"]',
+                html
+            )
+            if m and re.search(r'/dl/|\.mkv|\.mp4|\.avi|\.zip', m[1], re.IGNORECASE):
+                print(f"      ✅ Resolved via location.href pattern")
+                return m[1]
 
-        # If the final response URL after redirects is already a direct file
-        final_url = resp.url
-        if any(final_url.lower().endswith(e) for e in direct_exts) or '?pt=' in final_url:
-            print(f"      ✅ Resolved via redirect chain")
-            return final_url
+            # ── Pattern 5: data-url or data-link attributes ───────
+            m = re.search(
+                r'data-(?:url|link|href|src)=[\'"]?(https?://[^\'">\s]+\?pt=[^\'">\s]+)[\'"]?',
+                html
+            )
+            if m:
+                print(f"      ✅ Resolved via data-attribute pattern")
+                return m[1]
 
-    except Exception as e:
-        print(f"      ⚠️  HTML fetch/parse failed: {e}")
+            # ── Pattern 6: raw direct file URL anywhere in page ───
+            m = re.search(
+                r'[\'\"](https?://[^\'"?\s]{10,}\.(?:mp4|mkv|webm|avi|zip|rar))[\'"]',
+                html, re.IGNORECASE
+            )
+            if m:
+                print(f"      ✅ Resolved via raw file URL pattern")
+                return m[1]
+
+            # ── Pattern 7: base64-encoded URL (some hosts encode it) ─
+            b64_matches = re.findall(r'[\'\""]([A-Za-z0-9+/]{40,}={0,2})[\'\""]', html)
+            import base64
+            for b64 in b64_matches:
+                try:
+                    decoded = base64.b64decode(b64 + '==').decode('utf-8', errors='ignore')
+                    if decoded.startswith('http') and ('?pt=' in decoded or
+                            any(decoded.lower().endswith(e) for e in direct_exts)):
+                        print(f"      ✅ Resolved via base64 decode")
+                        return decoded
+                except Exception:
+                    continue
+
+            # If first attempt got nothing useful, wait briefly and retry
+            # (some pages load the link after a JS timer)
+            if attempt == 0:
+                print(f"      ⏳ No link found yet — retrying after 3s…")
+                time.sleep(3)
+                continue
+            break
+
+        except Exception as e:
+            print(f"      ⚠️  Cloudscraper fetch failed (attempt {attempt+1}): {e}")
+            if attempt == 0:
+                time.sleep(2)
+                continue
+            break
 
     print(f"      ❌ Could not resolve direct link from: {landing_url[:80]}")
     return None
