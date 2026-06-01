@@ -77,12 +77,60 @@ class Movie(models.Model):
     vi_filesize = models.CharField(max_length=30,  blank=True, default='', help_text="e.g. 102 MB")
     vi_subtitle = models.CharField(max_length=60,  blank=True, default='', help_text="e.g. English")
 
-    def _generate_unique_slug(self):
+    def _compute_seo_suffix(self):
         """
-        Build a slug from the title and append a numeric suffix if a collision
-        exists, e.g. "the-film-2025-2".
+        Derive a short SEO suffix from categories/vi_country.
+        Returns a slugified label like 'korean-drama', 'hollywood-movie', etc.
+        Called from the reslug_movies management command and the scraper post-save hook.
+        """
+        cat_names = [c.name.lower() for c in self.categories.all()]
+        country = (self.vi_country or '').lower()
+
+        if 'chinese drama' in cat_names or 'chinese' in country:
+            return 'chinese-drama'
+        elif 'korean drama' in cat_names or 'k drama' in cat_names or 'korean' in country:
+            return 'korean-drama'
+        elif 'thai drama' in cat_names or 'thai' in country:
+            return 'thai-drama'
+        elif 'turkish drama' in cat_names or 'turkish' in country:
+            return 'turkish-drama'
+        elif 'spanish drama' in cat_names or 'spanish' in country:
+            return 'spanish-drama'
+        elif 'filipino drama' in cat_names or 'filipino' in cat_names:
+            return 'filipino-drama'
+        elif 'anime' in cat_names:
+            return 'anime-series'
+        elif 'nollywood tv series' in cat_names:
+            return 'nollywood-series'
+        elif 'hollywood tv series' in cat_names:
+            return 'hollywood-tv-series'
+        elif 'sa series' in cat_names or 'south africa' in cat_names:
+            return 'sa-series'
+        elif 'tv series' in cat_names or 'series' in cat_names:
+            return 'tv-series'
+        elif 'japanese movie' in cat_names:
+            return 'japanese-movie'
+        elif 'animation movie' in cat_names:
+            return 'animation-movie'
+        elif 'bollywood' in cat_names or 'bollywood movies' in cat_names:
+            return 'bollywood-movie'
+        elif 'nollywood movie' in cat_names or 'nollywood movies' in cat_names or 'nollywood' in cat_names:
+            return 'nollywood-movie'
+        elif 'hollywood movie' in cat_names or 'hollywood movies' in cat_names or 'hollywood' in cat_names:
+            return 'hollywood-movie'
+        else:
+            return 'download'
+
+    def _generate_unique_slug(self, seo_suffix=''):
+        """
+        Build a slug from the title (+ optional seo_suffix) and append a
+        numeric suffix only if a collision exists.
+        e.g. "rick-and-morty-s09-hollywood-tv-series-download"
+             "filing-for-love-s01-korean-drama-download-2"  (if collision)
         """
         base = slugify(self.title)
+        if seo_suffix:
+            base = f"{base}-{seo_suffix}-download"
         slug = base
         n = 1
         qs = Movie.objects.exclude(pk=self.pk)
@@ -93,10 +141,11 @@ class Movie(models.Model):
 
     def save(self, *args, **kwargs):
         # Only generate slug if the field is blank (first save, or blank override).
-        # This preserves manually-set slugs and never rewrites an existing one.
+        # Preserves manually-set slugs and never rewrites an existing one.
         if not self.slug:
             self.slug = self._generate_unique_slug()
         super().save(*args, **kwargs)
+
 
     def __str__(self):
         return self.title

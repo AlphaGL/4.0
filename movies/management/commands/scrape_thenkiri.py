@@ -82,7 +82,7 @@ CATEGORY_DEFINITIONS = [
         'key':     'series',
         'slug':    'tv-series',
         'label':   'TV Series',
-        'db_cats': ['Hollywood movies', 'Series'],
+        'db_cats': ['Hollywood tv series', 'Series'],
     },
     {
         'key':     'kdrama',
@@ -118,7 +118,7 @@ CATEGORY_DEFINITIONS = [
         'key':     'philippine',
         'slug':    'asian-movies/download-philippine-movies',
         'label':   'Philippine Movies',
-        'db_cats': ['Series'],
+        'db_cats': ['Filipino drama', 'Series'],
     },
     {
         'key':     'k_variety',

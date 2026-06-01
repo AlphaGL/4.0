@@ -840,6 +840,64 @@ class MovieDetailView(DetailView):
         request = self.request
         user = request.user
 
+        # ── SEO context: seo_type, is_series, completion_label ───────────────
+        # Used by movie_detail.html to build keyword-rich title/meta/JSON-LD.
+        category_names = [c.name.lower() for c in movie.categories.all()]
+        country = (movie.vi_country or '').lower()
+
+        # ── IMPORTANT: drama/series checks MUST come before generic movie checks.
+        # A Hollywood TV Series has both 'hollywood tv series' AND 'hollywood movies'
+        # in its categories — checking 'hollywood movies' first mislabels it as a movie.
+
+        if 'chinese drama' in category_names or 'chinese' in country:
+            seo_type = 'Chinese Drama'
+        elif 'korean drama' in category_names or 'k drama' in category_names or 'korean' in country:
+            seo_type = 'Korean Drama'
+        elif 'thai drama' in category_names or 'thai' in country:
+            seo_type = 'Thai Drama'
+        elif 'turkish drama' in category_names or 'turkish' in country:
+            seo_type = 'Turkish Drama'
+        elif 'spanish drama' in category_names or 'spanish' in country:
+            seo_type = 'Spanish Drama'
+        elif 'filipino drama' in category_names or 'filipino' in category_names:
+            seo_type = 'Filipino Drama'
+        elif 'anime' in category_names:
+            seo_type = 'Anime Series'
+        elif 'nollywood tv series' in category_names:
+            seo_type = 'Nollywood Series'
+        elif 'hollywood tv series' in category_names:
+            seo_type = 'Hollywood TV Series'
+        elif 'sa series' in category_names or 'south africa' in category_names:
+            seo_type = 'South African Series'
+        elif 'tv series' in category_names or 'series' in category_names:
+            seo_type = 'TV Series'
+        elif 'japanese movie' in category_names:
+            seo_type = 'Japanese Movie'
+        elif 'animation movie' in category_names:
+            seo_type = 'Animation Movie'
+        elif 'bollywood' in category_names or 'bollywood movies' in category_names:
+            seo_type = 'Bollywood Movie'
+        elif 'nollywood movie' in category_names or 'nollywood movies' in category_names or 'nollywood' in category_names:
+            seo_type = 'Nollywood Movie'
+        elif 'hollywood movie' in category_names or 'hollywood movies' in category_names or 'hollywood' in category_names:
+            seo_type = 'Hollywood Movie'
+        elif '18plus' in category_names or '18+ movie' in category_names or 'adult' in category_names:
+            seo_type = 'Adult Movie'
+        else:
+            seo_type = 'Movie'
+
+        is_series = any(word in seo_type.lower() for word in ['drama', 'series', 'anime'])
+
+        if is_series:
+            completion_label = '(Complete)' if movie.completed else '(Ongoing)'
+        else:
+            completion_label = ''
+
+        context['seo_type'] = seo_type
+        context['is_series'] = is_series
+        context['completion_label'] = completion_label
+        # ── End SEO context ──────────────────────────────────────────────────
+
         # Like/watchlist status
         liked_users = set(movie.liked_by.all())
         watchlisted_users = set(movie.watchlisted_by.all())

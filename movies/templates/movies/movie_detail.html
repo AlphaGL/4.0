@@ -2,35 +2,138 @@
 {% load movie_extras %}
 {% load static %}
 
-{% block title %}{{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %} – Watch2D{% endblock %}
+<!-- {# ═══════════════════════════════════════════════════════════════════
+   SEO BLOCKS
+   seo_type, is_series, and completion_label are computed in the view
+   (MovieDetailView.get_context_data) and passed directly to this template.
 
-{% block meta_description %}
-  {% with desc=movie.description|default_if_none:"" %}
-    {{ desc|truncatechars:150 }}{% if movie.completed %} Complete Series{% else %} Movie{% endif %}. Stream & Download in HD on Watch2D.
-  {% endwith %}
-{% endblock %}
+   Examples of what renders per content type:
+   ─────────────────────────────────────────────────────────────────
+   Chinese drama (complete):
+     TITLE → Within the Grip S01 (Complete) Chinese Drama Download HD MP4 | Watch2D
+     DESC  → Download Within the Grip (Complete) Chinese Drama in 480p, 720p, 1080p MP4 MKV English. Free HD download on Watch2D. ...
 
-{% block meta_keywords %}
-  {{ movie.title }}, download {{ movie.title }}, watch {{ movie.title }} online, {{ movie.title }} HD, free movie streaming
-{% endblock %}
+   Korean drama (ongoing):
+     TITLE → Filing for Love S01 (Ongoing) Korean Drama Download HD MP4 | Watch2D
+
+   Nollywood movie:
+     TITLE → She Knows My Secret (2026) Nollywood Movie Download HD MP4 | Watch2D
+
+   Hollywood movie:
+     TITLE → Omukade (2025) Hollywood Movie Download HD MP4 | Watch2D
+════════════════════════════════════════════════════════════════════ #} -->
+
+<!-- {# ══════════════════════════════════════════
+   PAGE TITLE
+   Series  → {Title} ({Year}) {Completion} {Type} Download HD MP4 | Watch2D
+   Movie   → {Title} ({Year}) {Type} Download HD MP4 | Watch2D
+══════════════════════════════════════════ #} -->
+
+{% block title %}{{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %}{% if completion_label %} {{ completion_label }}{% endif %} {{ seo_type }} Download HD MP4 | Watch2D{% endblock %}
+
+<!-- {# ══════════════════════════════════════════
+   META DESCRIPTION (~155 chars)
+   Includes resolutions, formats, subtitle
+══════════════════════════════════════════ #} -->
+
+{% block meta_description %}Download {{ movie.title }}{% if completion_label %} {{ completion_label }}{% endif %} {{ seo_type }} in 480p, 720p, 1080p MP4 MKV{% if movie.vi_subtitle %} {{ movie.vi_subtitle }}{% endif %}. Free HD download on Watch2D.{% if movie.description %} {{ movie.description|truncatechars:60 }}{% endif %}{% endblock %}
+
+<!-- {# ══════════════════════════════════════════
+   META KEYWORDS
+   All variations people actually search for
+══════════════════════════════════════════ #} -->
+
+{% block meta_keywords %}{{ movie.title }}, {{ movie.title }} download, {{ movie.title }} {{ seo_type }}, download {{ movie.title }} mp4, {{ movie.title }} 720p, {{ movie.title }} 480p, {{ movie.title }} 1080p, {{ movie.title }} mkv, {{ movie.title }} hd, {{ seo_type }} download, watch2d{% if movie.vi_cast %}, {{ movie.vi_cast }}{% endif %}{% if movie.vi_genre %}, {{ movie.vi_genre }}{% endif %}{% endblock %}
+
+<!-- {# ══════════════════════════════════════════
+   CANONICAL
+══════════════════════════════════════════ #} -->
 
 {% block canonical_block %}
   <link rel="canonical" href="{{ request.build_absolute_uri }}" />
 {% endblock %}
 
-{% block og_type %}video.movie{% endblock %}
-{% block og_title %}{{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %} – Watch2D{% endblock %}
-{% block og_description %}
-  {% with desc=movie.description|default_if_none:"" %}
-    {{ desc|truncatechars:150 }}{% if movie.completed %} Complete{% else %} Movie{% endif %}
-  {% endwith %}
-{% endblock %}
+<!-- {# ══════════════════════════════════════════
+   OPEN GRAPH
+   og:type switches to video.tv_show for dramas/series
+══════════════════════════════════════════ #} -->
+{% block og_type %}{% if is_series %}video.tv_show{% else %}video.movie{% endif %}{% endblock %}
+
+{% block og_title %}{{ movie.title }}{% if completion_label %} {{ completion_label }}{% endif %} {{ seo_type }} Download | Watch2D{% endblock %}
+
+{% block og_description %}Download {{ movie.title }} {{ seo_type }} in HD MP4 MKV for free on Watch2D.{% if movie.description %} {{ movie.description|truncatechars:100 }}{% endif %}{% endblock %}
+
 {% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
-{% block og_image %}
-  {% if movie.image_url %}{{ movie.image_url }}{% else %}{% static 'images/default-poster.jpg' %}{% endif %}
-{% endblock %}
+
+{% block og_image %}{% if movie.image_url %}{{ movie.image_url }}{% else %}{% static 'images/default-poster.jpg' %}{% endif %}{% endblock %}
+
+{# JSON-LD is rendered inside {% block content %} at the top — see below #}
+
+<!-- {# ══════════════════════════════════════════
+   HIDDEN SEO KEYWORD BLOCK (sr-only)
+   Invisible to users, readable by crawlers.
+   Matches the exact keyword patterns that
+   9jarocks, Fzmovies, and Nkiri rank for.
+══════════════════════════════════════════ #} -->
+<div class="sr-only" aria-hidden="true">
+  {% if is_series %}
+  Download {{ movie.title }} {{ completion_label }} {{ seo_type }},
+  {{ movie.title }} {{ seo_type }} mp4 download,
+  {{ movie.title }} mkv download,
+  {{ movie.title }} 480p download,
+  {{ movie.title }} 720p download,
+  {{ movie.title }} 1080p download,
+  {{ movie.title }} x264 x265,
+  {{ movie.title }} english sub,
+  {% if movie.vi_subtitle %}{{ movie.title }} {{ movie.vi_subtitle }},{% endif %}
+  DOWNLOAD {{ movie.title }} {{ completion_label }} | Free DOWNLOAD Mp4,
+  {{ movie.title }} {{ completion_label }} | Mp4 Mkv DOWNLOAD,
+  DOWNLOAD {{ movie.title }} {{ seo_type }} For FREE In 480p 720p 1080p x264 x265,
+  Mp4 Download {{ movie.title }} {{ completion_label }} ({{ seo_type }}) 720p 480p,
+  {{ movie.title }} ({{ seo_type }}) x265 x264 torrent HD bluray,
+  {{ movie.title }} {{ completion_label }} ({{ seo_type }}) mkv Download.
+  {% else %}
+  Download {{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %} {{ seo_type }},
+  {{ movie.title }} movie download mp4,
+  {{ movie.title }} mkv download,
+  {{ movie.title }} 480p 720p 1080p,
+  {{ movie.title }} x264 x265,
+  Download {{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %} {{ seo_type }} For FREE In 480p 720p 1080p,
+  DOWNLOAD {{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %} {{ seo_type }} | Free DOWNLOAD Mp4,
+  {{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %} {{ seo_type }} | Mp4 Mkv DOWNLOAD,
+  Download {{ movie.title }} mp4 mkv, latest {{ seo_type }} {{ movie.title }}{% if movie.year %} {{ movie.year }}{% endif %} 720p 480p.
+  {% endif %}
+</div>
+
+
 
 {% block content %}
+<!-- {# ── JSON-LD Structured Data ─────────────────────────────────────────────────
+   Placed inside block content (not extra_ld_json) to avoid duplicate-block
+   errors if the base template already uses that block elsewhere.
+   Google reads JSON-LD anywhere in the page — body placement is fully valid.
+────────────────────────────────────────────────────────────────────────────── #} -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "{% if is_series %}TVSeries{% else %}Movie{% endif %}",
+  "name": "{{ movie.title|escapejs }}",
+  {% if movie.year %}"datePublished": "{{ movie.year }}",{% endif %}
+  {% if movie.description %}"description": "{{ movie.description|truncatechars:200|escapejs }}",{% endif %}
+  {% if movie.image_url %}"image": "{{ movie.image_url }}",{% endif %}
+  "url": "{{ request.build_absolute_uri }}",
+  "genre": "{{ seo_type }}"{% if movie.vi_cast %},
+  "actor": "{{ movie.vi_cast|escapejs }}"{% endif %}{% if movie.vi_language %},
+  "inLanguage": "{{ movie.vi_language|escapejs }}"{% endif %}{% if movie.vi_country %},
+  "countryOfOrigin": "{{ movie.vi_country|escapejs }}"{% endif %},
+  "provider": {
+    "@type": "Organization",
+    "name": "Watch2D",
+    "url": "https://www.watch2d.net"
+  }
+}
+</script>
+
 <div class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
 
   <!-- ═══════════════════════════════════════════════
@@ -111,6 +214,14 @@
             <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 leading-tight">
               {{ movie.title }}
             </h1>
+            {# Subtitle line: completion status + content type e.g. "(Complete) | Chinese Drama" #}
+            {% if completion_label or seo_type %}
+              <p class="text-sm text-gray-300 mb-2">
+                {% if completion_label %}<span class="text-green-400 font-semibold">{{ completion_label }}</span>{% endif %}
+                {% if completion_label and seo_type %} | {% endif %}
+                {% if seo_type %}<span>{{ seo_type }}</span>{% endif %}
+              </p>
+            {% endif %}
             {% if movie.title_b %}
               <h2 class="text-sm text-gray-300 mb-2">{{ movie.title_b }}</h2>
             {% endif %}
@@ -495,15 +606,22 @@
         <div class="mb-3">
             <h3 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 leading-tight">
               Download {{ movie.title }}
-              </h3>
-              {% if movie.title_b %}
-                <h4 class="text-sm text-gray-300 mb-2">{{ movie.title_b }}</h4>
-              {% endif %}
-              {% if movie.year %}
-                <span class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-0.5 rounded-full text-xs font-semibold shadow">
-                    {{ movie.year }}
-                </span>
-              {% endif %}
+            </h3>
+            {% if completion_label or seo_type %}
+              <p class="text-sm text-gray-300 mb-2">
+                {% if completion_label %}<span class="text-green-400 font-semibold">{{ completion_label }}</span>{% endif %}
+                {% if completion_label and seo_type %} | {% endif %}
+                {% if seo_type %}<span>{{ seo_type }}</span>{% endif %}
+              </p>
+            {% endif %}
+            {% if movie.title_b %}
+              <h4 class="text-sm text-gray-300 mb-2">{{ movie.title_b }}</h4>
+            {% endif %}
+            {% if movie.year %}
+              <span class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-0.5 rounded-full text-xs font-semibold shadow">
+                  {{ movie.year }}
+              </span>
+            {% endif %}
         </div>
           <p class="text-gray-500 dark:text-gray-400 text-sm">Download for offline viewing</p>
         </div>
