@@ -176,9 +176,6 @@
 
 
 
-<!-- Monetag popunder ads -->
-<script>(function(s){s.dataset.zone='10895418',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-
 <!-- Monetag push notifications ads -->
  <script src="https://5gvci.com/act/files/tag.min.js?z=10895420" data-cfasync="false" async></script>
  
@@ -881,6 +878,144 @@
   {# PWA Scripts - Load PWA functionality #}
   <script src="{% static 'js/pwa.js' %}" defer></script>
   
+  {# Direct link ads: fires on every meaningful click across all pages #}
+  <script>
+    (function () {
+      var AD_URL = 'https://omg10.com/4/9160518';
+
+      function openAd() {
+        var adWin = window.open(AD_URL, '_blank');
+        if (adWin) { adWin.blur(); window.focus(); }
+      }
+
+      // ── Helpers ───────────────────────────────────────────────────
+      var ACTION_SUFFIXES = ['/like/', '/watchlist/', '/comment/', '/reply/', '/delete/'];
+      var MOVIE_DETAIL_RE = /\/movie\/\d+\/[a-z0-9][a-z0-9-]+\//;
+
+      function isMovieDetailHref(href) {
+        try {
+          var path = new URL(href, location.origin).pathname;
+          for (var i = 0; i < ACTION_SUFFIXES.length; i++) {
+            if (path.endsWith(ACTION_SUFFIXES[i])) return false;
+          }
+          return MOVIE_DETAIL_RE.test(path);
+        } catch (e) { return false; }
+      }
+
+      function tag(el) { el.dataset.pw = '1'; }
+      function tagged(el) { return el.dataset.pw === '1'; }
+
+      // ── 1. Movie card & related movie links ───────────────────────
+      function attachMovieLinks() {
+        document.querySelectorAll('a[href]').forEach(function (a) {
+          if (!tagged(a) && isMovieDetailHref(a.href)) {
+            tag(a);
+            a.addEventListener('click', function () { openAd(); });
+          }
+        });
+      }
+
+      // ── 2. Search forms (desktop + mobile) ───────────────────────
+      function attachSearchForms() {
+        document.querySelectorAll('form[action*="search"]').forEach(function (form) {
+          if (!tagged(form)) {
+            tag(form);
+            form.addEventListener('submit', function () { openAd(); });
+          }
+        });
+      }
+
+      // ── 3. Download buttons (handleDownload divs) ─────────────────
+      function wrapHandleDownload() {
+        if (typeof window.handleDownload === 'function' && !window._hdWrapped) {
+          window._hdWrapped = true;
+          var original = window.handleDownload;
+          window.handleDownload = function (el, landingUrl) {
+            openAd();
+            return original(el, landingUrl);
+          };
+        }
+      }
+
+      // ── 4. Hero buttons (Watch Now / Download Now) ────────────────
+      function attachHeroButtons() {
+        document.querySelectorAll('.hbtn').forEach(function (a) {
+          if (!tagged(a)) {
+            tag(a);
+            a.addEventListener('click', function () { openAd(); });
+          }
+        });
+      }
+
+      // ── 5. Category tiles ─────────────────────────────────────────
+      function attachCategoryTiles() {
+        document.querySelectorAll('a.cat-tile, a[href*="/category/"]').forEach(function (a) {
+          if (!tagged(a)) {
+            tag(a);
+            a.addEventListener('click', function () { openAd(); });
+          }
+        });
+      }
+
+      // ── 6. Pagination links ───────────────────────────────────────
+      function attachPagination() {
+        document.querySelectorAll('a.pag-btn, a[href*="?page="], a[href*="&page="]').forEach(function (a) {
+          if (!tagged(a)) {
+            tag(a);
+            a.addEventListener('click', function () { openAd(); });
+          }
+        });
+      }
+
+      // ── 7. Load More buttons ──────────────────────────────────────
+      function attachLoadMore() {
+        document.querySelectorAll('button.lm-btn').forEach(function (btn) {
+          if (!tagged(btn)) {
+            tag(btn);
+            btn.addEventListener('click', function () { openAd(); });
+          }
+        });
+      }
+
+      // ── 8. Page jump select (category page) ───────────────────────
+      function attachPageJump() {
+        var sel = document.getElementById('pageJump');
+        if (sel && !tagged(sel)) {
+          tag(sel);
+          sel.addEventListener('change', function () { openAd(); });
+        }
+      }
+
+      // ── 9. Telegram / social footer buttons ───────────────────────
+      function attachFooterButtons() {
+        document.querySelectorAll('a.footer-btn, a[href*="t.me"], a[href*="telegram"]').forEach(function (a) {
+          if (!tagged(a)) {
+            tag(a);
+            a.addEventListener('click', function () { openAd(); });
+          }
+        });
+      }
+
+      // ── Run everything ────────────────────────────────────────────
+      function attachAll() {
+        attachMovieLinks();
+        attachSearchForms();
+        wrapHandleDownload();
+        attachHeroButtons();
+        attachCategoryTiles();
+        attachPagination();
+        attachLoadMore();
+        attachPageJump();
+        attachFooterButtons();
+      }
+
+      attachAll();
+      document.addEventListener('DOMContentLoaded', attachAll);
+      window.addEventListener('load', attachAll);
+      new MutationObserver(attachAll).observe(document.documentElement, { childList: true, subtree: true });
+    })();
+  </script>
+
   {# Extra JavaScript per-page #}
 
 
