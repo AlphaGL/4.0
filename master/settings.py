@@ -329,24 +329,11 @@ SITE_URL = 'https://watch2d.org'
 # ============================================================
 # BREVO (email notifications — broken link reports)
 # ============================================================
+BREVO_API_KEY      = config('BREVO_API_KEY', default='')
+# Your admin email — where broken-link reports are SENT TO
+BREVO_ADMIN_EMAIL  = config('BREVO_ADMIN_EMAIL', default='')
 
+# The FROM address — must be a verified sender in your Brevo account
+BREVO_SENDER_EMAIL = config('BREVO_SENDER_EMAIL', default='')
 
-
-
-BREVO_API_KEY="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"
-
-BREVO_ADMIN_EMAIL="ichukwugozirim@gmail.com"
-
-BREVO_SENDER_EMAIL="noreply@watch2d.org"
-
-BREVO_SENDER_NAME="Watch2D"
-
-
-# BREVO_API_KEY      = config('BREVO_API_KEY', default='')
-# # Your admin email — where broken-link reports are SENT TO
-# BREVO_ADMIN_EMAIL  = config('BREVO_ADMIN_EMAIL', default='')
-
-# # The FROM address — must be a verified sender in your Brevo account
-# BREVO_SENDER_EMAIL = config('BREVO_SENDER_EMAIL', default='')
-
-# BREVO_SENDER_NAME  = config('BREVO_SENDER_NAME', default='Watch2D Alerts')
+BREVO_SENDER_NAME  = config('BREVO_SENDER_NAME', default='Watch2D Alerts')
