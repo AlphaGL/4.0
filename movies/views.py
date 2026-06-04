@@ -37,6 +37,11 @@ import requests
 import re as _re
 import django.db.models as django_models
 
+
+
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
+
 # ── Cache TTL constants ───────────────────────────────────────────────────────
 MOVIES_HOME_CACHE_TTL       = 60 * 5      # 5 minutes
 SIDEBAR_CACHE_TTL           = 60 * 60 * 4  # 4 hours
@@ -811,21 +816,6 @@ class MovieDetailView(DetailView):
 
         return context
 
-    def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect('login')
-
-        movie = self.get_object()
-        form = CommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.movie = movie
-            comment.user = request.user
-            comment.save()
-            messages.success(request, "Comment added.")
-
-        return redirect(movie.get_absolute_url())
-
 
 @login_required
 def toggle_like(request, pk):
@@ -1053,3 +1043,124 @@ def delete_comment(request, pk):
         messages.error(request, 'You do not have permission to delete this comment')
 
     return redirect(movie.get_absolute_url() + '#comments-section')
+
+
+@require_POST
+def report_broken_link(request, pk):
+    """
+    Receives a broken-link report from a user on the movie detail page.
+    Sends a notification email to the admin via Brevo (formerly Sendinblue).
+ 
+    POST body (form-encoded or JSON):
+        episode_note  – optional free-text from user, e.g. "Episode 5 link"
+        link_label    – optional label of the specific download link clicked
+    """
+    movie = get_object_or_404(Movie, pk=pk)
+ 
+    # ── Collect context ──────────────────────────────────────────────────────
+    episode_note = (
+        request.POST.get('episode_note', '').strip()
+        or request.GET.get('episode_note', '').strip()
+    )
+    link_label = (
+        request.POST.get('link_label', '').strip()
+        or request.GET.get('link_label', '').strip()
+    )
+ 
+    movie_url      = request.build_absolute_uri(movie.get_absolute_url())
+    admin_edit_url = request.build_absolute_uri(
+        f"/watch2d/watch2d_admin/admin/movies/movie/{movie.pk}/change/"
+    )
+ 
+    # Build the email body
+    specific_link_line = ""
+    if link_label:
+        specific_link_line = f"<li><strong>Link clicked:</strong> {link_label}</li>"
+ 
+    episode_line = ""
+    if episode_note:
+        episode_line = f"<li><strong>User note:</strong> {episode_note}</li>"
+ 
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #e53e3e; border-bottom: 2px solid #e53e3e; padding-bottom: 10px;">
+        🔗 Broken Download Link Reported
+      </h2>
+      <p style="color: #4a5568;">A user has reported a broken or missing download link.</p>
+      <table style="width:100%; border-collapse:collapse; margin-top:16px;">
+        <tr style="background:#f7fafc;">
+          <td style="padding:10px; border:1px solid #e2e8f0; font-weight:bold; width:35%;">Movie</td>
+          <td style="padding:10px; border:1px solid #e2e8f0;">{movie.title}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border:1px solid #e2e8f0; font-weight:bold;">Movie ID</td>
+          <td style="padding:10px; border:1px solid #e2e8f0;">#{movie.pk}</td>
+        </tr>
+        <tr style="background:#f7fafc;">
+          <td style="padding:10px; border:1px solid #e2e8f0; font-weight:bold;">Page URL</td>
+          <td style="padding:10px; border:1px solid #e2e8f0;">
+            <a href="{movie_url}" style="color:#3182ce;">{movie_url}</a>
+          </td>
+        </tr>
+        {"<tr><td style='padding:10px; border:1px solid #e2e8f0; font-weight:bold;'>Link Label</td><td style='padding:10px; border:1px solid #e2e8f0;'>" + link_label + "</td></tr>" if link_label else ""}
+        {"<tr style='background:#f7fafc;'><td style='padding:10px; border:1px solid #e2e8f0; font-weight:bold;'>User Note</td><td style='padding:10px; border:1px solid #e2e8f0;'>" + episode_note + "</td></tr>" if episode_note else ""}
+        <tr {"style='background:#f7fafc;'" if not episode_note else ""}>
+          <td style="padding:10px; border:1px solid #e2e8f0; font-weight:bold;">Reported by</td>
+          <td style="padding:10px; border:1px solid #e2e8f0;">
+            {request.user.username if request.user.is_authenticated else "Guest"}
+          </td>
+        </tr>
+      </table>
+      <div style="margin-top:28px; text-align:center;">
+        <a href="{admin_edit_url}"
+           style="display:inline-block; padding:12px 28px; background:#3182ce; color:#fff;
+                  font-weight:bold; font-size:15px; text-decoration:none; border-radius:8px;
+                  margin-right:12px;">
+          ✏️ Edit Movie in Admin
+        </a>
+        <a href="{movie_url}"
+           style="display:inline-block; padding:12px 28px; background:#718096; color:#fff;
+                  font-weight:bold; font-size:15px; text-decoration:none; border-radius:8px;">
+          🎬 View Movie Page
+        </a>
+      </div>
+      <p style="margin-top:24px; color:#a0aec0; font-size:12px;">
+        — Watch2D automated alert
+      </p>
+    </div>
+    """
+ 
+    # ── Send via Brevo ────────────────────────────────────────────────────────
+    brevo_api_key = getattr(settings, 'BREVO_API_KEY', '')
+    admin_email   = getattr(settings, 'BREVO_ADMIN_EMAIL', '')
+    sender_email  = getattr(settings, 'BREVO_SENDER_EMAIL', '')
+    sender_name   = getattr(settings, 'BREVO_SENDER_NAME', 'Watch2D Alerts')
+ 
+    if not brevo_api_key or not admin_email:
+        # Gracefully degrade — still return success to the user
+        return JsonResponse({'status': 'ok', 'message': 'Report received. Thank you!'})
+ 
+    try:
+        configuration = sib_api_v3_sdk.Configuration()
+        configuration.api_key['api-key'] = brevo_api_key
+ 
+        api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
+            sib_api_v3_sdk.ApiClient(configuration)
+        )
+ 
+        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+            to=[{"email": admin_email}],
+            sender={"name": sender_name, "email": sender_email or admin_email},
+            subject=f"🔗 Broken Link: {movie.title}",
+            html_content=html_content,
+        )
+ 
+        api_instance.send_transac_email(send_smtp_email)
+ 
+    except ApiException as e:
+        # Log but don't expose error to user
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Brevo API error on broken-link report: {e}")
+ 
+    return JsonResponse({'status': 'ok', 'message': 'Report received. Thank you!'})

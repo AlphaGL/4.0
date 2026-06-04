@@ -42,3 +42,5 @@ reportlab==4.0.9
 telethon==1.36.0
 
 django-redis
+
+sib-api-v3-sdk

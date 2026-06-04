@@ -11,7 +11,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='your-secret-key-here')
 DEBUG = config('DEBUG', default=False, cast=bool)
-# DEBUG = True
 
 ALLOWED_HOSTS = [
     'watch2d.vercel.app',
@@ -242,6 +241,9 @@ STATICFILES_FINDERS = [
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+MEDIA_URL  = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 STATICFILES_DIRS = [
     BASE_DIR / 'main' / 'static',
     BASE_DIR / 'movies' / 'static',
@@ -321,3 +323,30 @@ CRONJOBS = [
 
 
 SITE_URL = 'https://watch2d.org'
+
+
+
+# ============================================================
+# BREVO (email notifications — broken link reports)
+# ============================================================
+
+
+
+
+BREVO_API_KEY="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"
+
+BREVO_ADMIN_EMAIL="ichukwugozirim@gmail.com"
+
+BREVO_SENDER_EMAIL="noreply@watch2d.org"
+
+BREVO_SENDER_NAME="Watch2D"
+
+
+# BREVO_API_KEY      = config('BREVO_API_KEY', default='')
+# # Your admin email — where broken-link reports are SENT TO
+# BREVO_ADMIN_EMAIL  = config('BREVO_ADMIN_EMAIL', default='')
+
+# # The FROM address — must be a verified sender in your Brevo account
+# BREVO_SENDER_EMAIL = config('BREVO_SENDER_EMAIL', default='')
+
+# BREVO_SENDER_NAME  = config('BREVO_SENDER_NAME', default='Watch2D Alerts')

@@ -1275,11 +1275,17 @@ def _post_to_wordpress(
 
         # Full post title  e.g.  "Zatima S04 (Episode 16 Added) | Download Tv Series"
         if is_series and title_b:
-            full_title = f'{title} ({title_b}) | Download {wp_cat_name}'
+            full_title = f'{title} ({title_b}) | Mp4 Mkv DOWNLOAD'
         elif is_series:
-            full_title = f'{title} | Download {wp_cat_name}'
+            full_title = f'{title} | Mp4 Mkv DOWNLOAD'
         else:
-            full_title = f'{title} | Download {wp_cat_name}'
+            full_title = f'{title} | Mp4 Mkv DOWNLOAD'
+        # if is_series and title_b:
+        #     full_title = f'{title} ({title_b}) | Download {wp_cat_name}'
+        # elif is_series:
+        #     full_title = f'{title} | Download {wp_cat_name}'
+        # else:
+        #     full_title = f'{title} | Download {wp_cat_name}'
 
         # Excerpt
         year       = meta_info.get('vi_year', meta_info.get('year', '')).strip()

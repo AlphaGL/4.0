@@ -167,7 +167,9 @@
                 <img src="{{ movie.image_url }}"
                      alt="{{ movie.title }}"
                      class="poster-img w-44 h-64 sm:w-52 sm:h-76 md:w-56 md:h-80 object-cover rounded-lg shadow-2xl block"
-                     loading="lazy">
+                     loading="eager"
+                     fetchpriority="high"
+                     decoding="async">
               {% else %}
                 <div class="poster-img w-44 h-64 sm:w-52 sm:h-76 md:w-56 md:h-80 bg-gradient-to-br from-gray-700 to-gray-600 rounded-lg flex items-center justify-center">
                   <i class="fas fa-film text-4xl text-gray-400"></i>
@@ -689,6 +691,186 @@
     </div>
   </div>
 
+    <!-- {# ═══════════════════════════════════════════════════════════════════════════
+    BROKEN LINK REPORT WIDGET
+    Place this INSIDE #download-section, right after the closing </div> of
+    the #download card (i.e. after line ~687, before the closing </div></div></div>
+    of the download section).
+
+    It shows:
+      • A subtle "Report a broken link" toggle button
+      • An expandable panel with:
+          - For series (multiple download_links): a dropdown to pick which episode
+          - A free-text note field
+          - A submit button
+      • Inline success / error feedback (no page reload)
+  ════════════════════════════════════════════════════════════════════════════ #} -->
+
+  {# — Report broken link widget — #}
+  <div class="mt-4 px-2 sm:px-0" id="broken-link-section">
+
+    {# Toggle button #}
+    <button type="button"
+            onclick="toggleReportPanel()"
+            class="flex items-center gap-2 text-xs text-gray-400 hover:text-red-400 dark:text-gray-500 dark:hover:text-red-400 transition-colors duration-200 mx-auto">
+      <i class="fas fa-flag text-[10px]"></i>
+      <span>Report a broken or missing download link</span>
+      <i id="report-chevron" class="fas fa-chevron-down text-[10px] transition-transform duration-200"></i>
+    </button>
+
+    {# Collapsible panel #}
+    <div id="report-panel"
+        class="hidden mt-3 bg-red-50 dark:bg-gray-700/60 border border-red-200 dark:border-red-800/40 rounded-xl p-4 max-w-lg mx-auto">
+
+      <p class="text-xs text-gray-600 dark:text-gray-300 mb-3 text-center">
+        Let us know which link is broken and we'll fix it ASAP.
+      </p>
+
+      {# Episode selector — only shown when multiple download links exist #}
+      {% if movie.download_links.exists %}
+      <div class="mb-3">
+        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+          Which episode / link is broken?
+        </label>
+        <select id="report-episode-select"
+                class="w-full text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600
+                      text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2 focus:outline-none
+                      focus:ring-2 focus:ring-red-400">
+          <option value="">-- Select an episode --</option>
+          {% for link in movie.download_links.all %}
+            <option value="{{ link.label|default:'Episode' }}">{{ link.label|default:"Episode" }}</option>
+          {% endfor %}
+          <option value="All links">All links are broken</option>
+          <option value="No links at all">No download links exist</option>
+        </select>
+      </div>
+      {% endif %}
+
+      {# Free-text note #}
+      <div class="mb-3">
+        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+          Additional details <span class="font-normal text-gray-400">(optional)</span>
+        </label>
+        <textarea id="report-note"
+                  rows="2"
+                  placeholder="e.g. 'Episode 3 link gives a 404 error' or 'All links redirect to spam'"
+                  class="w-full text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600
+                        text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2 resize-none
+                        focus:outline-none focus:ring-2 focus:ring-red-400 placeholder-gray-400"></textarea>
+      </div>
+
+      {# Submit + feedback #}
+      <div class="flex flex-col items-center gap-2">
+        {% csrf_token %}
+        <button type="button"
+                id="report-submit-btn"
+                onclick="submitBrokenLinkReport({{ movie.pk }})"
+                class="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-red-500 to-pink-500
+                      hover:from-red-600 hover:to-pink-600 text-white text-sm font-semibold rounded-full
+                      shadow transition-all duration-200 hover:scale-105 active:scale-95">
+          <i class="fas fa-paper-plane text-xs" id="report-btn-icon"></i>
+          <span id="report-btn-text">Send Report</span>
+        </button>
+
+        {# Inline feedback messages #}
+        <p id="report-success-msg"
+          class="hidden text-xs text-green-600 dark:text-green-400 font-medium text-center">
+          <i class="fas fa-check-circle mr-1"></i>
+          Thanks! We've been notified and will fix the link soon.
+        </p>
+        <p id="report-error-msg"
+          class="hidden text-xs text-red-500 font-medium text-center">
+          <i class="fas fa-exclamation-triangle mr-1"></i>
+          Something went wrong. Please try again.
+        </p>
+      </div>
+    </div>
+
+  </div>{# end broken-link-section #}
+
+
+  <!-- {# ══════════════════════════════════════════════════════════════════════════
+  ════════════════════════════════════════════════════════════════════════════ #} -->
+  <script>
+  // ── Broken-link report panel ──────────────────────────────────────────────
+  function toggleReportPanel() {
+    const panel   = document.getElementById('report-panel');
+    const chevron = document.getElementById('report-chevron');
+    const isHidden = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden', !isHidden);
+    chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+  }
+
+  async function submitBrokenLinkReport(moviePk) {
+    const btn      = document.getElementById('report-submit-btn');
+    const btnIcon  = document.getElementById('report-btn-icon');
+    const btnText  = document.getElementById('report-btn-text');
+    const successMsg = document.getElementById('report-success-msg');
+    const errorMsg   = document.getElementById('report-error-msg');
+
+    // Hide old feedback
+    successMsg.classList.add('hidden');
+    errorMsg.classList.add('hidden');
+
+    // Collect values
+    const episodeSelect = document.getElementById('report-episode-select');
+    const noteEl        = document.getElementById('report-note');
+    const linkLabel     = episodeSelect ? episodeSelect.value : '';
+    const note          = noteEl ? noteEl.value.trim() : '';
+
+    // Loading state
+    btn.disabled = true;
+    btnIcon.className = 'fas fa-spinner fa-spin text-xs';
+    btnText.textContent = 'Sending…';
+
+    try {
+      const formData = new FormData();
+      formData.append('link_label',   linkLabel);
+      formData.append('episode_note', note);
+
+      // Get CSRF token from the hidden input Django renders in every page
+      // (more reliable than reading document.cookie directly)
+      const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+      const csrfToken = csrfInput ? csrfInput.value : '';
+      formData.append('csrfmiddlewaretoken', csrfToken);
+
+      const response = await fetch(`/movie/${moviePk}/report-broken-link/`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Success UI
+        successMsg.classList.remove('hidden');
+        btnIcon.className = 'fas fa-check text-xs';
+        btnText.textContent = 'Report Sent!';
+        btn.classList.remove('from-red-500', 'to-pink-500', 'hover:from-red-600', 'hover:to-pink-600');
+        btn.classList.add('from-green-500', 'to-emerald-500');
+        // Reset after 4s
+        setTimeout(() => {
+          btn.disabled = false;
+          btnIcon.className = 'fas fa-paper-plane text-xs';
+          btnText.textContent = 'Send Report';
+          btn.classList.add('from-red-500', 'to-pink-500', 'hover:from-red-600', 'hover:to-pink-600');
+          btn.classList.remove('from-green-500', 'to-emerald-500');
+          successMsg.classList.add('hidden');
+          if (noteEl) noteEl.value = '';
+          if (episodeSelect) episodeSelect.value = '';
+        }, 4000);
+      } else {
+        console.error('report-broken-link failed, HTTP', response.status);
+        throw new Error('Server error ' + response.status);
+      }
+    } catch (err) {
+      console.error('report-broken-link exception:', err);
+      errorMsg.classList.remove('hidden');
+      btn.disabled = false;
+      btnIcon.className = 'fas fa-paper-plane text-xs';
+      btnText.textContent = 'Send Report';
+    }
+  }
+  </script>
 
   <!-- ═══════════════════════════════════════════════
      RELATED MOVIES
@@ -737,10 +919,11 @@
 </div>
 
 
-{# External Libraries #}
-<link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+{# External Libraries — CSS preloaded, scripts deferred so they don't block render #}
+<link rel="preload" href="https://cdn.plyr.io/3.7.8/plyr.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css"></noscript>
+<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest" defer></script>
 
 
 <style>
