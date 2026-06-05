@@ -877,8 +877,25 @@
 
   {# PWA Scripts - Load PWA functionality #}
   <script src="{% static 'js/pwa.js' %}" defer></script>
-  
-  {# Direct link ads: fires on every meaningful click across all pages #}
+
+
+  <!-- {# ═══════════════════════════════════════════════════════════════════════════
+   UPDATED POPUNDER SCRIPT for movies/base.html
+   ─────────────────────────────────────────────────────────────────────────
+   Replace the existing  {# Direct link ads … #} <script>…</script>  block
+   (original lines ~881-1016) with this.
+
+   The ONE change from the original:
+     • A guard at the top checks `{{ disable_global_popunder }}`.
+       When DownloadGateView sets that context flag, the entire script is
+       skipped so the gate page handles its own single popunder and users
+       are never hit twice.
+   Everything else is identical to what you already have.
+═══════════════════════════════════════════════════════════════════════════ #}
+
+  {# Direct link ads: fires on every meaningful click across all pages.
+     Disabled on the download gate page (which fires its own popunder). #} -->
+  {% if not disable_global_popunder %}
   <script>
     (function () {
       var AD_URL = 'https://omg10.com/4/9160518';
@@ -925,16 +942,19 @@
         });
       }
 
-      // ── 3. Download buttons (handleDownload divs) ─────────────────
-      function wrapHandleDownload() {
-        if (typeof window.handleDownload === 'function' && !window._hdWrapped) {
-          window._hdWrapped = true;
-          var original = window.handleDownload;
-          window.handleDownload = function (el, landingUrl) {
-            openAd();
-            return original(el, landingUrl);
-          };
-        }
+      // ── 3. Download buttons on movie_detail (now <a> tags to gate) ────────
+      // The gate page itself handles the popunder — but on movie_detail the
+      // download <a> tags are caught by attachMovieLinks? No — they point to
+      // /movie/<pk>/download/ which does NOT match MOVIE_DETAIL_RE.
+      // So we add a dedicated selector for gate links here.
+      function attachGateLinks() {
+        document.querySelectorAll('a[href*="/download/"]').forEach(function (a) {
+          if (!tagged(a)) {
+            tag(a);
+            // Do NOT open ad here — the gate page will fire it on arrival.
+            // We intentionally leave this handler empty; the anchor navigates normally.
+          }
+        });
       }
 
       // ── 4. Hero buttons (Watch Now / Download Now) ────────────────
@@ -1000,7 +1020,7 @@
       function attachAll() {
         attachMovieLinks();
         attachSearchForms();
-        wrapHandleDownload();
+        attachGateLinks();   // NEW — registers gate links (no-op ad, just tags them)
         attachHeroButtons();
         attachCategoryTiles();
         attachPagination();
@@ -1015,10 +1035,7 @@
       new MutationObserver(attachAll).observe(document.documentElement, { childList: true, subtree: true });
     })();
   </script>
-
-  {# Extra JavaScript per-page #}
-
-
+  {% endif %}{# end disable_global_popunder guard #}
 
 
 

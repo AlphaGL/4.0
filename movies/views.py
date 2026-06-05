@@ -1164,3 +1164,172 @@ def report_broken_link(request, pk):
         logger.error(f"Brevo API error on broken-link report: {e}")
  
     return JsonResponse({'status': 'ok', 'message': 'Report received. Thank you!'})
+
+
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# DOWNLOAD GATE VIEW  —  paste at the bottom of  movies/views.py
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Also add  DownloadGateView  to the import in movies/urls.py (see urls.py).
+#
+# No new imports needed — everything referenced below is already present
+# at the top of views.py.
+# ═══════════════════════════════════════════════════════════════════════════
+
+from urllib.parse import unquote as _url_unquote
+
+
+class DownloadGateView(DetailView):
+    """
+    Intermediate "gate" page shown between movie_detail and the real download.
+
+    URL:  /movie/<pk>/download/?link=<DownloadLink.pk>
+      or  /movie/<pk>/download/?url=<percent-encoded-url>
+
+    This view renders INSTANTLY — it does NOT pre-fetch the download URL.
+    The browser-side JS on the gate page calls /resolve-download/ via fetch()
+    in parallel with the countdown timer, exactly as handleDownload() used to
+    do on movie_detail.  This keeps page load fast even when resolution takes
+    several seconds (e.g. downloadwella POST scrape).
+
+    What the view provides to the template:
+        movie           – Movie instance (with categories + download_links)
+        link_obj        – DownloadLink instance, or None for url= param
+        link_label      – Human-readable label, e.g. "Episode 5 (720p)"
+        landing_url     – The raw URL JS will resolve (nkiri/downloadwella page)
+        countdown       – Seconds for the countdown timer (default 5)
+        seo_type        – e.g. "Korean Drama", "Hollywood Movie"
+        related_movies  – Up to 8 related movies for the suggestions strip
+        categories      – Sidebar categories (required by base.html)
+        disable_global_popunder – True → base.html skips its click-popunder
+    """
+
+    model = Movie
+    template_name = 'movies/download_gate.html'
+    COUNTDOWN_SECONDS = 5
+
+    # ── Queryset ──────────────────────────────────────────────────────────────
+    def get_queryset(self):
+        return Movie.objects.prefetch_related('categories', 'download_links')
+
+    def get_object(self, queryset=None):
+        if queryset is None:
+            queryset = self.get_queryset()
+        return get_object_or_404(queryset, pk=self.kwargs['pk'])
+
+    # ── Request handling ──────────────────────────────────────────────────────
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
+
+    # ── Context ───────────────────────────────────────────────────────────────
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        movie   = context['object']
+        request = self.request
+
+        # ── 1. Figure out which link was requested ────────────────────────────
+        link_pk  = request.GET.get('link', '').strip()
+        raw_url  = request.GET.get('url',  '').strip()
+
+        link_obj    = None
+        link_label  = 'Download'
+        landing_url = ''
+
+        if link_pk:
+            # ?link=<DownloadLink.pk> — the normal case from episode buttons
+            try:
+                link_obj    = movie.download_links.get(pk=int(link_pk))
+                landing_url = link_obj.url
+                link_label  = link_obj.label or 'Download'
+            except (DownloadLink.DoesNotExist, ValueError):
+                pass  # fall through to other options
+
+        if not landing_url and raw_url:
+            # ?url=<encoded> — from the legacy single download_url field
+            landing_url = _url_unquote(raw_url)
+            link_label  = 'Download'
+
+        if not landing_url and movie.download_url:
+            # Last resort: use the movie's own download_url
+            landing_url = movie.download_url
+            link_label  = 'Download'
+
+        # ── 2. SEO type (same logic as MovieDetailView) ───────────────────────
+        movie_categories = list(movie.categories.all())   # uses prefetch cache
+        category_names   = [c.name.lower() for c in movie_categories]
+        country          = (movie.vi_country or '').lower()
+
+        if 'chinese drama' in category_names or 'chinese' in country:
+            seo_type = 'Chinese Drama'
+        elif 'korean drama' in category_names or 'k drama' in category_names or 'korean' in country:
+            seo_type = 'Korean Drama'
+        elif 'thai drama' in category_names or 'thai' in country:
+            seo_type = 'Thai Drama'
+        elif 'turkish drama' in category_names or 'turkish' in country:
+            seo_type = 'Turkish Drama'
+        elif 'spanish drama' in category_names or 'spanish' in country:
+            seo_type = 'Spanish Drama'
+        elif 'filipino drama' in category_names or 'filipino' in category_names:
+            seo_type = 'Filipino Drama'
+        elif 'anime' in category_names:
+            seo_type = 'Anime Series'
+        elif 'nollywood tv series' in category_names:
+            seo_type = 'Nollywood Series'
+        elif 'hollywood tv series' in category_names:
+            seo_type = 'Hollywood TV Series'
+        elif 'sa series' in category_names or 'south africa' in category_names:
+            seo_type = 'South African Series'
+        elif 'tv series' in category_names or 'series' in category_names:
+            seo_type = 'TV Series'
+        elif 'japanese movie' in category_names:
+            seo_type = 'Japanese Movie'
+        elif 'animation movie' in category_names:
+            seo_type = 'Animation Movie'
+        elif 'bollywood' in category_names or 'bollywood movies' in category_names:
+            seo_type = 'Bollywood Movie'
+        elif 'nollywood movie' in category_names or 'nollywood movies' in category_names or 'nollywood' in category_names:
+            seo_type = 'Nollywood Movie'
+        elif 'hollywood movie' in category_names or 'hollywood movies' in category_names or 'hollywood' in category_names:
+            seo_type = 'Hollywood Movie'
+        elif '18plus' in category_names or '18+ movie' in category_names:
+            seo_type = 'Adult Movie'
+        else:
+            seo_type = 'Movie'
+
+        # ── 3. Related movies ─────────────────────────────────────────────────
+        if movie_categories:
+            related_movies = list(
+                Movie.objects
+                .only('id', 'title', 'slug', 'image_url')
+                .filter(categories__in=movie_categories)
+                .exclude(pk=movie.pk)
+                .distinct()
+                .order_by('-created_at')[:8]
+            )
+        else:
+            related_movies = list(
+                Movie.objects
+                .only('id', 'title', 'slug', 'image_url')
+                .exclude(pk=movie.pk)
+                .order_by('-created_at')[:8]
+            )
+
+        # ── 4. Pack context ───────────────────────────────────────────────────
+        context.update({
+            'movie':          movie,
+            'link_obj':       link_obj,
+            'link_label':     link_label,
+            'landing_url':    landing_url,
+            'countdown':      self.COUNTDOWN_SECONDS,
+            'seo_type':       seo_type,
+            'related_movies': related_movies,
+            'categories':     get_sidebar_categories(),
+            # Tells base.html to skip the global click-popunder so the gate's
+            # own ad script is the sole popunder on this page.
+            'disable_global_popunder': True,
+        })
+        return context

@@ -52,28 +52,28 @@ CATEGORY_DEFINITIONS = [
         'key':       'hollywood',
         'slug':      'videodownload/hollywood-movie',
         'label':     'Hollywood Movie',
-        'wp_cat':    'Hollywood Movie',
+        'wp_cat':    'Hollywood movie',
         'is_series': False,
     },
     {
         'key':       'hollywood_series',
         'slug':      'videodownload/hollywood-tv-series',
         'label':     'Hollywood TV Series',
-        'wp_cat':    'Hollywood Tv series',
+        'wp_cat':    'Hollywood Series',
         'is_series': True,
     },
     {
         'key':       'nollywood',
         'slug':      'videodownload/nollywood-movie',
         'label':     'Nollywood Movie',
-        'wp_cat':    'Nollywood Movie',
+        'wp_cat':    'Nollywood movie',
         'is_series': False,
     },
     {
         'key':       'nollywood_series',
         'slug':      'videodownload/nollywood-tv-series',
         'label':     'Nollywood TV Series',
-        'wp_cat':    'Nollywood Tv Series',
+        'wp_cat':    'Nollywood tv series',
         'is_series': True,
     },
     {
@@ -87,14 +87,14 @@ CATEGORY_DEFINITIONS = [
         'key':       'chinese_drama',
         'slug':      'videodownload/chinese-drama',
         'label':     'Chinese Drama',
-        'wp_cat':    'Chinese Drama',
+        'wp_cat':    'Chinese drama',
         'is_series': True,
     },
     {
         'key':       'thai_drama',
         'slug':      'videodownload/thai-drama',
         'label':     'Thai Drama',
-        'wp_cat':    'Thai Drama',
+        'wp_cat':    'Thai drama',
         'is_series': True,
     },
     {
@@ -108,7 +108,7 @@ CATEGORY_DEFINITIONS = [
         'key':       'japanese_drama',
         'slug':      'videodownload/japanese-drama',
         'label':     'Japanese Drama',
-        'wp_cat':    'Japanese Drama',
+        'wp_cat':    'Japanese drama',
         'is_series': True,
     },
     {
@@ -122,7 +122,7 @@ CATEGORY_DEFINITIONS = [
         'key':       'foreign',
         'slug':      'videodownload/foreign-movies',
         'label':     'Other Foreign Movies',
-        'wp_cat':    'Other Foreign Movies',
+        'wp_cat':    'Other foreign movies',
         'is_series': False,
     },
     {
@@ -136,7 +136,7 @@ CATEGORY_DEFINITIONS = [
         'key':       'wrestling',
         'slug':      'videodownload/pro-wrestling-fighting-sports',
         'label':     'Pro Wrestling & Fighting Sports',
-        'wp_cat':    'Pro Wrestling & Fighting Sports',
+        'wp_cat':    'Wrestling',
         'is_series': True,
     },
     {
@@ -644,13 +644,28 @@ def parse_post_page(html: str, url: str) -> dict | None:
                 except Exception:
                     pass
                 label = btn_text.strip() or 'DOWNLOAD'
-                # Derive a reliable episode label from the URL filename (e.g. S01E02.mkv)
-                # because the source site <em> tags and anchor text are often wrong/duplicate.
+                # Derive a reliable episode label from the URL filename.
+                # 9jarocks uses multiple naming patterns:
+                #   Standard  : S01E02  → season 1 episode 2
+                #   No-E form : S0102   → season 01, episode 02 (2-digit each)
+                #               S0103   → season 01, episode 03
+                # We ALWAYS prefer the URL filename over the <em> tag because
+                # 9jarocks often copies the wrong <em> label (e.g. "EPISODE 1"
+                # for what is actually episode 2, 3, etc.).
                 _fname = href.rstrip('/').split('/')[-1]
-                _se = re.search(r'[Ss](\d+)[Ee](\d+)', _fname)
                 _zip_url = re.search(r'[Ss](\d+).*\.zip', _fname, re.IGNORECASE)
+                # Pattern 1: SxxExx  (standard — must check first)
+                _se = re.search(r'[Ss](\d+)[Ee](\d+)', _fname)
+                # Pattern 2: Sxxyy where xx=season(2 digits), yy=episode(2 digits)
+                # e.g. S0102 → S01 E02,  S0103 → S01 E03
+                # Only match when there is NO 'E' between the two digit groups.
+                _se_noe = re.search(r'[Ss](\d{2})(\d{2})(?!\d)', _fname) if not _se else None
+
                 if _se:
                     _sn, _en = int(_se.group(1)), int(_se.group(2))
+                    ep_label = f'S{_sn:02d}E{_en:02d}' if _sn > 1 else f'E{_en:02d}'
+                elif _se_noe:
+                    _sn, _en = int(_se_noe.group(1)), int(_se_noe.group(2))
                     ep_label = f'S{_sn:02d}E{_en:02d}' if _sn > 1 else f'E{_en:02d}'
                 elif _zip_url:
                     ep_label = f'ZIP S{int(_zip_url.group(1)):02d}'
@@ -774,21 +789,106 @@ def _get_wp_base_url() -> str:
     return getattr(settings, 'WP_SITE_URL', '').rstrip('/')
 
 
+# ── 9jarocks source category name → NaijaDeleys target category name ──────────
+# This map is the single source of truth.  The keys are the exact strings that
+# come from the 9jarocks source (og:title category labels + CATEGORY_DEFINITIONS
+# wp_cat values).  The values are the EXACT category names on naijadeleys.com.ng
+# as seen in the WP editor (document index 7 / 2).
+#
+# Rule: if a name is not in this map the function does a live WP search, and if
+# that still fails it uses the fallback  "TV Series" / "Movie"  (both of which
+# exist on NaijaDeleys).
+_NAIJADELEYS_CAT_MAP: dict[str, str] = {
+    # ── Hollywood ──────────────────────────────────────────────────────────────
+    "hollywood movie":                    "Hollywood movie",
+    "hollywood tv series":                "Hollywood Series",
+    "hollywood series":                   "Hollywood Series",
+    "hollywood tv series":                "Hollywood Series",
+    # ── Nollywood ─────────────────────────────────────────────────────────────
+    "nollywood movie":                    "Nollywood movie",
+    "nollywood tv series":                "Nollywood tv series",
+    "nollywood":                          "Nollywood movie",
+    # ── Asian Dramas ──────────────────────────────────────────────────────────
+    "korean drama":                       "Korean Drama",
+    "kdrama":                             "Korean Drama",
+    "k-drama":                            "Korean Drama",
+    "chinese drama":                      "Chinese drama",
+    "cdrama":                             "Chinese drama",
+    "thai drama":                         "Thai drama",
+    "filipino drama":                     "Filipino Drama",
+    "philippine drama":                   "Filipino Drama",
+    "japanese drama":                     "Japanese drama",
+    "turkish drama":                      "Turkish Drama",
+    "spanish drama":                      "Spanish drama",
+    # ── Anime ─────────────────────────────────────────────────────────────────
+    "anime":                              "Anime",
+    "chinese anime":                      "Anime",
+    "japanese anime":                     "Anime",
+    # ── Other Foreign ─────────────────────────────────────────────────────────
+    "other foreign movies":               "Other foreign movies",
+    "foreign movies":                     "Other foreign movies",
+    "other foreign series":               "Other Foreign Series",
+    "foreign series":                     "Other Foreign Series",
+    "foreign":                            "Other foreign movies",
+    # ── Sports / Wrestling ────────────────────────────────────────────────────
+    "pro wrestling & fighting sports":    "Wrestling",
+    "pro wrestling":                      "Wrestling",
+    "wrestling":                          "Wrestling",
+    # ── Ongoing / other ───────────────────────────────────────────────────────
+    "ongoing":                            "Ongoing",
+    "ongoing series":                     "Ongoing",
+    # ── Genres (used as fallback WP categories on NaijaDeleys) ────────────────
+    "action":                             "Action",
+    "adventure":                          "Adventure",
+    "animation":                          "Animation",
+    "biography":                          "Biography",
+    "comedy":                             "Comedy",
+    "crime":                              "Crime",
+    "documentary":                        "Documentary",
+    "drama":                              "TV Series",      # "Drama" → TV Series
+    "entertainment":                      "Entertainment",
+    "family":                             "Family",
+    "fantasy":                            "Fantasy",
+    "history":                            "History",
+    "horror":                             "Horror",
+    "mystery":                            "Mystery",
+    "reality-tv":                         "Reality-tv",
+    "romance":                            "Romance",
+    "sci-fi":                             "Sci-fi",
+    "thriller":                           "Thriller",
+    "war":                                "War",
+    "western":                            "Western",
+    # ── Fallback safety nets ──────────────────────────────────────────────────
+    "movie":                              "Movie",
+    "movies":                             "Movie",
+    "tv series":                          "TV Series",
+    "series":                             "TV Series",
+    "hollywood":                          "Hollywood movie",
+}
+
+
 def _wp_get_or_create_category(cat_name: str, headers: dict, wp_base: str,
                                 is_series: bool = False) -> int | None:
     """
-    Resolve cat_name → WP category ID on the target site.
-    NEVER creates a new category — unknown content falls back to
-    'Drama' (series) or 'Movie' (film).
+    Resolve cat_name → WP category ID on the target site (naijadeleys.com.ng).
+
+    Resolution order:
+      1. Hardcoded _NAIJADELEYS_CAT_MAP  (instant, no network call needed)
+      2. Live WP category search         (handles any future categories added to the site)
+      3. Fallback to "TV Series" / "Movie" — both guaranteed to exist on NaijaDeleys
     """
-    mapped = cat_name.strip()
-    if not mapped:
-        mapped = 'Drama' if is_series else 'Movie'
+    raw = cat_name.strip()
+    if not raw:
+        raw = "TV Series" if is_series else "Movie"
+
+    # ── Step 1: hardcoded map lookup (case-insensitive) ─────────────────────
+    mapped = _NAIJADELEYS_CAT_MAP.get(raw.lower(), raw)
 
     key = mapped.strip().lower()
     if key in _wp_category_cache:
         return _wp_category_cache[key]
 
+    # ── Step 2: live WP search ───────────────────────────────────────────────
     try:
         r = requests.get(
             f'{wp_base}/wp-json/wp/v2/categories',
@@ -801,9 +901,15 @@ def _wp_get_or_create_category(cat_name: str, headers: dict, wp_base: str,
                     _wp_category_cache[key] = cat['id']
                     print(f"    📁 WP category: '{mapped}' (ID {cat['id']})")
                     return cat['id']
-        fallback = 'Drama' if is_series else 'Movie'
-        print(f"    ⚠️ Category '{mapped}' not found → fallback to '{fallback}'")
+
+        # ── Step 3: fallback ─────────────────────────────────────────────────
+        fallback = "TV Series" if is_series else "Movie"
+        print(f"    ⚠️ Category '{mapped}' not found on NaijaDeleys → fallback to '{fallback}'")
+        if mapped.strip().lower() == fallback.strip().lower():
+            # Avoid infinite recursion if fallback itself is missing
+            return None
         return _wp_get_or_create_category(fallback, headers, wp_base, is_series)
+
     except Exception as e:
         print(f"    ⚠️ WP category error ({mapped}): {e}")
     return None
@@ -849,7 +955,16 @@ def _wp_upload_image(image_url: str, title: str, headers: dict, wp_base: str) ->
 def _wp_find_existing_post(title: str, headers: dict, wp_base: str) -> dict | None:
     """
     Search target WP site for an existing post matching this title.
-    Exact + prefix matching handles series updated episode by episode.
+
+    Matching rules (strictest first):
+      1. Exact match on the rendered post title  (case-insensitive)
+      2. The search title (with "(Complete/Completed)" stripped) exactly matches
+         the bare rendered title (our publisher appends "| Mp4 Mkv DOWNLOAD").
+      3. Complete-stripped bare title match — handles series with/without suffix.
+
+    We intentionally do NOT do prefix matching because it caused false positives:
+    e.g. "Touring After the Apocalypse S01 (Complete)" being treated as a duplicate
+    of a freshly-scraped post for the same series with a different episode count.
     """
     search_title = re.sub(r'\s*\(Complet(?:e|ed)\)\s*$', '', title, flags=re.IGNORECASE).strip()
     try:
@@ -866,11 +981,25 @@ def _wp_find_existing_post(title: str, headers: dict, wp_base: str) -> dict | No
             rendered = BeautifulSoup(
                 post['title']['rendered'], 'html.parser'
             ).get_text().strip().lower()
+            # Strip the "| Mp4 Mkv DOWNLOAD" suffix our publisher appends
+            rendered_bare = re.sub(
+                r'\s*\|\s*mp4\s+mkv\s+download\s*$', '', rendered, flags=re.IGNORECASE
+            ).strip()
+            rendered_bare_no_complete = re.sub(
+                r'\s*\(complet(?:e|ed)\)\s*$', '', rendered_bare, flags=re.IGNORECASE
+            ).strip()
+
+            # Rule 1: exact full-title match (re-running same scrape)
             if rendered in (title_lower, search_lower):
-                print(f"    🔎 WP duplicate (exact): {post['title']['rendered']}")
+                print(f"    🔎 WP duplicate (exact full): {post['title']['rendered']}")
                 return post
-            if rendered.startswith(search_lower):
-                print(f"    🔎 WP duplicate (prefix): {post['title']['rendered']}")
+            # Rule 2: bare title exact match
+            if rendered_bare in (title_lower, search_lower):
+                print(f"    🔎 WP duplicate (bare title): {post['title']['rendered']}")
+                return post
+            # Rule 3: complete-stripped bare title exact match
+            if rendered_bare_no_complete == search_lower:
+                print(f"    🔎 WP duplicate (complete-stripped): {post['title']['rendered']}")
                 return post
     except Exception as e:
         print(f"    ⚠️ WP search error: {e}")

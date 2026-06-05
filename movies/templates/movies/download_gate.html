@@ -1,0 +1,496 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block title %}Download {{ movie.title }}{% if link_label %} — {{ link_label }}{% endif %} | Watch2D{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block canonical_block %}{% endblock %}
+
+{% block head_extra %}
+<!-- Gate-specific popunder -->
+<script>(function(s){s.dataset.zone='10895418',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+<script src="https://5gvci.com/act/files/tag.min.js?z=10895420" data-cfasync="false" async></script>
+
+<style>
+  @keyframes ring-fill   { from { stroke-dashoffset: 169.6; } }
+  @keyframes glow-green  { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.5); } 50% { box-shadow: 0 0 0 10px rgba(34,197,94,0); } }
+  @keyframes shim-btn    { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+  @keyframes grad-move   { to { background-position: 200% center; } }
+
+  .btn-shimmer {
+    background: linear-gradient(90deg,#1e3a5f 25%,#312e81 50%,#1e3a5f 75%);
+    background-size: 200% auto;
+    animation: shim-btn 1.6s linear infinite;
+  }
+  .btn-go-glow { animation: glow-green 2s ease-in-out infinite; }
+  .card-top-bar {
+    height: 3px;
+    background: linear-gradient(90deg, #0ea5e9, #ec4899, #8b5cf6, #0ea5e9);
+    background-size: 200% auto;
+    animation: grad-move 3s linear infinite;
+  }
+  .ring-track { stroke: rgba(0,0,0,.08); }
+  .dark .ring-track { stroke: rgba(255,255,255,.08); }
+  .ring-fill-path {
+    stroke: url(#ringGrad);
+    stroke-linecap: round;
+    transition: stroke-dashoffset .9s linear;
+    filter: drop-shadow(0 0 5px rgba(14,165,233,.6));
+  }
+
+  /* step states */
+  .step-wait  { background: rgba(107,114,128,.3); }
+  .step-spin  { background: rgba(14,165,233,.5); }
+  .step-done  { background: #0ea5e9; box-shadow: 0 0 8px rgba(14,165,233,.5); }
+  .step-ready { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,.5); }
+
+  /* related card — mirrors home.html .gc */
+  .rel-gc { cursor:pointer; text-decoration:none; display:block; }
+  .rel-gc-img {
+    position:relative; aspect-ratio:2/3; border-radius:4px;
+    overflow:hidden; background:#e5e7eb; transition:transform .22s ease;
+  }
+  .dark .rel-gc-img { background:#242424; }
+  .rel-gc:hover .rel-gc-img { transform:scale(1.05); }
+  .rel-gc-img img { width:100%; height:100%; object-fit:cover; display:block; opacity:0; transition:opacity .3s; }
+  .rel-gc-img img.ld { opacity:1; }
+  .rel-gc-ov {
+    position:absolute; inset:0;
+    background:linear-gradient(to top,rgba(0,0,0,.78) 0%,transparent 55%);
+    opacity:0; transition:opacity .22s;
+  }
+  .rel-gc:hover .rel-gc-ov { opacity:1; }
+  .rel-gc-play {
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; transition:opacity .22s;
+  }
+  .rel-gc:hover .rel-gc-play { opacity:1; }
+  .rel-play-btn {
+    width:30px; height:30px; border-radius:50%;
+    background:rgba(255,255,255,.9);
+    display:flex; align-items:center; justify-content:center;
+    color:#000; font-size:.65rem; padding-left:2px;
+  }
+  @keyframes rel-shim { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  .rel-shim {
+    background:linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%);
+    background-size:200% 100%; animation:rel-shim 1.5s ease infinite;
+  }
+  .dark .rel-shim {
+    background:linear-gradient(90deg,#242424 25%,#2e2e2e 50%,#242424 75%);
+    background-size:200% 100%; animation:rel-shim 1.5s ease infinite;
+  }
+  .rel-gc-ttl {
+    font-size:clamp(.56rem,.8vw,.72rem); color:#4b5563;
+    margin-top:5px; line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2;
+    -webkit-box-orient:vertical; overflow:hidden;
+    padding:0 1px; transition:color .18s;
+  }
+  .dark .rel-gc-ttl { color:#aaa; }
+  .rel-gc:hover .rel-gc-ttl { color:#111827; }
+  .dark .rel-gc:hover .rel-gc-ttl { color:#fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# Data island #}
+<div id="gd"
+     data-landing="{{ landing_url }}"
+     data-countdown="{{ countdown }}"
+     data-resolve-url="{% url 'movies:resolve_download' %}"
+     class="hidden"></div>
+
+{# Hidden SVG gradient defs for the ring #}
+<svg width="0" height="0" style="position:absolute;overflow:hidden;">
+  <defs>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="container mx-auto px-4 lg:px-6 py-3 max-w-2xl">
+
+  {# ── Breadcrumb ── #}
+  <div class="mb-3">
+    <a href="{{ movie.get_absolute_url }}"
+       class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400
+              hover:text-primary-600 dark:hover:text-primary-400
+              bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm
+              border border-gray-200/60 dark:border-gray-700/60
+              px-3 py-1.5 rounded-2xl shadow-sm transition-all duration-300
+              hover:border-primary-300 dark:hover:border-primary-700
+              hover:-translate-x-0.5">
+      <i class="fas fa-arrow-left text-xs"></i>
+      Back to
+      <span class="font-medium text-gray-700 dark:text-gray-300 truncate max-w-[160px]">{{ movie.title }}</span>
+    </a>
+  </div>
+
+  {# ── Movie identity strip ── #}
+  <div class="flex items-center gap-4 p-3 mb-3
+              bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm
+              border border-gray-200/60 dark:border-gray-700/60
+              rounded-3xl shadow-lg">
+    {% if movie.image_url %}
+      <img src="{{ movie.image_url }}" alt="{{ movie.title }}"
+           class="w-14 h-[84px] object-cover rounded-2xl flex-shrink-0 shadow-md ring-2 ring-primary-500/20">
+    {% else %}
+      <div class="w-14 h-[84px] rounded-2xl flex-shrink-0 bg-gradient-to-br from-primary-100 to-accent-100 dark:from-primary-900/40 dark:to-accent-900/40 flex items-center justify-center shadow-md">
+        <i class="fas fa-film text-primary-400 dark:text-primary-500 text-xl"></i>
+      </div>
+    {% endif %}
+    <div class="min-w-0 flex-1">
+      <p class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">
+        Now Downloading
+      </p>
+      <h1 class="font-bold text-gray-900 dark:text-gray-100 text-base leading-snug line-clamp-2">
+        {{ movie.title }}
+      </h1>
+      {% if link_label and link_label != "Download" %}
+        <div class="mt-2.5 flex items-center gap-2
+                    px-3 py-2 rounded-2xl
+                    bg-gradient-to-r from-primary-500 to-accent-500
+                    shadow-md shadow-primary-500/25">
+          <i class="fas fa-tv text-white text-xs flex-shrink-0"></i>
+          <span class="text-white font-extrabold text-sm leading-tight tracking-wide truncate">
+            {{ link_label }}
+          </span>
+        </div>
+      {% endif %}
+      {% if seo_type %}
+        <p class="mt-1.5 text-xs text-gray-400 dark:text-gray-500">{{ seo_type }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Main gate card ── #}
+  <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm
+              border border-gray-200/60 dark:border-gray-700/60
+              rounded-3xl shadow-xl overflow-hidden mb-4">
+
+    {# Animated top gradient bar #}
+    <div class="card-top-bar"></div>
+
+    {# Card header #}
+    <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-gray-700/50">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-r from-primary-500 to-accent-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary-500/25">
+        <i class="fas fa-shield-alt text-white text-sm"></i>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-900 dark:text-gray-100 leading-tight">Secure Download Gateway</p>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Watch2D · Ad-supported free downloads</p>
+      </div>
+      <div class="ml-auto flex items-center gap-1.5
+                  px-2.5 py-1 rounded-full
+                  bg-green-50 dark:bg-green-900/20
+                  border border-green-200 dark:border-green-700/40">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+        <span class="text-xs font-semibold text-green-600 dark:text-green-400">Safe</span>
+      </div>
+    </div>
+
+    {# ── Ring + Steps side by side (compact, above-the-fold) ── #}
+    <div class="flex items-center gap-3 px-4 pt-4 pb-3">
+
+      {# Small ring — left side #}
+      <div class="relative flex-shrink-0" style="width:72px;height:72px;">
+        <svg class="w-full h-full -rotate-90" viewBox="0 0 64 64">
+          <circle class="ring-track" cx="32" cy="32" r="27" fill="none" stroke-width="4"/>
+          <circle id="ring" class="ring-fill-path" cx="32" cy="32" r="27" fill="none"
+                  stroke-width="4" stroke-dasharray="169.6" stroke-dashoffset="169.6"/>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center select-none">
+          <span id="cnum" class="text-2xl font-extrabold text-gray-900 dark:text-gray-100 tabular-nums leading-none transition-colors duration-300">{{ countdown }}</span>
+          <span id="csub" class="text-[9px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide leading-none mt-0.5">secs</span>
+        </div>
+      </div>
+
+      {# Steps — right side, stacked tightly #}
+      <div class="flex-1 min-w-0 space-y-1.5">
+
+        <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl
+                    bg-green-50/70 dark:bg-green-900/15
+                    border border-green-200/50 dark:border-green-700/25">
+          <div class="step-done w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-check text-white" style="font-size:7px;"></i>
+          </div>
+          <span class="text-xs font-medium text-gray-600 dark:text-gray-300 truncate">Request received</span>
+          <i class="fas fa-check-circle text-green-500 ml-auto flex-shrink-0" style="font-size:10px;"></i>
+        </div>
+
+        <div id="step2-row" class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl
+                    bg-primary-50/70 dark:bg-primary-900/15
+                    border border-primary-200/50 dark:border-primary-700/25
+                    transition-all duration-300">
+          <div id="s2" class="step-spin w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0">
+            <i id="s2i" class="fas fa-spinner fa-spin text-white" style="font-size:7px;"></i>
+          </div>
+          <span id="s2l" class="text-xs font-medium text-gray-600 dark:text-gray-300 truncate transition-colors duration-300">Resolving server…</span>
+        </div>
+
+        <div id="step3-row" class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl
+                    bg-gray-50/80 dark:bg-gray-700/20
+                    border border-gray-200/50 dark:border-gray-600/25
+                    transition-all duration-300">
+          <div id="s3" class="step-wait w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0">
+            <i id="s3i" class="fas fa-lock text-white/50" style="font-size:7px;"></i>
+          </div>
+          <span id="s3l" class="text-xs font-medium text-gray-400 dark:text-gray-500 truncate transition-colors duration-300">Generating secure link…</span>
+        </div>
+
+      </div>
+    </div>
+
+    {# Status message #}
+    <p id="status-msg" class="text-xs text-gray-400 dark:text-gray-500 text-center font-medium px-4 pb-2 transition-colors duration-300">
+      Preparing your download link…
+    </p>
+
+    {# Buttons #}
+    <div class="px-4 pb-4 space-y-2">
+
+      {# Locked shimmer — shown during countdown #}
+      <div id="btn-locked"
+           class="btn-shimmer w-full py-3.5 rounded-2xl text-white/60 font-semibold text-sm
+                  flex items-center justify-center gap-2 cursor-not-allowed select-none">
+        <i class="fas fa-lock text-xs opacity-60"></i>
+        Preparing download…
+      </div>
+
+      {# Download button — shown when ready #}
+      <a id="btn-go"
+         href="#"
+         target="_blank"
+         rel="noopener noreferrer"
+         style="display:none"
+         class="btn-go-glow w-full py-3.5 rounded-2xl font-bold text-sm text-white
+                bg-gradient-to-r from-green-500 to-emerald-500
+                hover:from-green-400 hover:to-emerald-400
+                items-center justify-center gap-3
+                shadow-lg shadow-green-500/25
+                transition-all duration-300 hover:scale-[1.02]
+                cursor-pointer">
+        <div style="margin-left: 2%;" class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+             <i class="fas fa-download text-xs"></i>
+        </div>
+        <span id="btn-go-label">Click Here to Download</span>
+      </a>
+
+      {# Fallback #}
+      <a id="btn-fallback"
+         href="#"
+         target="_blank"
+         rel="noopener noreferrer"
+         style="display:none"
+         class="w-full py-2 rounded-2xl
+                border border-gray-200 dark:border-gray-700
+                text-gray-500 dark:text-gray-400
+                hover:text-primary-600 dark:hover:text-primary-400
+                hover:border-primary-300 dark:hover:border-primary-700
+                text-xs font-medium items-center justify-center gap-2
+                transition-all duration-300 bg-transparent">
+        <i class="fas fa-external-link-alt" style="font-size:10px;"></i>
+        Open download page manually
+      </a>
+
+      {# Hint #}
+      <p class="text-center text-[11px] text-gray-400 dark:text-gray-500 flex items-center justify-center gap-1.5">
+        <i class="fas fa-info-circle flex-shrink-0" style="font-size:10px;"></i>
+        An ad may open — close it and your download will be here.
+      </p>
+    </div>
+
+    {# Card footer #}
+    <div class="px-5 py-3.5 border-t border-gray-100 dark:border-gray-700/50 flex justify-center">
+      <a href="https://t.me/+wUlsP5Yv8h9iZDJk" target="_blank" rel="nofollow"
+         class="inline-flex items-center gap-2 text-xs font-medium text-gray-400 dark:text-gray-500
+                hover:text-primary-600 dark:hover:text-primary-400
+                bg-gray-50 dark:bg-gray-700/30
+                border border-gray-200 dark:border-gray-700/50
+                px-4 py-2 rounded-2xl transition-all duration-300
+                hover:border-primary-300 dark:hover:border-primary-700
+                hover:bg-primary-50 dark:hover:bg-primary-900/20">
+        <i class="fab fa-telegram text-sm"></i>
+        Faster downloads on our Telegram
+      </a>
+    </div>
+  </div>
+
+  {# ── Related movies ── #}
+  {% if related_movies %}
+  <div class="pt-2">
+    <div class="flex items-center gap-2 mb-3">
+      <i class="fas fa-fire text-sm" style="color:#f59e0b;"></i>
+      <span class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">You may also like</span>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(6px,1.2vw,10px);">
+      {% for rel in related_movies|slice:":8" %}
+        <a href="{{ rel.get_absolute_url }}" class="rel-gc">
+          <div class="rel-gc-img rel-shim">
+            {% if rel.image_url %}
+              <img src="{{ rel.image_url }}"
+                   alt="{{ rel.title }}"
+                   loading="lazy"
+                   onload="this.classList.add('ld');this.parentElement.classList.remove('rel-shim')">
+            {% endif %}
+            <div class="rel-gc-ov"></div>
+            <div class="rel-gc-play">
+              <div class="rel-play-btn"><i class="fas fa-play"></i></div>
+            </div>
+          </div>
+          <p class="rel-gc-ttl">{{ rel.title }}</p>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+
+  var gd          = document.getElementById('gd');
+  var LANDING_URL = gd.dataset.landing;
+  var TOTAL       = parseInt(gd.dataset.countdown, 10) || 5;
+  var RESOLVE_URL = gd.dataset.resolveUrl;
+
+  var ring        = document.getElementById('ring');
+  var cnum        = document.getElementById('cnum');
+  var csub        = document.getElementById('csub');
+  var statusMsg   = document.getElementById('status-msg');
+  var s2          = document.getElementById('s2');
+  var s2i         = document.getElementById('s2i');
+  var s2l         = document.getElementById('s2l');
+  var s3          = document.getElementById('s3');
+  var s3i         = document.getElementById('s3i');
+  var s3l         = document.getElementById('s3l');
+  var step2Row    = document.getElementById('step2-row');
+  var step3Row    = document.getElementById('step3-row');
+  var btnLocked   = document.getElementById('btn-locked');
+  var btnGo       = document.getElementById('btn-go');
+  var btnGoLabel  = document.getElementById('btn-go-label');
+  var btnFallback = document.getElementById('btn-fallback');
+
+  var CIRCUM = 169.6;
+  var resolvedUrl = null;
+  var fetchDone   = false;
+  var countDone   = false;
+
+  function updateRing(left) {
+    var filled = ((TOTAL - left) / TOTAL) * CIRCUM;
+    ring.style.strokeDashoffset = (CIRCUM - filled).toFixed(2);
+  }
+
+  function markStep2Done(wasResolved) {
+    s2.className    = 'w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ' +
+                      (wasResolved ? 'step-done' : 'step-wait');
+    s2i.className   = wasResolved ? 'fas fa-check text-white' : 'fas fa-minus text-white/60';
+    s2i.style.fontSize = '7px';
+    s2l.textContent = wasResolved ? 'Server found' : 'Using original link';
+    s2l.className   = 'text-xs font-medium truncate transition-colors duration-300 ' +
+                      (wasResolved ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400');
+    step2Row.className = step2Row.className.replace(/bg-\S+\/\S+/g,'').replace(/border-\S+\/\S+/g,'').trim();
+    if (wasResolved) {
+      step2Row.classList.add('bg-green-50/70','dark:bg-green-900/15','border-green-200/50','dark:border-green-700/25');
+    } else {
+      step2Row.classList.add('bg-yellow-50/70','dark:bg-yellow-900/15','border-yellow-200/50','dark:border-yellow-700/25');
+    }
+  }
+
+  function markStep3Done() {
+    s3.className    = 'w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 step-ready';
+    s3i.className   = 'fas fa-check text-white';
+    s3i.style.fontSize = '7px';
+    s3l.textContent = 'Link ready — tap download!';
+    s3l.className   = 'text-xs font-semibold text-green-600 dark:text-green-400 truncate transition-colors duration-300';
+    step3Row.className = step3Row.className
+      .replace('bg-gray-50/80','bg-green-50/70')
+      .replace('dark:bg-gray-700/20','dark:bg-green-900/15')
+      .replace('border-gray-200/50','border-green-200/50')
+      .replace('dark:border-gray-600/25','dark:border-green-700/25');
+  }
+
+  /* Prevent ad scripts swallowing download button clicks */
+  function stopAdOnBtn(el) {
+    ['click','mousedown','touchstart','pointerdown'].forEach(function(evt) {
+      el.addEventListener(evt, function(e){ e.stopPropagation(); }, { capture: true });
+    });
+  }
+  stopAdOnBtn(btnGo);
+  stopAdOnBtn(btnFallback);
+
+  function unlock() {
+    markStep3Done();
+    var finalUrl = resolvedUrl || LANDING_URL;
+    btnLocked.style.display = 'none';
+
+    if (finalUrl) {
+      btnGo.href = finalUrl;
+      var lower    = finalUrl.toLowerCase();
+      var isDirect = ['.mp4','.mkv','.webm','.avi','.mov','.zip','.rar']
+                       .some(function(e){ return lower.indexOf(e) !== -1; })
+                     || lower.indexOf('?pt=') !== -1;
+      btnGoLabel.textContent = isDirect ? 'Click Here to Download' : 'Click Here to Download';
+      btnGo.style.display = 'flex';
+
+      if (LANDING_URL && LANDING_URL !== finalUrl) {
+        btnFallback.href          = LANDING_URL;
+        btnFallback.style.display = 'flex';
+      }
+    } else {
+      btnLocked.style.display    = 'flex';
+      btnLocked.innerHTML        = '<i class="fas fa-exclamation-triangle text-xs opacity-80"></i> No link found — try again';
+      btnLocked.style.background = '#7f1d1d';
+      btnLocked.style.animation  = 'none';
+    }
+
+    ring.style.strokeDashoffset = '0';
+    cnum.textContent = '✓';
+    cnum.style.color = '#22c55e';
+    if (csub) csub.style.display = 'none';
+    statusMsg.textContent   = finalUrl ? 'Your download is ready!' : 'Link unavailable.';
+    statusMsg.style.color   = finalUrl ? '#22c55e' : '#ef4444';
+    statusMsg.style.fontWeight = '700';
+  }
+
+  function checkReady() { if (fetchDone && countDone) unlock(); }
+
+  function fetchResolvedUrl() {
+    if (!LANDING_URL) { resolvedUrl = null; fetchDone = true; checkReady(); return; }
+    fetch(RESOLVE_URL + '?url=' + encodeURIComponent(LANDING_URL))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        resolvedUrl = data.download_url || LANDING_URL;
+        fetchDone   = true;
+        markStep2Done(resolvedUrl !== LANDING_URL);
+        checkReady();
+      })
+      .catch(function(){
+        resolvedUrl = LANDING_URL; fetchDone = true;
+        markStep2Done(false); checkReady();
+      });
+  }
+
+  var remaining = TOTAL;
+  updateRing(TOTAL);
+
+  var tick = setInterval(function(){
+    remaining = Math.max(remaining - 1, 0);
+    cnum.textContent = remaining;
+    updateRing(remaining);
+    if (remaining === 0) { clearInterval(tick); countDone = true; checkReady(); }
+  }, 1000);
+
+  fetchResolvedUrl();
+})();
+</script>
+{% endblock %}
