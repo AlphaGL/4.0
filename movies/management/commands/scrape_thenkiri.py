@@ -430,10 +430,10 @@ def _post_movie_to_telegram(movie, is_new: bool):
 
             # ── Header ───────────────────────────────────────────
             lines = [
-                f"{'━' * 22}",
-                f"{emoji}  <b>NEW {kind} AVAILABLE!</b>",
-                f"{'━' * 22}",
-                "",
+                # f"{'━' * 22}",
+                # f"{emoji}  <b>NEW {kind} AVAILABLE!</b>",
+                # f"{'━' * 22}",
+                # "",
                 f"🎞  <b>{movie.title}</b>",
                 "",
             ]
@@ -514,10 +514,10 @@ def _post_movie_to_telegram(movie, is_new: bool):
             # ── Episode update post ───────────────────────────────
             episode_label = movie.title_b or "New Episode"
             lines = [
-                f"{'━' * 22}",
-                f"🆕  <b>NEW EPISODE DROPPED!</b>",
-                f"{'━' * 22}",
-                "",
+                # f"{'━' * 22}",
+                # f"🆕  <b>NEW EPISODE DROPPED!</b>",
+                # f"{'━' * 22}",
+                # "",
                 f"📺  <b>{movie.title}</b>",
                 f"🎬  <b>Episode:</b>  {episode_label}",
                 "",
