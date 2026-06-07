@@ -100,6 +100,9 @@
      data-landing="{{ landing_url }}"
      data-countdown="{{ countdown }}"
      data-resolve-url="{% url 'movies:resolve_download' %}"
+     data-movie-pk="{{ movie.pk }}"
+     data-link-label="{{ link_label|escapejs }}"
+     data-link-pk="{% if link_obj %}{{ link_obj.pk }}{% endif %}"
      class="hidden"></div>
 
 {# Hidden SVG gradient defs for the ring #}
@@ -302,6 +305,80 @@
         <i class="fas fa-info-circle flex-shrink-0" style="font-size:10px;"></i>
         An ad may open — close it and your download will be here.
       </p>
+
+      {# ── Broken link report — hidden until countdown finishes ── #}
+      <div id="broken-link-gate-wrap" style="display:none;" class="pt-1">
+
+        {# Trigger button #}
+        <button id="broken-link-toggle"
+                type="button"
+                onclick="toggleGateReport()"
+                class="w-full flex items-center justify-center gap-2
+                       py-2.5 px-4 rounded-2xl
+                       border border-amber-400/60 dark:border-amber-500/40
+                       bg-amber-50/80 dark:bg-amber-900/20
+                       text-amber-700 dark:text-amber-400
+                       text-xs font-semibold
+                       hover:bg-amber-100 dark:hover:bg-amber-900/40
+                       transition-all duration-200">
+          <i class="fas fa-exclamation-triangle text-amber-500" style="font-size:11px;"></i>
+          Link not working? Report it
+          <i id="gate-report-chevron" class="fas fa-chevron-down text-[10px] ml-auto transition-transform duration-200"></i>
+        </button>
+
+        {# Expandable report panel #}
+        <div id="gate-report-panel"
+             class="overflow-hidden transition-all duration-300"
+             style="max-height:0; opacity:0;">
+          <div class="mt-2 p-3 rounded-2xl
+                      border border-amber-300/50 dark:border-amber-600/30
+                      bg-amber-50/60 dark:bg-amber-900/10
+                      space-y-2.5">
+
+            <p class="text-[11px] text-amber-700 dark:text-amber-400 leading-snug">
+              <i class="fas fa-info-circle mr-1"></i>
+              Tell us what's wrong and we'll fix it fast. No sign-in needed.
+            </p>
+
+            {# Optional note #}
+            <textarea id="gate-report-note"
+                      rows="2"
+                      placeholder="e.g. Page opens but no download button, or link goes to error page…"
+                      class="w-full text-xs rounded-xl px-3 py-2 resize-none
+                             bg-white dark:bg-gray-800
+                             border border-amber-300/60 dark:border-amber-600/40
+                             text-gray-700 dark:text-gray-300
+                             placeholder-gray-400 dark:placeholder-gray-600
+                             focus:outline-none focus:ring-1 focus:ring-amber-400
+                             transition-colors duration-150"></textarea>
+
+            {# Submit + feedback #}
+            <div class="flex items-center gap-2">
+              <button id="gate-report-btn"
+                      type="button"
+                      onclick="submitGateReport()"
+                      class="flex items-center gap-1.5 px-4 py-2 rounded-xl
+                             bg-amber-500 hover:bg-amber-600
+                             text-white text-xs font-bold
+                             transition-colors duration-200
+                             disabled:opacity-50 disabled:cursor-not-allowed">
+                <i id="gate-report-icon" class="fas fa-paper-plane" style="font-size:10px;"></i>
+                <span id="gate-report-text">Send Report</span>
+              </button>
+              <p id="gate-report-success"
+                 class="hidden text-xs text-green-600 dark:text-green-400 font-medium">
+                <i class="fas fa-check-circle mr-1"></i>Thanks — we'll fix it soon!
+              </p>
+              <p id="gate-report-error"
+                 class="hidden text-xs text-red-500 font-medium">
+                <i class="fas fa-times-circle mr-1"></i>Error — please try again.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>{# end broken-link-gate-wrap #}
+
     </div>
 
     {# Card footer #}
@@ -460,6 +537,10 @@
     statusMsg.textContent   = finalUrl ? 'Your download is ready!' : 'Link unavailable.';
     statusMsg.style.color   = finalUrl ? '#22c55e' : '#ef4444';
     statusMsg.style.fontWeight = '700';
+
+    // Reveal the broken-link report widget now that the user can test the link
+    var blWrap = document.getElementById('broken-link-gate-wrap');
+    if (blWrap) blWrap.style.display = 'block';
   }
 
   function checkReady() { if (fetchDone && countDone) unlock(); }
@@ -492,5 +573,79 @@
 
   fetchResolvedUrl();
 })();
+
+// ── Broken-link report helpers (gate page) ────────────────────────────────
+function toggleGateReport() {
+  var panel   = document.getElementById('gate-report-panel');
+  var chevron = document.getElementById('gate-report-chevron');
+  var open    = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+  if (open) {
+    panel.style.maxHeight = '0';
+    panel.style.opacity   = '0';
+    chevron.style.transform = '';
+  } else {
+    panel.style.maxHeight = '300px';
+    panel.style.opacity   = '1';
+    chevron.style.transform = 'rotate(180deg)';
+  }
+}
+
+async function submitGateReport() {
+  var btn      = document.getElementById('gate-report-btn');
+  var icon     = document.getElementById('gate-report-icon');
+  var text     = document.getElementById('gate-report-text');
+  var note     = document.getElementById('gate-report-note');
+  var success  = document.getElementById('gate-report-success');
+  var error    = document.getElementById('gate-report-error');
+
+  // Grab link context from the data island
+  var gd       = document.getElementById('gd');
+  var moviePk  = gd ? gd.dataset.moviePk : '';
+  var linkLabel = gd ? (gd.dataset.linkLabel || '') : '';
+  var linkPk    = gd ? (gd.dataset.linkPk   || '') : '';
+
+  if (!moviePk) return;
+
+  btn.disabled = true;
+  icon.className = 'fas fa-spinner fa-spin';
+  text.textContent = 'Sending…';
+  success.classList.add('hidden');
+  error.classList.add('hidden');
+
+  var body = new URLSearchParams();
+  body.append('episode_note', note ? note.value.trim() : '');
+  body.append('link_label',   linkLabel);
+  if (linkPk) body.append('link_pk', linkPk);
+
+  try {
+    var csrfToken = document.cookie.split('; ')
+      .find(function(r){ return r.startsWith('csrftoken='); });
+    csrfToken = csrfToken ? csrfToken.split('=')[1] : '';
+
+    var resp = await fetch('/movie/' + moviePk + '/report-broken-link/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken,
+      },
+      body: body.toString(),
+    });
+
+    if (resp.ok) {
+      success.classList.remove('hidden');
+      if (note) note.value = '';
+      // Collapse panel after 3s
+      setTimeout(function(){ toggleGateReport(); }, 3000);
+    } else {
+      error.classList.remove('hidden');
+    }
+  } catch (e) {
+    error.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    icon.className = 'fas fa-paper-plane';
+    text.textContent = 'Send Report';
+  }
+}
 </script>
 {% endblock %}

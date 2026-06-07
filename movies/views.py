@@ -1131,38 +1131,52 @@ def report_broken_link(request, pk):
     """
  
     # ── Send via Brevo ────────────────────────────────────────────────────────
+    import logging
+    logger = logging.getLogger(__name__)
+
     brevo_api_key = getattr(settings, 'BREVO_API_KEY', '')
     admin_email   = getattr(settings, 'BREVO_ADMIN_EMAIL', '')
     sender_email  = getattr(settings, 'BREVO_SENDER_EMAIL', '')
     sender_name   = getattr(settings, 'BREVO_SENDER_NAME', 'Watch2D Alerts')
- 
+
     if not brevo_api_key or not admin_email:
-        # Gracefully degrade — still return success to the user
+        logger.error(
+            "report_broken_link: cannot send email — "
+            f"BREVO_API_KEY={'SET' if brevo_api_key else 'MISSING'}, "
+            f"BREVO_ADMIN_EMAIL={'SET' if admin_email else 'MISSING'}"
+        )
+        # Still acknowledge receipt so user isn't confused, but log clearly
         return JsonResponse({'status': 'ok', 'message': 'Report received. Thank you!'})
- 
+
     try:
         configuration = sib_api_v3_sdk.Configuration()
         configuration.api_key['api-key'] = brevo_api_key
- 
+
         api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
             sib_api_v3_sdk.ApiClient(configuration)
         )
- 
+
         send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
             to=[{"email": admin_email}],
             sender={"name": sender_name, "email": sender_email or admin_email},
             subject=f"🔗 Broken Link: {movie.title}",
             html_content=html_content,
         )
- 
-        api_instance.send_transac_email(send_smtp_email)
- 
+
+        api_response = api_instance.send_transac_email(send_smtp_email)
+        logger.info(f"report_broken_link: email sent OK for movie #{movie.pk} — messageId={getattr(api_response, 'message_id', 'n/a')}")
+
     except ApiException as e:
-        # Log but don't expose error to user
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.error(f"Brevo API error on broken-link report: {e}")
- 
+        logger.error(
+            f"report_broken_link: Brevo ApiException for movie #{movie.pk} — "
+            f"status={e.status}, reason={e.reason}, body={e.body}"
+        )
+        return JsonResponse({'status': 'error', 'message': 'Failed to send report.'}, status=500)
+
+    except Exception as e:
+        logger.error(f"report_broken_link: unexpected error for movie #{movie.pk} — {type(e).__name__}: {e}")
+        return JsonResponse({'status': 'error', 'message': 'Failed to send report.'}, status=500)
+
     return JsonResponse({'status': 'ok', 'message': 'Report received. Thank you!'})
 
 
