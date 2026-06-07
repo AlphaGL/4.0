@@ -16,6 +16,37 @@ Usage:
     python manage.py scrape_9jarocks_wp --startpage 1 --endpage 5
     python manage.py scrape_9jarocks_wp --category all --max-pages 10
 
+    # Scrape individual post URLs from a text file (one URL per line):
+    python manage.py scrape_9jarocks_wp --urls-file links.txt
+    python manage.py scrape_9jarocks_wp --urls-file links.txt --delay 1.0
+
+    The URLs file should contain one 9jarocks.net post URL per line.
+    Blank lines and lines starting with # are ignored.
+    Example links.txt:
+        https://9jarocks.net/videodownload/in-the-grey-2026-id393368.html
+        https://9jarocks.net/videodownload/totally-funny-animals-season-2-id394058.html
+        # This line is a comment and will be skipped
+
+WORDPRESS ONE-TIME SETUP (required for smart dedup/update):
+    Add this to your theme's functions.php so the script can store and query
+    the original 9jarocks source URL on each post:
+
+        add_action('init', function() {
+            register_post_meta('post', '_9jarocks_source_url', [
+                'show_in_rest' => true,
+                'single'       => true,
+                'type'         => 'string',
+                'auth_callback' => '__return_true',
+            ]);
+        });
+
+    How it works:
+        - MOVIES  : if the source URL already exists on your WP site → SKIP (no duplicate)
+        - SERIES  : if the source URL already exists → UPDATE the post in place
+                    (title gets new episode count, download links refreshed,
+                     slug never changes so Google ranking is preserved)
+        - NEW     : if not found → CREATE a new post with a clean slug
+
 Available --category aliases:
     hollywood, nollywood, nollywood_series, hollywood_series,
     kdrama, chinese_drama, thai_drama, filipino_drama, japanese_drama,
@@ -239,11 +270,18 @@ def _make_scraper():
 # LISTING PAGE / PAGINATION HELPERS
 # ══════════════════════════════════════════════════════════════
 
+def _normalise_9jarocks_url(href: str) -> str:
+    """Strip www. prefix so https://www.9jarocks.net/... → https://9jarocks.net/..."""
+    return re.sub(r'^(https?://)www\.', r'\1', href, count=1)
+
+
 def _is_post_url(href: str) -> bool:
     """
     9jarocks post URLs follow the pattern:
       https://9jarocks.net/videodownload/<slug>-id<number>.html
+    Also accepts https://www.9jarocks.net/... (www. variant).
     """
+    href = _normalise_9jarocks_url(href)
     if not href.startswith(SITE_URL):
         return False
     path = href[len(SITE_URL):]
@@ -721,6 +759,7 @@ def parse_post_page(html: str, url: str) -> dict | None:
         'categories':     categories,
         'is_series':      is_series,
         'is_complete':    is_complete,
+        'source_url':     url,          # original 9jarocks post URL — used for dedup/update
         'meta':           meta,
         **vi,
     }
@@ -750,8 +789,19 @@ def clean_title_parts(raw: str):
     series_pat = re.compile(r'(?i)(.*?\b(S\d{1,2}|Season\s?\d{1,2}))[\s\-–:]*\s*(.*)')
     match       = series_pat.match(title)
     if match:
-        base    = match.group(1).strip()
-        title_b = re.sub(r'^\(|\)$', '', match.group(3)).strip()
+        base        = match.group(1).strip()
+        rest        = match.group(3).strip()
+        # rest may look like "(Episode 9-10 Added) (Chinese Drama)" —
+        # extract only the first parenthesised episode block if present,
+        # otherwise take the whole rest (stripped of outer parens).
+        ep_block = re.match(r'[\(\[](Episode\s*[\d\s\-–—]+(?:Added)?|Complete[d]?)[\)\]]',
+                            rest, re.IGNORECASE)
+        if ep_block:
+            title_b = ep_block.group(1).strip()
+        else:
+            # Strip outer parens and any trailing "(Category)" suffix
+            title_b = re.sub(r'^\(|\)$', '', rest).strip()
+            title_b = re.sub(r'\s*\([^)]{2,30}\)\s*$', '', title_b).strip()
         if is_complete and 'complete' not in base.lower() and 'complete' not in title_b.lower():
             base += ' (Completed)' if 'completed' in title_lower else ' (Complete)'
         return base, title_b, True
@@ -952,31 +1002,145 @@ def _wp_upload_image(image_url: str, title: str, headers: dict, wp_base: str) ->
     return None
 
 
-def _wp_find_existing_post(title: str, headers: dict, wp_base: str) -> dict | None:
+def _wp_find_by_source_url(source_url: str, headers: dict, wp_base: str) -> dict | None:
     """
-    Search target WP site for an existing post matching this title.
+    Query the target WP site for a post whose custom meta field
+    '_9jarocks_source_url' matches *source_url*.
+
+    This is the primary duplicate / update detection mechanism.
+    It is reliable even when the post title changes (e.g. new episode added).
+
+    Requires the WP REST API to expose custom post meta — ensure your WP
+    theme/plugin exposes 'meta' in the posts endpoint, or add this to
+    functions.php:
+        register_post_meta('post', '_9jarocks_source_url', [
+            'show_in_rest' => true, 'single' => true, 'type' => 'string',
+        ]);
+    """
+    if not source_url:
+        return None
+    # Normalise: strip www. so stored values and queried values always match
+    source_url = _normalise_9jarocks_url(source_url)
+    try:
+        # Request meta fields so we can verify the match ourselves.
+        # NOTE: WP's default REST API silently ignores meta_key/meta_value
+        # filtering unless a plugin is installed.  We therefore fetch candidates
+        # and manually verify the meta field rather than trusting server-side filter.
+        r = requests.get(
+            f'{wp_base}/wp-json/wp/v2/posts',
+            params={
+                'meta_key':   '_9jarocks_source_url',
+                'meta_value': source_url,
+                'per_page':   5,
+                'status':     'any',
+                '_fields':    'id,title,slug,categories,meta',
+                'context':    'edit',   # required to get meta in response
+            },
+            headers=headers, timeout=10,
+        )
+        if r.status_code == 200:
+            for post in r.json():
+                # Verify the meta actually matches — WP often ignores the
+                # meta_key/meta_value filter and returns unrelated recent posts.
+                stored = ''
+                post_meta = post.get('meta', {})
+                if isinstance(post_meta, dict):
+                    stored = post_meta.get('_9jarocks_source_url', '') or ''
+                stored = _normalise_9jarocks_url(stored.strip())
+                if stored == source_url:
+                    print(f"    🔎 Found existing post by source URL (ID {post['id']})")
+                    return post
+        # meta_key filter didn't work or returned no verified match.
+        # Try a wider scan: fetch the 50 most recent posts and check meta.
+        # This is slower but works even without plugin support for meta filtering.
+        r2 = requests.get(
+            f'{wp_base}/wp-json/wp/v2/posts',
+            params={
+                'per_page': 50,
+                'status':   'any',
+                '_fields':  'id,title,slug,categories,meta',
+                'context':  'edit',
+            },
+            headers=headers, timeout=15,
+        )
+        if r2.status_code == 200:
+            for post in r2.json():
+                stored = ''
+                post_meta = post.get('meta', {})
+                if isinstance(post_meta, dict):
+                    stored = post_meta.get('_9jarocks_source_url', '') or ''
+                stored = _normalise_9jarocks_url(stored.strip())
+                if stored == source_url:
+                    print(f"    🔎 Found existing post by meta scan (ID {post['id']})")
+                    return post
+    except Exception as exc:
+        print(f"    ⚠️ WP source-URL lookup error: {exc}")
+    return None
+
+
+def _strip_episode_suffix(text: str) -> str:
+    """
+    Strip episode/complete suffix from a title so we can match across episode updates.
+    e.g. "Double Helix Season 1 (Episode 8 Added) (Chinese Drama)" →
+         "Double Helix Season 1"
+    Also strips trailing parenthesised words that follow the episode info
+    (like "(Chinese Drama)" in the example above).
+    """
+    # Strip (Episode X Added), (Episode X-Y Added), (Complete), (Completed)
+    text = re.sub(
+        r'\s*[\(\[]?\s*(?:episode\s*[\d\s\-–—]+(?:added)?|complete[d]?)\s*[\)\]]?'
+        r'(?:\s*[\(\[][^\)\]]*[\)\]])*\s*$',
+        '', text, flags=re.IGNORECASE
+    ).strip()
+    # Strip trailing pipe
+    text = re.sub(r'\s*\|.*$', '', text).strip()
+    return text
+
+
+def _wp_find_existing_post(title: str, headers: dict, wp_base: str,
+                           is_series: bool = False) -> dict | None:
+    """
+    Fallback title-based search — used only when no source URL match found.
 
     Matching rules (strictest first):
       1. Exact match on the rendered post title  (case-insensitive)
       2. The search title (with "(Complete/Completed)" stripped) exactly matches
          the bare rendered title (our publisher appends "| Mp4 Mkv DOWNLOAD").
-      3. Complete-stripped bare title match — handles series with/without suffix.
+      3. Complete-stripped bare title exact match.
+      4. SERIES ONLY — base title match (episode suffix stripped from both sides).
+         Handles the case where an existing post has a different episode count,
+         e.g. "Double Helix Season 1 (Episode 8 Added)" matched by scraping
+         "Double Helix Season 1 (Episode 9-10 Added)".
 
-    We intentionally do NOT do prefix matching because it caused false positives:
-    e.g. "Touring After the Apocalypse S01 (Complete)" being treated as a duplicate
-    of a freshly-scraped post for the same series with a different episode count.
+    IMPORTANT: WP full-text search is fuzzy — e.g. searching "UFC Fight Night X"
+    can return older "UFC Fight Night Y" posts.  We ONLY accept a result when the
+    stored title (after stripping our suffix) exactly equals the search title.
     """
     search_title = re.sub(r'\s*\(Complet(?:e|ed)\)\s*$', '', title, flags=re.IGNORECASE).strip()
+    # For the WP search query use only the base title (no episode info, no year)
+    # so we always get candidate posts back regardless of episode number.
+    base_title_for_query = _strip_episode_suffix(search_title)
+    base_title_for_query = re.sub(r'\s*\(\d{4}\)\s*$', '', base_title_for_query).strip()
+    # Use the base title as the search query — broad enough to find all episode variants
+    search_query = base_title_for_query
     try:
         r = requests.get(
             f'{wp_base}/wp-json/wp/v2/posts',
-            params={'search': search_title, 'per_page': 10, 'status': 'any'},
+            params={
+                'search':   search_query,
+                'per_page': 10,
+                'status':   'any',
+                '_fields':  'id,title,slug,categories,meta',
+                'context':  'edit',
+            },
             headers=headers, timeout=10,
         )
         if r.status_code != 200:
             return None
-        search_lower = search_title.strip().lower()
-        title_lower  = title.strip().lower()
+        search_lower      = search_title.strip().lower()
+        title_lower       = title.strip().lower()
+        base_search_lower = _strip_episode_suffix(search_lower)
+
         for post in r.json():
             rendered = BeautifulSoup(
                 post['title']['rendered'], 'html.parser'
@@ -988,22 +1152,51 @@ def _wp_find_existing_post(title: str, headers: dict, wp_base: str) -> dict | No
             rendered_bare_no_complete = re.sub(
                 r'\s*\(complet(?:e|ed)\)\s*$', '', rendered_bare, flags=re.IGNORECASE
             ).strip()
+            rendered_base = _strip_episode_suffix(rendered_bare)
 
             # Rule 1: exact full-title match (re-running same scrape)
-            if rendered in (title_lower, search_lower):
-                print(f"    🔎 WP duplicate (exact full): {post['title']['rendered']}")
-                return post
+            matched    = rendered in (title_lower, search_lower)
+            match_rule = 'exact full title'
             # Rule 2: bare title exact match
-            if rendered_bare in (title_lower, search_lower):
-                print(f"    🔎 WP duplicate (bare title): {post['title']['rendered']}")
-                return post
+            if not matched and rendered_bare in (title_lower, search_lower):
+                matched    = True
+                match_rule = 'bare title'
             # Rule 3: complete-stripped bare title exact match
-            if rendered_bare_no_complete == search_lower:
-                print(f"    🔎 WP duplicate (complete-stripped): {post['title']['rendered']}")
-                return post
+            if not matched and rendered_bare_no_complete == search_lower:
+                matched    = True
+                match_rule = 'complete-stripped'
+            # Rule 4: series base-title match (episode suffix stripped from both)
+            if not matched and is_series and base_search_lower and rendered_base == base_search_lower:
+                matched    = True
+                match_rule = 'series base title'
+
+            if not matched:
+                continue
+
+            # ── Extra guard: if this post already has a DIFFERENT source URL
+            # stored in its meta, it belongs to a different 9jarocks post —
+            # reject it (WP fuzzy-search false positive).
+            post_meta  = post.get('meta', {})
+            stored_src = ''
+            if isinstance(post_meta, dict):
+                stored_src = _normalise_9jarocks_url(
+                    (post_meta.get('_9jarocks_source_url') or '').strip()
+                )
+            title_slug_words = set(re.sub(r'[^a-z0-9]', ' ', base_search_lower or title_lower).split())
+            if stored_src:
+                stored_slug_words = set(re.sub(r'[^a-z0-9]', ' ', stored_src.lower()).split())
+                overlap = title_slug_words & stored_slug_words
+                if len(overlap) < 3:
+                    print(f"    ⚠️  Title match (ID {post['id']}) rejected — belongs to different source URL")
+                    continue
+
+            print(f"    🔎 WP duplicate ({match_rule}): {post['title']['rendered']}")
+            return post
     except Exception as e:
         print(f"    ⚠️ WP search error: {e}")
     return None
+
+
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1013,10 +1206,17 @@ def _wp_find_existing_post(title: str, headers: dict, wp_base: str) -> dict | No
 def _make_slug(text: str, is_series: bool = False) -> str:
     import unicodedata
     if is_series:
+        # Strip any episode-count / complete suffix so the slug is stable
+        # across all future episode updates.
+        # Handles patterns like:
+        #   (Episode 1 Added)          (Episode 1 – 3 Added)
+        #   (Episode 5)                (Complete) / (Completed)
+        #   Episode 3 Added            [Episode 2 Added]
         text = re.sub(
-            r'\s*[\(\[]?\s*(?:episode\s*\d+\s*(?:added)?|complete[d]?)\s*[\)\]]?.*$',
+            r'\s*[\(\[]?\s*(?:episode\s*[\d\s\-––]+(?:added)?|complete[d]?)\s*[\)\]]?\s*$',
             '', text, flags=re.IGNORECASE
         ).strip()
+        # Also strip trailing pipe and everything after
         text = re.sub(r'\s*\|.*$', '', text).strip()
 
     text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
@@ -1424,7 +1624,56 @@ def _post_to_wordpress(
             print("    ⚠️ WP_SITE_URL not configured — skipping.")
             return False
 
-        # Upload poster image first
+        # Full post title
+        if is_series and title_b:
+            full_title = f'{title} ({title_b}) | Mp4 Mkv DOWNLOAD'
+        else:
+            full_title = f'{title} | Mp4 Mkv DOWNLOAD'
+
+        excerpt_text = description[:300] if description else ''
+
+        # ── Duplicate / update detection (BEFORE image upload) ────
+        # Check WP first so we don't waste time uploading images for
+        # movies that already exist, or series with no new episodes.
+        source_url    = _normalise_9jarocks_url(meta_info.get('source_url', ''))
+        existing_post = (
+            _wp_find_by_source_url(source_url, headers, wp_base)
+            if source_url else None
+        )
+        if not existing_post:
+            existing_post = _wp_find_existing_post(title, headers, wp_base, is_series=is_series)
+
+        # ── MOVIE: skip immediately, no image upload needed ───────
+        if existing_post and not is_series:
+            post_id = existing_post['id']
+            print(f"    ⏭️  Movie already exists (ID {post_id}) — skipping.")
+            return True
+
+        # ── SERIES: check if episode has actually changed ─────────
+        if existing_post and is_series:
+            post_id       = existing_post['id']
+            current_title = BeautifulSoup(
+                existing_post['title']['rendered'], 'html.parser'
+            ).get_text().strip()
+
+            # If this "series" has no episode info (e.g. a wrestling event, UFC card,
+            # or any one-off that 9jarocks categorises under a series category),
+            # treat it as a movie — skip entirely, no update needed.
+            if not title_b:
+                print(f"    ⏭️  Series post with no episode info (ID {post_id}) — treating as movie, skipping.")
+                return True
+
+            title_changed = (current_title.strip().lower() != full_title.strip().lower())
+
+            if not title_changed:
+                # Same episode count — nothing to update, skip image upload
+                print(f"    ⏭️  Series already up to date (ID {post_id}) — no new episode, skipping.")
+                return True
+
+            # New episode detected — fall through to image upload + update below
+            print(f"    🆕  New episode detected — updating post (ID {post_id})...")
+
+        # ── IMAGE UPLOAD (only reached for new posts or series updates) ──
         wp_media_id  = None
         wp_image_url = ''
         if image_url:
@@ -1456,53 +1705,43 @@ def _post_to_wordpress(
         cat_id  = _wp_get_or_create_category(wp_cat_name, headers, wp_base, is_series)
         cat_ids = [cat_id] if cat_id else []
 
-        # Full post title  —  matches 9jarocks format e.g. "Wingman (2025) Mp4 Mkv Download"
-        if is_series and title_b:
-            full_title = f'{title} ({title_b}) | Mp4 Mkv DOWNLOAD'
-        else:
-            full_title = f'{title} | Mp4 Mkv DOWNLOAD'
-
-        # Excerpt
-        excerpt_text = description[:300] if description else ''
-
-        # Check for existing post
-        existing_post = _wp_find_existing_post(title, headers, wp_base)
-
-        # ── UPDATE ───────────────────────────────────────────────
-        if existing_post:
-            post_id       = existing_post['id']
-            current_title = BeautifulSoup(
-                existing_post['title']['rendered'], 'html.parser'
-            ).get_text().strip()
-            title_changed = (current_title.strip().lower() != full_title.strip().lower())
-
-            patch: dict = {'content': content, 'meta': rank_math_meta}
-            if title_changed:
-                patch['title'] = full_title
-                from datetime import datetime, timezone as tz
-                now_utc           = datetime.now(tz.utc)
-                patch['date']     = now_utc.strftime('%Y-%m-%dT%H:%M:%S')
-                patch['date_gmt'] = now_utc.strftime('%Y-%m-%dT%H:%M:%S')
-                print(f"    🔗 Slug preserved (SEO safe) — date bumped.")
+        # ── SERIES: update in place (slug / URL never changes) ───
+        if existing_post and is_series:
+            post_id = existing_post['id']
+            # title_changed is guaranteed True here (same-episode was skipped above)
+            patch: dict = {
+                'title':   full_title,
+                'content': content,
+                'meta': {
+                    **rank_math_meta,
+                    '_9jarocks_source_url': source_url,
+                },
+            }
+            from datetime import datetime, timezone as tz
+            now_utc           = datetime.now(tz.utc)
+            patch['date']     = now_utc.strftime('%Y-%m-%dT%H:%M:%S')
+            patch['date_gmt'] = now_utc.strftime('%Y-%m-%dT%H:%M:%S')
             if excerpt_text:
                 patch['excerpt'] = excerpt_text
             if cat_ids:
                 existing_cats       = existing_post.get('categories', [])
                 patch['categories'] = list(set(existing_cats + cat_ids))
+            if wp_media_id:
+                patch['featured_media'] = wp_media_id
 
             r = requests.post(
                 f'{wp_base}/wp-json/wp/v2/posts/{post_id}',
                 headers=headers, json=patch, timeout=15,
             )
             if r.status_code == 200:
-                action = 'title+date bumped' if title_changed else 'content only'
-                print(f"    ✏️  WP updated ({action}, ID {post_id}) — {full_title}")
+                print(f"    ✏️  WP series updated — new episode + date bumped (ID {post_id})")
+                print(f"    🔗  Slug unchanged (SEO safe) ← {full_title}")
                 return True
             else:
                 print(f"    ⚠️ WP update failed: {r.status_code} {r.text[:150]}")
                 return False
 
-        # ── CREATE ───────────────────────────────────────────────
+        # ── CREATE (new post — movie or series) ───────────────────
         post_data: dict = {
             'title':   full_title,
             'slug':    _make_slug(title, is_series=is_series),
@@ -1510,7 +1749,12 @@ def _post_to_wordpress(
             'status':  'publish',
             'format':  'video',
             'excerpt': excerpt_text or '',
-            'meta':    rank_math_meta,
+            'meta': {
+                **rank_math_meta,
+                # Save the original 9jarocks URL so future runs can find
+                # this post without relying on title matching.
+                '_9jarocks_source_url': source_url,
+            },
         }
         if cat_ids:
             post_data['categories'] = cat_ids
@@ -1603,11 +1847,226 @@ class Command(BaseCommand):
             '--list-categories', action='store_true', default=False,
             help='Print all available --category aliases and exit',
         )
+        parser.add_argument(
+            '--url', type=str, default=None,
+            metavar='URL',
+            help=(
+                'Scrape a single 9jarocks post URL directly. '
+                'Example: --url https://9jarocks.net/videodownload/some-movie-id123.html'
+            ),
+        )
+        parser.add_argument(
+            '--urls-file', type=str, default=None,
+            metavar='FILE',
+            help=(
+                'Path to a plain-text file containing individual 9jarocks post URLs '
+                'to scrape (one URL per line). Blank lines and lines starting with # '
+                'are ignored. When this option is used, --category / --startpage / '
+                '--endpage / --max-pages are all ignored.'
+            ),
+        )
+
+    # ── helpers ────────────────────────────────────────────────
+    def _load_urls_file(self, filepath: str) -> list:
+        """
+        Read a plain-text file of post URLs.
+        - One URL per line.
+        - Lines starting with # (after stripping) are treated as comments.
+        - Blank lines are skipped.
+        - Duplicate URLs are removed while preserving order.
+        """
+        import os
+        if not os.path.isfile(filepath):
+            raise FileNotFoundError(f"URLs file not found: {filepath}")
+
+        seen = set()
+        urls = []
+        with open(filepath, 'r', encoding='utf-8') as fh:
+            for raw_line in fh:
+                line = raw_line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                # Tolerate lines like "1. https://..." (numbered lists)
+                line = re.sub(r'^\d+[\.\)]\s*', '', line).strip()
+                if not line:
+                    continue
+                # Normalise www. variant → canonical URL
+                line = _normalise_9jarocks_url(line)
+                if line in seen:
+                    print(f"   ⚠️  Duplicate URL skipped: {line}")
+                    continue
+                if not _is_post_url(line):
+                    print(f"   ⚠️  Skipping non-post URL: {line}")
+                    continue
+                seen.add(line)
+                urls.append(line)
+        return urls
+
+    def _infer_wp_cat_from_parsed(self, parsed: dict) -> tuple:
+        """
+        Given a parsed post dict, infer (wp_cat_name, is_series) by looking at
+        the categories list extracted from the page.  Falls back to 'Video' / False.
+        """
+        cats = [c.lower() for c in parsed.get('categories', [])]
+
+        # Priority order: try to match a known category definition
+        for defn in CATEGORY_DEFINITIONS:
+            label_lower = defn['label'].lower()
+            wp_cat_lower = defn['wp_cat'].lower()
+            slug_part = defn['slug'].split('/')[-1].replace('-', ' ')
+            if any(
+                label_lower in c or wp_cat_lower in c or slug_part in c
+                for c in cats
+            ):
+                return defn['wp_cat'], defn['is_series']
+
+        # Fallback heuristics on raw category strings
+        all_cats = ' '.join(cats)
+        if 'movie' in all_cats:
+            if 'nollywood' in all_cats:
+                return 'Nollywood movie', False
+            if 'bollywood' in all_cats or 'foreign' in all_cats:
+                return 'Other foreign movies', False
+            return 'Hollywood movie', False
+        if 'series' in all_cats or 'ongoing' in all_cats:
+            return 'Hollywood Series', True
+        if 'anime' in all_cats:
+            return 'Anime', True
+        if 'korean' in all_cats or 'kdrama' in all_cats:
+            return 'Korean Drama', True
+        if 'chinese' in all_cats:
+            return 'Chinese drama', True
+        if 'thai' in all_cats:
+            return 'Thai drama', True
+        if 'filipino' in all_cats or 'philippine' in all_cats:
+            return 'Filipino Drama', True
+        if 'japanese' in all_cats:
+            return 'Japanese drama', True
+
+        # No match — treat as generic video / movie
+        return 'Video', False
+
+    def _scrape_urls_from_file(self, filepath: str, delay: float):
+        """
+        Main routine for --urls-file mode.
+        Loads URLs from *filepath*, scrapes each post, and publishes to WordPress.
+        """
+        print("=" * 60)
+        print("🚀  scrape_9jarocks_wp — URLS-FILE mode")
+        print(f"    Source site : {SITE_URL}")
+        print(f"    URLs file   : {filepath}")
+        print(f"    Delay       : {delay}s between requests")
+        print("=" * 60)
+
+        try:
+            post_urls = self._load_urls_file(filepath)
+        except FileNotFoundError as exc:
+            self.stderr.write(f"❌  {exc}")
+            return
+
+        if not post_urls:
+            self.stderr.write("❌  No valid URLs found in the file. Nothing to do.")
+            return
+
+        print(f"\n📋  {len(post_urls)} unique post URL(s) loaded from file.\n")
+
+        scraper = _make_scraper()
+
+        total_scraped = 0
+        total_wp_ok   = 0
+        total_wp_fail = 0
+
+        for idx, post_url in enumerate(post_urls, start=1):
+            print(f"\n{'─'*60}")
+            print(f"[{idx}/{len(post_urls)}] 🎬  {post_url}")
+
+            if delay > 0 and idx > 1:
+                time.sleep(delay)
+
+            try:
+                resp = scraper.get(post_url, timeout=25)
+                if resp.status_code != 200:
+                    print(f"   ⚠️  HTTP {resp.status_code} — skipping")
+                    continue
+                post_html = resp.text
+            except Exception as exc:
+                print(f"   ❌  Fetch error: {exc}")
+                continue
+
+            parsed = parse_post_page(post_html, post_url)
+            if not parsed:
+                print("   ⚠️  Could not parse post — skipping")
+                continue
+
+            if not parsed['download_links']:
+                print(f"   ⛔  No download links found — skipping '{parsed['title_raw']}'")
+                continue
+
+            # Auto-detect wp category from the page's own category tags
+            wp_cat_name, cat_is_series = self._infer_wp_cat_from_parsed(parsed)
+
+            title, title_b, is_series = clean_title_parts(parsed['title_raw'])
+            if not parsed['is_series']:
+                is_series = False
+            # If the inferred cat says it's a series, trust it too
+            if cat_is_series:
+                is_series = True
+
+            print(f"   📝  Title    : {title}")
+            if title_b:
+                print(f"   📝  Episode  : {title_b}")
+            print(f"   🏷   WP cat   : {wp_cat_name}  (auto-detected)")
+            print(f"   📥  Links    : {len(parsed['download_links'])}")
+
+            total_scraped += 1
+
+            ok = _post_to_wordpress(
+                title          = title,
+                title_b        = title_b,
+                description    = parsed['description'],
+                meta_info      = parsed,
+                image_url      = parsed['image_url'],
+                video_url      = parsed['video_url'],
+                download_links = parsed['download_links'],
+                categories     = parsed['categories'],
+                is_series      = is_series,
+                wp_cat_name    = wp_cat_name,
+            )
+            if ok:
+                total_wp_ok += 1
+            else:
+                total_wp_fail += 1
+
+        print(f"\n\n{'=' * 60}")
+        print("🎉  Done (URLs-file mode)!")
+        print(f"    Posts scraped    : {total_scraped}")
+        print(f"    WP published OK  : {total_wp_ok}")
+        print(f"    WP failures      : {total_wp_fail}")
+        print("=" * 60)
 
     def handle(self, *args, **options):
         if options['list_categories']:
             self._print_category_list()
             return
+
+        # ── Single URL mode ───────────────────────────────────────
+        single_url = options.get('url')
+        if single_url:
+            single_url = _normalise_9jarocks_url(single_url)
+            if not _is_post_url(single_url):
+                self.stderr.write(f"❌  Not a valid 9jarocks post URL: {single_url}")
+                return
+            self._scrape_urls_from_file(None, delay=options['delay'],
+                                        single_urls=[single_url])
+            return
+
+        # ── URLs-file mode ────────────────────────────────────────
+        urls_file = options.get('urls_file')
+        if urls_file:
+            self._scrape_urls_from_file(urls_file, delay=options['delay'])
+            return
+
+        # ── Normal category-crawl mode ────────────────────────────
 
         start_page = options['startpage']
         end_page   = options['endpage']
@@ -1773,9 +2232,19 @@ class Command(BaseCommand):
 #
 #   python manage.py scrape_9jarocks_wp
 #   python manage.py scrape_9jarocks_wp --list-categories
-#   
-# 
+#
+#   # Scrape by category (existing behaviour):
 #   python manage.py scrape_9jarocks_wp --category nollywood --startpage 1 --endpage 5
 #   python manage.py scrape_9jarocks_wp --category all --max-pages 10 --delay 1.0
 #   python manage.py scrape_9jarocks_wp --category anime --max-pages 5
+#
+#   # Scrape individual posts from a URLs file (NEW):
+#   python manage.py scrape_9jarocks_wp --urls-file links.txt
+#   python manage.py scrape_9jarocks_wp --urls-file links.txt --delay 1.5
+#
+#   links.txt format (one URL per line, # = comment, blank lines OK):
+#       https://9jarocks.net/videodownload/in-the-grey-2026-id393368.html
+#       https://9jarocks.net/videodownload/totally-funny-animals-season-2-id394058.html
+#       # this is a comment
+#       1. https://9jarocks.net/videodownload/some-movie-id123456.html
 # ──────────────────────────────────────────────────────────────

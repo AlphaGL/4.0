@@ -501,7 +501,8 @@ def _post_movie_to_telegram(movie, is_new: bool):
             ]
 
             # ── Hashtags ──────────────────────────────────────────
-            lines += [tg_tags, TELEGRAM_FOOTER]
+            lines += [TELEGRAM_FOOTER]
+            # lines += [tg_tags, TELEGRAM_FOOTER]
 
             from automation.models import TelegramPost
             TelegramPost.objects.get_or_create(
@@ -527,9 +528,9 @@ def _post_movie_to_telegram(movie, is_new: bool):
                 f"",
                 f"👉  <a href='{url}'><b>{url}</b></a>",
                 f"",
-                f"{'▬' * 22}",
-                "",
-                tg_tags,
+                # f"{'▬' * 22}",
+                # "",
+                # tg_tags,
                 TELEGRAM_FOOTER,
             ]
 
