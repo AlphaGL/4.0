@@ -648,4 +648,172 @@ async function submitGateReport() {
   }
 }
 </script>
+
+{# ═══ FLOATING DOWNLOAD GUIDE VIDEO ═══ #}
+<style>
+  @keyframes guide-pulse { 0%,100%{opacity:.9} 50%{opacity:.25} }
+  #guideWidget {
+    position: fixed;
+    bottom: 20px;
+    right: 16px;
+    width: clamp(130px, 18vw, 170px);
+    background: #0f0f0f;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
+    z-index: 9999;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  #guideWidget.gw-hidden {
+    opacity: 0 !important;
+    transform: translateY(20px) !important;
+    pointer-events: none !important;
+  }
+  #guideVideoWrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 9/16;
+    max-height: 260px;
+    background: #000;
+    cursor: pointer;
+  }
+  #guideVideo {
+    width: 100%; height: 100%;
+    display: block;
+    object-fit: contain;
+  }
+  #guidePlayOverlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 6px;
+    background: rgba(0,0,0,0.55);
+    transition: opacity .2s;
+  }
+  #guidePlayOverlay .gpo-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(229,9,20,0.92);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.1rem; padding-left: 3px;
+    box-shadow: 0 4px 16px rgba(229,9,20,0.5);
+    transition: transform .18s, background .18s;
+  }
+  #guidePlayOverlay:hover .gpo-btn { transform: scale(1.1); background: #e50914; }
+  #guidePlayOverlay .gpo-label {
+    color: #fff; font-size: .58rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .07em;
+    text-shadow: 0 1px 4px rgba(0,0,0,.8);
+  }
+  #guideWidget .gw-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 10px 6px;
+    background: linear-gradient(90deg, #e50914, #b0060f);
+  }
+  #guideWidget .gw-label-wrap { display: flex; align-items: center; gap: 6px; }
+  #guideWidget .gw-dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: #fff; opacity: .9;
+    animation: guide-pulse 1.4s ease infinite;
+  }
+  #guideWidget .gw-label {
+    color: #fff; font-size: .62rem; font-weight: 800;
+    letter-spacing: .07em; text-transform: uppercase;
+  }
+  #guideClose {
+    background: rgba(255,255,255,0.18); border: none; color: #fff;
+    cursor: pointer; width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .65rem; flex-shrink: 0; transition: background .2s; line-height: 1;
+  }
+  #guideClose:hover { background: rgba(255,255,255,0.35); }
+  #guideProgress {
+    height: 3px; background: rgba(255,255,255,0.15);
+    position: absolute; bottom: 0; left: 0; right: 0;
+  }
+  #guideProgressBar {
+    height: 100%; width: 0%;
+    background: #e50914;
+    transition: width 0.25s linear;
+  }
+</style>
+
+<div id="guideWidget">
+  <div class="gw-bar">
+    <div class="gw-label-wrap">
+      <span class="gw-dot"></span>
+      <span class="gw-label">How to Download</span>
+    </div>
+    <button id="guideClose" title="Close">&#x2715;</button>
+  </div>
+  <div id="guideVideoWrap">
+    <video id="guideVideo"
+      src="{% static 'guide/download-gate-page.mp4' %}"
+      muted autoplay playsinline preload="auto">
+    </video>
+    <div id="guidePlayOverlay">
+      <div class="gpo-btn">&#9654;</div>
+      <span class="gpo-label">Tap to watch</span>
+    </div>
+    <div id="guideProgress"><div id="guideProgressBar"></div></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var widget      = document.getElementById('guideWidget');
+  var video       = document.getElementById('guideVideo');
+  var closeBtn    = document.getElementById('guideClose');
+  var overlay     = document.getElementById('guidePlayOverlay');
+  var progressBar = document.getElementById('guideProgressBar');
+  var closedByUser = false;
+  var hasReappeared = false;
+  var reappearTimer = null;
+
+  /* ── slow down playback ── */
+  video.playbackRate = 0.75;
+  video.addEventListener('play', function () { video.playbackRate = 0.75; });
+
+  function hideWidget() { widget.classList.add('gw-hidden'); }
+  function showWidget() {
+    if (closedByUser) return;
+    widget.classList.remove('gw-hidden');
+    video.currentTime = 0;
+    video.playbackRate = 0.75;
+    tryPlay();
+  }
+  function tryPlay() {
+    var p = video.play();
+    if (p !== undefined) {
+      p.then(function () { overlay.style.display = 'none'; })
+       .catch(function () { overlay.style.display = 'flex'; });
+    }
+  }
+  overlay.addEventListener('click', function () {
+    overlay.style.display = 'none';
+    video.playbackRate = 0.75;
+    video.play();
+  });
+  video.addEventListener('timeupdate', function () {
+    if (!video.duration) return;
+    progressBar.style.width = ((video.currentTime / video.duration) * 100) + '%';
+  });
+  video.addEventListener('ended', function () {
+    progressBar.style.width = '100%';
+    setTimeout(function () {
+      hideWidget();
+      if (!closedByUser && !hasReappeared) {
+        hasReappeared = true;
+        reappearTimer = setTimeout(showWidget, 60000);
+      }
+    }, 400);
+  });
+  closeBtn.addEventListener('click', function () {
+    closedByUser = true;
+    if (reappearTimer) clearTimeout(reappearTimer);
+    video.pause();
+    hideWidget();
+  });
+  tryPlay();
+})();
+</script>
 {% endblock %}

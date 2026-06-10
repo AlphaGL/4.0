@@ -1,12 +1,14 @@
 """
 scrape_9jarocks_wp.py
 =====================
-Django management command that scrapes 9jarocks.net by crawling category
-listing pages (WordPress / Jannah theme HTML), then visits each post to
-extract title, image, description, video info, and download links —
-and publishes DIRECTLY to WordPress.  Zero DB interaction, zero social posting.
+Django management command that scrapes 9jarocks.net (and its mirror
+my9jarocks.wf) by crawling category listing pages (WordPress / Jannah theme
+HTML), then visits each post to extract title, image, description, video info,
+and download links — and publishes DIRECTLY to WordPress.
+Zero DB interaction, zero social posting.
 
-Source site  : 9jarocks.net  (HTML scraping via WP REST API + HTML)
+Source sites : 9jarocks.net          (canonical)
+               www.my9jarocks.wf     (mirror — same post structure)
 Target site  : Your WordPress site (WP REST API via WP_SITE_URL / WP_APP_PASSWORD)
 
 Usage:
@@ -20,11 +22,12 @@ Usage:
     python manage.py scrape_9jarocks_wp --urls-file links.txt
     python manage.py scrape_9jarocks_wp --urls-file links.txt --delay 1.0
 
-    The URLs file should contain one 9jarocks.net post URL per line.
-    Blank lines and lines starting with # are ignored.
+    The URLs file accepts both domains — mix and match freely:
     Example links.txt:
         https://9jarocks.net/videodownload/in-the-grey-2026-id393368.html
         https://9jarocks.net/videodownload/totally-funny-animals-season-2-id394058.html
+        https://www.my9jarocks.wf/videodownload/yowayowa-sensei-season-1-anime-id385500.html
+        https://my9jarocks.wf/videodownload/some-other-title-id123456.html
         # This line is a comment and will be skipped
 
 WORDPRESS ONE-TIME SETUP (required for smart dedup/update):
@@ -74,7 +77,12 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # SITE / CATEGORY CONSTANTS  —  9jarocks.net
 # ══════════════════════════════════════════════════════════════
 
-SITE_URL = 'https://9jarocks.net'
+SITE_URL        = 'https://9jarocks.net'
+SITE_URL_MIRROR = 'https://www.my9jarocks.wf'   # mirror domain
+
+# Both domains that host the same content / post structure.
+# Canonical is 9jarocks.net — mirror is my9jarocks.wf.
+_ALL_SITE_URLS = (SITE_URL, SITE_URL_MIRROR)
 
 # 9jarocks uses /category/videodownload/<slug>  for all video content.
 # The REST API categories endpoint (document index 3) confirms these IDs.
@@ -250,7 +258,7 @@ def normalize_url(url: str) -> str:
     return unquote(f"{parsed.scheme}://{parsed.netloc}{parsed.path}").lower()
 
 
-def _make_scraper():
+def _make_scraper(referer: str = SITE_URL):
     """Return a cloudscraper session with browser-like headers."""
     scraper = cloudscraper.create_scraper()
     scraper.headers.update({
@@ -261,7 +269,7 @@ def _make_scraper():
         ),
         "Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
-        "Referer":         SITE_URL,
+        "Referer":         referer,
     })
     return scraper
 
@@ -271,20 +279,45 @@ def _make_scraper():
 # ══════════════════════════════════════════════════════════════
 
 def _normalise_9jarocks_url(href: str) -> str:
-    """Strip www. prefix so https://www.9jarocks.net/... → https://9jarocks.net/..."""
-    return re.sub(r'^(https?://)www\.', r'\1', href, count=1)
+    """
+    Canonicalise both known source-site domains to their www-less form.
+
+    Transforms:
+      https://www.9jarocks.net/...  → https://9jarocks.net/...
+      https://www.my9jarocks.wf/... → https://my9jarocks.wf/...
+      (non-www variants are returned unchanged)
+    """
+    href = re.sub(r'^(https?://)www\.9jarocks\.net',   r'\g<1>9jarocks.net',   href, count=1)
+    href = re.sub(r'^(https?://)www\.my9jarocks\.wf',  r'\g<1>my9jarocks.wf',  href, count=1)
+    return href
+
+
+def _get_site_url_for(href: str) -> str | None:
+    """
+    Return the matching canonical site-URL prefix for *href*, or None if it
+    doesn't belong to either known source domain (after normalisation).
+    """
+    normalised = _normalise_9jarocks_url(href)
+    for base in _ALL_SITE_URLS:
+        # Compare against the www-less version of each base
+        base_norm = _normalise_9jarocks_url(base)
+        if normalised.startswith(base_norm):
+            return base_norm
+    return None
 
 
 def _is_post_url(href: str) -> bool:
     """
-    9jarocks post URLs follow the pattern:
+    Valid post URLs for both source domains follow the pattern:
       https://9jarocks.net/videodownload/<slug>-id<number>.html
-    Also accepts https://www.9jarocks.net/... (www. variant).
+      https://my9jarocks.wf/videodownload/<slug>-id<number>.html
+    Also accepts www. variants of both (they are normalised first).
     """
-    href = _normalise_9jarocks_url(href)
-    if not href.startswith(SITE_URL):
+    href       = _normalise_9jarocks_url(href)
+    site_base  = _get_site_url_for(href)
+    if site_base is None:
         return False
-    path = href[len(SITE_URL):]
+    path = href[len(site_base):]
     if not path or path == '/':
         return False
     skip = (
@@ -629,27 +662,37 @@ def parse_post_page(html: str, url: str) -> dict | None:
                 'imdb.com', 'wp-admin', '#respond', 'mailto:',
                 '9jarocks.net/category/', '9jarocks.net/tag/',
                 '9jarocks.net/page/', '9jarocks.net/a-z',
+                'my9jarocks.wf/category/', 'my9jarocks.wf/tag/',
+                'my9jarocks.wf/page/', 'my9jarocks.wf/a-z',
                 'tiktok.com', 'x.com/', 'telegram.org',
                 'googletagmanager', 'cloudflare',
             ]):
                 continue
-            # ── CRITICAL: block ALL 9jarocks internal post URLs ────────
-            # 9jarocks posts live at /videodownload/<slug>-id<n>.html
+            # ── CRITICAL: block ALL internal post URLs from both source domains ──
+            # Posts live at /videodownload/<slug>-id<n>.html on both domains.
             # The word "download" in that path would otherwise fool the
             # is_dl check below into treating them as real file links.
             if '9jarocks.net' in href_lower and '/videodownload/' in href_lower:
                 continue
-            # Also block any other 9jarocks.net internal link that isn't
-            # pointing to a known external file host
-            if href_lower.startswith(SITE_URL.lower()):
+            if 'my9jarocks.wf' in href_lower and '/videodownload/' in href_lower:
+                continue
+            # Also block any other internal link from either source domain
+            _href_is_source = any(
+                href_lower.startswith(_normalise_9jarocks_url(base).lower())
+                for base in _ALL_SITE_URLS
+            )
+            if _href_is_source:
                 continue
 
             # 9jarocks download buttons have class "fa-fa-download" —
             # but ONLY treat as definitive when the URL is an external file host
-            # (internal 9jarocks URLs are already blocked above, so this is a
+            # (internal source-domain URLs are already blocked above, so this is a
             # belt-and-braces guard for any edge-cases that still reach here)
             a_classes = ' '.join(a.get('class', []))
-            _is_external_host = '9jarocks.net' not in href_lower
+            _is_external_host = (
+                '9jarocks.net' not in href_lower and
+                'my9jarocks.wf' not in href_lower
+            )
             is_download_btn = 'fa-fa-download' in a_classes and _is_external_host
 
             is_dl = is_download_btn or (
@@ -1953,7 +1996,8 @@ class Command(BaseCommand):
         """
         print("=" * 60)
         print("🚀  scrape_9jarocks_wp — URLS-FILE mode")
-        print(f"    Source site : {SITE_URL}")
+        print(f"    Source sites: {SITE_URL}")
+        print(f"                  {SITE_URL_MIRROR}")
         print(f"    URLs file   : {filepath}")
         print(f"    Delay       : {delay}s between requests")
         print("=" * 60)
@@ -1970,7 +2014,7 @@ class Command(BaseCommand):
 
         print(f"\n📋  {len(post_urls)} unique post URL(s) loaded from file.\n")
 
-        scraper = _make_scraper()
+        scraper = _make_scraper()  # default; Referer updated per-URL below
 
         total_scraped = 0
         total_wp_ok   = 0
@@ -1982,6 +2026,11 @@ class Command(BaseCommand):
 
             if delay > 0 and idx > 1:
                 time.sleep(delay)
+
+            # Use the correct Referer for each domain so the server sees a
+            # same-domain request (reduces chance of Cloudflare challenges).
+            _domain_base = _get_site_url_for(post_url) or SITE_URL
+            scraper.headers.update({"Referer": _domain_base})
 
             try:
                 resp = scraper.get(post_url, timeout=25)
@@ -2054,7 +2103,7 @@ class Command(BaseCommand):
         if single_url:
             single_url = _normalise_9jarocks_url(single_url)
             if not _is_post_url(single_url):
-                self.stderr.write(f"❌  Not a valid 9jarocks post URL: {single_url}")
+                self.stderr.write(f"❌  Not a valid 9jarocks/my9jarocks post URL: {single_url}")
                 return
             self._scrape_urls_from_file(None, delay=options['delay'],
                                         single_urls=[single_url])
@@ -2238,13 +2287,16 @@ class Command(BaseCommand):
 #   python manage.py scrape_9jarocks_wp --category all --max-pages 10 --delay 1.0
 #   python manage.py scrape_9jarocks_wp --category anime --max-pages 5
 #
-#   # Scrape individual posts from a URLs file (NEW):
+#   # Scrape individual posts from a URLs file:
 #   python manage.py scrape_9jarocks_wp --urls-file links.txt
 #   python manage.py scrape_9jarocks_wp --urls-file links.txt --delay 1.5
 #
-#   links.txt format (one URL per line, # = comment, blank lines OK):
+#   links.txt format — both domains accepted, mix freely:
 #       https://9jarocks.net/videodownload/in-the-grey-2026-id393368.html
 #       https://9jarocks.net/videodownload/totally-funny-animals-season-2-id394058.html
+#       https://www.my9jarocks.wf/videodownload/yowayowa-sensei-season-1-anime-id385500.html
+#       https://my9jarocks.wf/videodownload/some-movie-id123456.html
 #       # this is a comment
-#       1. https://9jarocks.net/videodownload/some-movie-id123456.html
+#       1. https://9jarocks.net/videodownload/another-movie-id789.html
+# ──────────────────────────────────────────────────────────────
 # ──────────────────────────────────────────────────────────────
