@@ -21,6 +21,21 @@ ALLOWED_HOSTS = [
     '.onrender.com',
 ]
 
+
+WHITENOISE_MIMETYPES = {
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.mov': 'video/quicktime',
+}
+
+
+WHITENOISE_SKIP_COMPRESS_EXTENSIONS = [
+    'jpg', 'jpeg', 'png', 'gif', 'webp',
+    'zip', 'gz', 'tgz', 'bz2', 'tbz', 'xz', 'br',
+    'swf', 'flv', 'woff', 'woff2',
+    'mp4', 'webm', 'mp3', 'wav',  # add these
+]
+
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
