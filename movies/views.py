@@ -277,32 +277,96 @@ def check_streamable(request):
     return JsonResponse({'streamable': True, 'reason': 'unknown'})
 
 
+# @require_GET
+# def resolve_download_link(request):
+#     landing_url = request.GET.get('url', '').strip()
+#     debug = request.GET.get('debug') == '1' and request.user.is_staff
+
+#     if not landing_url:
+#         return JsonResponse({'error': 'No URL provided'}, status=400)
+
+#     from urllib.parse import urlparse, urlunparse
+#     parsed = urlparse(landing_url)
+#     host = parsed.netloc.lower()
+#     lower = landing_url.lower()
+
+#     if 'sabishares.com' in host and 'preview' in parsed.query:
+#         direct = urlunparse(parsed._replace(query='', fragment=''))
+#         if debug:
+#             return JsonResponse({'method': 'sabishares_preview', 'download_url': direct})
+#         return JsonResponse({'download_url': direct})
+
+#     direct_exts = ('.mp4', '.mkv', '.webm', '.avi', '.mov', '.zip', '.rar')
+#     if '?pt=' in lower or any(lower.endswith(ext) for ext in direct_exts):
+#         return JsonResponse({'download_url': landing_url})
+
+#     if 'mylulutv.com' in host:
+#         return JsonResponse({'download_url': landing_url})
+
+#     if 'downloadwella.com' in host:
+#         result, dbg = _resolve_downloadwella(landing_url, parsed, debug)
+#         if result:
+#             if debug:
+#                 return JsonResponse({'method': 'downloadwella_post', 'download_url': result, 'debug': dbg})
+#             return JsonResponse({'download_url': result})
+#         if debug:
+#             return JsonResponse({'method': 'downloadwella_failed', 'fallback': landing_url, 'debug': dbg})
+#         return JsonResponse({'download_url': landing_url})
+
+#     html, fetch_err = _fetch_html_safe(landing_url)
+#     if not html:
+#         if debug:
+#             return JsonResponse({'method': 'fetch_failed', 'error': fetch_err, 'fallback': landing_url})
+#         return JsonResponse({'download_url': landing_url})
+
+#     download_url = _extract_download_url(html, host)
+#     if download_url:
+#         if debug:
+#             return JsonResponse({'method': 'html_extract', 'download_url': download_url, 'html_length': len(html)})
+#         return JsonResponse({'download_url': download_url})
+
+#     if debug:
+#         return JsonResponse({
+#             'method': 'extract_failed',
+#             'fallback': landing_url,
+#             'html_length': len(html),
+#             'cloudflare_block': 'cf-browser-verification' in html or 'Checking your browser' in html,
+#             'has_pt_token': '?pt=' in html,
+#             'has_kissorgrab': 'kissorgrab' in html,
+#             'html_snippet': html[:3000],
+#         })
+#     return JsonResponse({'download_url': landing_url})
+
 @require_GET
 def resolve_download_link(request):
     landing_url = request.GET.get('url', '').strip()
     debug = request.GET.get('debug') == '1' and request.user.is_staff
-
+ 
     if not landing_url:
         return JsonResponse({'error': 'No URL provided'}, status=400)
-
+ 
     from urllib.parse import urlparse, urlunparse
     parsed = urlparse(landing_url)
-    host = parsed.netloc.lower()
-    lower = landing_url.lower()
-
+    host   = parsed.netloc.lower()
+    lower  = landing_url.lower()
+ 
+    # ── sabishares: strip preview query ───────────────────────
     if 'sabishares.com' in host and 'preview' in parsed.query:
         direct = urlunparse(parsed._replace(query='', fragment=''))
         if debug:
             return JsonResponse({'method': 'sabishares_preview', 'download_url': direct})
         return JsonResponse({'download_url': direct})
-
+ 
+    # ── already a direct link — return as-is ──────────────────
     direct_exts = ('.mp4', '.mkv', '.webm', '.avi', '.mov', '.zip', '.rar')
     if '?pt=' in lower or any(lower.endswith(ext) for ext in direct_exts):
         return JsonResponse({'download_url': landing_url})
-
+ 
+    # ── passthrough hosts ──────────────────────────────────────
     if 'mylulutv.com' in host:
         return JsonResponse({'download_url': landing_url})
-
+ 
+    # ── downloadwella ──────────────────────────────────────────
     if 'downloadwella.com' in host:
         result, dbg = _resolve_downloadwella(landing_url, parsed, debug)
         if result:
@@ -312,31 +376,43 @@ def resolve_download_link(request):
         if debug:
             return JsonResponse({'method': 'downloadwella_failed', 'fallback': landing_url, 'debug': dbg})
         return JsonResponse({'download_url': landing_url})
-
+ 
+    # ── loadedfiles.org  ← NEW ────────────────────────────────
+    if 'loadedfiles.org' in host:
+        result, dbg = _resolve_loadedfiles(landing_url, parsed, debug)
+        if result:
+            if debug:
+                return JsonResponse({'method': 'loadedfiles_resolved', 'download_url': result, 'debug': dbg})
+            return JsonResponse({'download_url': result})
+        # Couldn't resolve — fall back to the landing page itself
+        if debug:
+            return JsonResponse({'method': 'loadedfiles_failed', 'fallback': landing_url, 'debug': dbg})
+        return JsonResponse({'download_url': landing_url})
+ 
+    # ── generic HTML fetch + extract ──────────────────────────
     html, fetch_err = _fetch_html_safe(landing_url)
     if not html:
         if debug:
             return JsonResponse({'method': 'fetch_failed', 'error': fetch_err, 'fallback': landing_url})
         return JsonResponse({'download_url': landing_url})
-
+ 
     download_url = _extract_download_url(html, host)
     if download_url:
         if debug:
             return JsonResponse({'method': 'html_extract', 'download_url': download_url, 'html_length': len(html)})
         return JsonResponse({'download_url': download_url})
-
+ 
     if debug:
         return JsonResponse({
-            'method': 'extract_failed',
-            'fallback': landing_url,
-            'html_length': len(html),
-            'cloudflare_block': 'cf-browser-verification' in html or 'Checking your browser' in html,
-            'has_pt_token': '?pt=' in html,
-            'has_kissorgrab': 'kissorgrab' in html,
-            'html_snippet': html[:3000],
+            'method':             'extract_failed',
+            'fallback':           landing_url,
+            'html_length':        len(html),
+            'cloudflare_block':   'cf-browser-verification' in html or 'Checking your browser' in html,
+            'has_pt_token':       '?pt=' in html,
+            'has_kissorgrab':     'kissorgrab' in html,
+            'html_snippet':       html[:3000],
         })
     return JsonResponse({'download_url': landing_url})
-
 
 def _resolve_downloadwella(landing_url, parsed, debug=False):
     dbg = {}
@@ -400,7 +476,108 @@ def _resolve_downloadwella(landing_url, parsed, debug=False):
     except Exception as e:
         return None, {'exception': str(e)}
 
-
+ 
+def _resolve_loadedfiles(landing_url, parsed, debug=False):
+    """
+    Resolve a loadedfiles.org file page to its real ?pt= download URL.
+ 
+    Why two steps:
+      loadedfiles.org checks BOTH Referer AND a session cookie.
+      Step 1 — GET the homepage to receive a valid session cookie.
+      Step 2 — GET the file page within that same session, sending
+               the 9jarocks Referer.  The server now sees a real
+               browser-like session and returns the page with the
+               `var downloadUrl = '...?pt=...'` JS variable in it.
+    """
+    import requests as _requests
+ 
+    dbg = {}
+    HEADERS = {
+        'User-Agent': (
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+            'AppleWebKit/537.36 (KHTML, like Gecko) '
+            'Chrome/124.0.0.0 Safari/537.36'
+        ),
+        'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
+ 
+    try:
+        session = _requests.Session()
+        session.headers.update(HEADERS)
+ 
+        # ── Step 1: warm up a session cookie from the homepage ────────────
+        home_url = f"{parsed.scheme}://{parsed.netloc}/"
+        try:
+            warm = session.get(home_url, timeout=10, allow_redirects=True)
+            dbg['warm_status'] = warm.status_code
+            dbg['warm_cookies'] = list(session.cookies.keys())
+        except Exception as e:
+            dbg['warm_error'] = str(e)
+            # Non-fatal — try the file page anyway
+ 
+        # ── Step 2: fetch the actual file page with session + 9jarocks Referer
+        resp = session.get(
+            landing_url,
+            timeout=15,
+            allow_redirects=True,
+            headers={'Referer': 'https://9jarocks.net/'},
+        )
+        dbg['status']    = resp.status_code
+        dbg['final_url'] = resp.url
+ 
+        if resp.status_code != 200:
+            dbg['error'] = f'HTTP {resp.status_code}'
+            if debug:
+                dbg['body_snippet'] = resp.text[:500]
+            return None, dbg
+ 
+        html = resp.text
+        dbg['html_length'] = len(html)
+ 
+        # ── Pattern 1: var downloadUrl = '...?pt=...' (exact loadedfiles pattern)
+        m = re.search(
+            r"var\s+downloadUrl\s*=\s*['\"]"
+            r"(https?://[^'\"]+\?pt=[^'\"]+)['\"]",
+            html, re.IGNORECASE
+        )
+        if m:
+            dbg['pattern'] = 'downloadUrl_var'
+            return m.group(1).strip(), dbg
+ 
+        # ── Pattern 2: window.location.href = '...?pt=...'
+        m = re.search(
+            r"window\.location(?:\.href)?\s*=\s*['\"]"
+            r"(https?://[^'\"]+\?pt=[^'\"]+)['\"]",
+            html, re.IGNORECASE
+        )
+        if m:
+            dbg['pattern'] = 'window_location_pt'
+            return m.group(1).strip(), dbg
+ 
+        # ── Pattern 3: any quoted loadedfiles URL with ?pt= (broadest)
+        m = re.search(
+            r"['\"]"
+            r"(https?://loadedfiles\.org/[^'\"]+\?pt=[^'\"]+)"
+            r"['\"]",
+            html, re.IGNORECASE
+        )
+        if m:
+            dbg['pattern'] = 'quoted_pt'
+            return m.group(1).strip(), dbg
+ 
+        # ── Nothing found — attach snippet for debug diagnosis
+        dbg['error'] = 'no_pt_pattern_found'
+        dbg['has_downloadUrl_var'] = 'var downloadUrl' in html
+        dbg['has_pt_anywhere']     = '?pt=' in html
+        dbg['cf_block']            = 'cf-browser-verification' in html or 'just a moment' in html.lower()
+        if debug:
+            dbg['html_snippet'] = html[:3000]
+        return None, dbg
+ 
+    except Exception as e:
+        return None, {'exception': str(e)}
+    
 def _fetch_html_safe(url):
     try:
         scraper = _get_scraper()

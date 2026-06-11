@@ -273,6 +273,16 @@ FACEBOOK_FOOTER = (
     "━━━━━━━━━━━━━━━━━━━"
 )
 
+TELEGRAM_FOOTER = (
+    "\n\n┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n"
+    "📣 <b>Stay Connected:</b>\n"
+    f"📱 <a href='{PLATFORM_LINKS['telegram']}'>Join our Telegram Channel</a>\n"
+    f"📘 <a href='{PLATFORM_LINKS['facebook']}'>Like us on Facebook</a>\n"
+    f"🐦 <a href='{PLATFORM_LINKS['twitter']}'>Follow us on X/Twitter</a>\n"
+    f"🌍 <a href='{PLATFORM_LINKS['website']}'>Visit Watch2D.org</a>\n"
+    "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄"
+)
+
 
 # ══════════════════════════════════════════════════════════════
 # RATE LIMITER
@@ -698,9 +708,18 @@ def parse_post_page(html: str, url: str) -> dict | None:
         return None
 
     categories = []
-    for a in soup.select('a.post-cat'):
+    # Scope to .entry-header or .entry-header-outer ONLY — the sidebar also uses
+    # class="post-cat" on genre/alphabet links which would pollute the list.
+    _cat_scope = (
+        soup.find(class_='entry-header') or
+        soup.find(class_='entry-header-outer') or
+        soup.find(class_='post-header') or
+        soup  # last resort: full page (old behaviour, but sidebar will be filtered below)
+    )
+    for a in _cat_scope.select('a.post-cat'):
         name = a.get_text(strip=True)
-        if name and name.lower() not in ('video', 'uncategorized'):
+        # Skip generic/sidebar labels
+        if name and name.lower() not in ('video', 'uncategorized') and len(name) > 1:
             categories.append(name)
     if not categories:
         breadcrumb = soup.find(id='breadcrumb')
@@ -925,6 +944,28 @@ def parse_post_page(html: str, url: str) -> dict | None:
 # TITLE CLEANING
 # ══════════════════════════════════════════════════════════════
 
+# Canonical season format: "Season N" (title-case, no zero-padding)
+# Covers all these raw inputs:
+#   S04  S4  Season 4  Season 04  SEASON 4  season4  Season4
+_SEASON_RE = re.compile(
+    r'\b(?:S(?:eason\s*)?|Season\s*)0*(\d{1,2})\b',
+    re.IGNORECASE,
+)
+
+def _canonicalize_season(text: str) -> str:
+    """
+    Replace every season token in *text* with the canonical form "Season N".
+    Examples:
+        "S04"       → "Season 4"
+        "Season 04" → "Season 4"
+        "SEASON 4"  → "Season 4"
+        "Season4"   → "Season 4"
+        "S4"        → "Season 4"
+    Non-season text is left untouched.
+    """
+    return _SEASON_RE.sub(lambda m: f"Season {int(m.group(1))}", text)
+
+
 def clean_title_parts(raw: str) -> tuple[str, str]:
     """Returns (main_title, episode_label)."""
     title      = re.sub(r'\s+', ' ', raw).strip()
@@ -936,7 +977,7 @@ def clean_title_parts(raw: str) -> tuple[str, str]:
     )
     m = series_re.match(title)
     if m:
-        base   = m.group(1).strip()
+        base   = _canonicalize_season(m.group(1).strip())
         ep_lbl = m.group(2).strip()
         ep_lbl = re.sub(r'\s*[\-–|:]*\s*\bcomplete(d)?\b', '', ep_lbl, flags=re.IGNORECASE).strip()
         if is_complete and 'complete' not in base.lower():
@@ -964,14 +1005,51 @@ def normalize_url(url: str) -> str:
     return unquote(f"{parsed.scheme}://{parsed.netloc}{parsed.path}").lower()
 
 
+def _season_variants(title: str) -> list[str]:
+    """
+    Given a title that may contain a season token in ANY format, return every
+    plausible spelling of that token so we can match old DB records regardless
+    of which format was used when they were first scraped.
+
+    Example — "My Show Season 4":
+        "My Show Season 4"   (canonical, already in list)
+        "My Show Season 04"
+        "My Show S4"
+        "My Show S04"
+        "My Show SEASON 4"
+        "My Show season 4"
+    """
+    m = _SEASON_RE.search(title)
+    if not m:
+        return [title]
+
+    n      = int(m.group(1))          # the season number, e.g. 4
+    prefix = title[:m.start()]        # everything before the season token
+    suffix = title[m.end():]          # everything after  the season token
+
+    forms = [
+        f"Season {n}", f"Season {n:02d}",
+        f"S{n}",       f"S{n:02d}",
+        f"SEASON {n}", f"season {n}",
+    ]
+    return list(dict.fromkeys(f"{prefix}{f}{suffix}" for f in forms))
+
+
 def find_existing_movie(title: str, max_retries: int = 3):
     from django.db import connection
 
     base_title = re.sub(r'\s*\((complete|completed)\)\s*$', '', title, flags=re.IGNORECASE).strip()
-    variants   = list(dict.fromkeys([
+
+    # Build every combination of (complete suffix) × (season spelling)
+    title_bases = list(dict.fromkeys([
         title, base_title,
         f"{base_title} (Complete)", f"{base_title} (Completed)",
     ]))
+    variants: list[str] = []
+    for t in title_bases:
+        for v in _season_variants(t):
+            if v not in variants:
+                variants.append(v)
 
     for attempt in range(max_retries):
         try:
@@ -1006,14 +1084,26 @@ def assign_db_categories(movie, scraped_cats: list[str], forced_db_cats: list[st
     DB category names match exactly what is in views.py get_sidebar_categories():
       'Nollywood movies', 'Korean drama', 'Hollywood movies', 'Bollywood movies',
       'Anime', 'Chinese drama', 'Thai drama', 'Series', 'Animation'
+
+    IMPORTANT: We use .set() to REPLACE all existing categories, not .add().
+    This prevents stale categories from previous scrapes (e.g. Anime, Nollywood)
+    from accumulating on unrelated movies.
     """
+    if not forced_db_cats:
+        return
+
+    # Resolve the target Category objects
+    target_cats = []
     for name in forced_db_cats:
         cat_obj, created = Category.objects.get_or_create(name=name.strip())
-        movie.categories.add(cat_obj)
+        target_cats.append(cat_obj)
         if created:
             print(f"      🏷  Created new DB category: '{name}'")
-        else:
-            print(f"      🏷  Assigned category: '{name}'")
+
+    # Replace all existing categories with exactly the target set
+    movie.categories.set(target_cats)
+    for cat in target_cats:
+        print(f"      🏷  Assigned category: '{cat.name}'")
 
 
 # ══════════════════════════════════════════════════════════════
