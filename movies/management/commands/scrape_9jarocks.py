@@ -421,28 +421,36 @@ def _detect_hashtags(movie):
     combined = title_lower + ' ' + cat_names
 
     if any(kw in combined for kw in ['korean', 'kdrama', 'k-drama', 'korea']):
-        tg = "#Watch2D #KDrama #KoreanDrama #KoreanSeries #AsianDrama #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #KDramaEnglishSub #WatchFree #Trending"
+        tg =""
+        # tg = "#Watch2D #KDrama #KoreanDrama #KoreanSeries #AsianDrama #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #KDramaEnglishSub #WatchFree #Trending"
         tw = "#Watch2D #KDrama #KoreanDrama #AsianDrama #FreeDownload"
     elif any(kw in combined for kw in ['nigerian', 'nollywood', 'naija', 'nigeria']):
-        tg = "#Watch2D #Nollywood #NigerianMovies #NaijaMovies #AfricanMovies #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #AfricanCinema #WatchFree #Trending"
+        tg = ""
+        # tg = "#Watch2D #Nollywood #NigerianMovies #NaijaMovies #AfricanMovies #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #AfricanCinema #WatchFree #Trending"
         tw = "#Watch2D #Nollywood #NaijaMovies #AfricanMovies #FreeDownload"
     elif any(kw in combined for kw in ['turkish', 'turkey', 'dizi']):
-        tg = "#Watch2D #TurkishSeries #TurkishDrama #Dizi #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #EnglishSubtitles #WatchFree #Trending"
+        tg = ""
+        # tg = "#Watch2D #TurkishSeries #TurkishDrama #Dizi #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #EnglishSubtitles #WatchFree #Trending"
         tw = "#Watch2D #TurkishDrama #Dizi #TurkishSeries #FreeDownload"
     elif any(kw in combined for kw in ['indian', 'bollywood', 'hindi', 'telugu', 'tamil']):
-        tg = "#Watch2D #Bollywood #IndianSeries #HindiSeries #FreeDownload #HDDownload #NowStreaming #MustWatch #IndianCinema #WatchFree #Trending"
+        tg = ""
+        # tg = "#Watch2D #Bollywood #IndianSeries #HindiSeries #FreeDownload #HDDownload #NowStreaming #MustWatch #IndianCinema #WatchFree #Trending"
         tw = "#Watch2D #Bollywood #IndianSeries #HindiSeries #FreeDownload"
     elif any(kw in combined for kw in ['chinese', 'china', 'cdrama']):
-        tg = "#Watch2D #CDrama #ChineseDrama #ChineseSeries #AsianDrama #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #WatchFree #Trending"
+        tg = ""
+        # tg = "#Watch2D #CDrama #ChineseDrama #ChineseSeries #AsianDrama #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #WatchFree #Trending"
         tw = "#Watch2D #CDrama #ChineseDrama #AsianDrama #FreeDownload"
     elif any(kw in combined for kw in ['anime']):
-        tg = "#Watch2D #Anime #AnimeDownload #AnimeSeries #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #WatchFree #Trending"
+        tg = ""
+        # tg = "#Watch2D #Anime #AnimeDownload #AnimeSeries #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #WatchFree #Trending"
         tw = "#Watch2D #Anime #AnimeDownload #FreeDownload"
     elif movie.is_series:
-        tg = "#Watch2D #NewSeries #TVSeries #Series #NowStreaming #FreeDownload #HDDownload #MustWatch #BingeWatch #WatchFree #Trending"
+        tg = ""
+        # tg = "#Watch2D #NewSeries #TVSeries #Series #NowStreaming #FreeDownload #HDDownload #MustWatch #BingeWatch #WatchFree #Trending"
         tw = "#Watch2D #TVSeries #NowStreaming #FreeDownload #BingeWatch"
     else:
-        tg = "#Watch2D #NewMovie #Hollywood #FullMovie #FreeDownload #HDMovie #NowStreaming #MustWatch #MovieLovers #WatchFree #Trending"
+        tg = ""
+        # tg = "#Watch2D #NewMovie #Hollywood #FullMovie #FreeDownload #HDMovie #NowStreaming #MustWatch #MovieLovers #WatchFree #Trending"
         tw = "#Watch2D #NewMovie #Hollywood #FreeDownload #MustWatch"
     return tg, tw, tg
 
@@ -482,7 +490,7 @@ def _post_movie_to_telegram(movie, is_new: bool):
 
             lines += [
                 "",
-                f"🔗 <a href='{url}'>▶️ CLICK HERE TO WATCH / DOWNLOAD</a>",
+                f"🔗 <a href='{url}'>▶️ Download FREE Now</a>",
                 "",
                 tg_tags,
                 TELEGRAM_FOOTER,
@@ -502,7 +510,7 @@ def _post_movie_to_telegram(movie, is_new: bool):
                 f"📺 <b>{movie.title}</b>",
                 f"🎬 <b>Episode:</b> {episode_label}",
                 "",
-                f"🔗 <a href='{url}'>▶️ Watch FREE Now</a>",
+                f"🔗 <a href='{url}'>▶️ Download FREE Now</a>",
                 "",
                 tg_tags,
                 TELEGRAM_FOOTER,

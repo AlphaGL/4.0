@@ -45,6 +45,12 @@ class Movie(models.Model):
     description = models.TextField(blank=True)
     video_url   = models.URLField("Video/Embed URL", max_length=500)
     download_url = models.URLField("Download URL", blank=True, null=True, max_length=500)
+    stream_url   = models.URLField(
+        "Stream/Embed URL", blank=True, null=True, max_length=600,
+        help_text="Embeddable streaming player URL (e.g. moviebox / streamimdb). "
+                  "Separate from download — powers the stream gate. A movie can "
+                  "have downloads AND streaming at the same time."
+    )
     image_url    = models.URLField("Cover Image URL", blank=True, null=True, max_length=500)
     categories   = models.ManyToManyField(Category, blank=True, related_name='movies')
     added_by     = models.ForeignKey(

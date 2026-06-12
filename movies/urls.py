@@ -8,7 +8,8 @@ from .views import (
     delete_comment, resolve_download_link, check_streamable, stream_proxy,
     old_movie_redirect,       # ← handles legacy /movie/<pk>/ URLs (301 → slug URL)
     old_category_redirect, report_broken_link,    # ← handles legacy /category/<pk>/ URLs (301 → slug URL)
-    DownloadGateView,         # ← NEW: monetised download gate
+    DownloadGateView,         # ← monetised download gate
+    StreamGateView,           # ← NEW: streaming player gate (moviebox / streamimdb)
 )
 
 app_name = 'movies'
@@ -36,6 +37,10 @@ urlpatterns = [
     # then counts down before handing the user the real download link.
     # ?link=<DownloadLink.pk>  or  ?url=<percent-encoded-url>
     path('movie/<int:pk>/download/', DownloadGateView.as_view(), name='download_gate'),
+
+    # ── NEW: Stream gate — dedicated player page for stream_url titles ───────
+    # /movie/<pk>/stream/  — must also sit before the canonical detail URL.
+    path('movie/<int:pk>/stream/', StreamGateView.as_view(), name='stream_gate'),
 
     # ── Canonical SEO URL:  /movie/<pk>/<slug>/  ─────────────────────────────
     path('movie/<int:pk>/<slug:slug>/', MovieDetailView.as_view(), name='movie_detail'),

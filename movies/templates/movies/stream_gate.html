@@ -1,0 +1,373 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block title %}Watch {{ movie.title }} Online Free{% if seo_type %} — {{ seo_type }}{% endif %} | Watch2D{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
+{% block canonical_block %}{% endblock %}
+
+{% block head_extra %}
+<!-- Gate-specific popunder (same zones as the download gate) -->
+<script>(function(s){s.dataset.zone='10895418',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+<script src="https://5gvci.com/act/files/tag.min.js?z=10895420" data-cfasync="false" async></script>
+
+<!-- hls.js for the ad-free own-player (falls back to the iframe if unavailable) -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+
+<style>
+  .card-top-bar {
+    height: 3px;
+    background: linear-gradient(90deg, #0ea5e9, #ec4899, #8b5cf6, #0ea5e9);
+    background-size: 200% auto;
+    animation: grad-move 3s linear infinite;
+  }
+  @keyframes grad-move { to { background-position: 200% center; } }
+
+  /* Player */
+  .sg-player-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+  .sg-player-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .sg-poster {
+    position: absolute; inset: 0; cursor: pointer;
+    background-size: cover; background-position: center;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sg-poster::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,.45); }
+  .sg-play-btn {
+    position: relative; z-index: 1;
+    width: 70px; height: 70px; border-radius: 50%;
+    background: rgba(229,9,20,.92); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; padding-left: 5px;
+    box-shadow: 0 6px 24px rgba(229,9,20,.5);
+    transition: transform .18s, background .18s;
+  }
+  .sg-poster:hover .sg-play-btn { transform: scale(1.08); background: #e50914; }
+  .sg-play-label {
+    position: absolute; z-index: 1; bottom: 18px; left: 0; right: 0;
+    text-align: center; color: #fff; font-size: .72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em; text-shadow: 0 1px 4px rgba(0,0,0,.8);
+  }
+
+  /* Episode selector (series) */
+  .sg-ep-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:6px; }
+  .sg-ep {
+    padding:7px 4px; border-radius:8px; font-size:.72rem; font-weight:700; cursor:pointer;
+    background:#1f2937; color:#cbd5e1; border:1px solid #374151; transition:all .15s;
+  }
+  .dark .sg-ep { background:#111827; }
+  .sg-ep:hover { background:#374151; color:#fff; }
+  .sg-ep-active { background:linear-gradient(90deg,#22c55e,#10b981) !important; color:#fff !important; border-color:transparent !important; }
+
+  /* Related card — mirrors download_gate */
+  .rel-gc { cursor:pointer; text-decoration:none; display:block; }
+  .rel-gc-img { position:relative; aspect-ratio:2/3; border-radius:4px; overflow:hidden; background:#e5e7eb; transition:transform .22s ease; }
+  .dark .rel-gc-img { background:#242424; }
+  .rel-gc:hover .rel-gc-img { transform:scale(1.05); }
+  .rel-gc-img img { width:100%; height:100%; object-fit:cover; display:block; }
+  .rel-gc-ttl {
+    font-size:clamp(.56rem,.8vw,.72rem); color:#4b5563; margin-top:5px; line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; padding:0 1px;
+  }
+  .dark .rel-gc-ttl { color:#aaa; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# Data island — the embed URL is loaded into the iframe on user click #}
+<div id="sg" data-stream="{{ stream_url }}" data-title="{{ movie.title }}" class="hidden"></div>
+
+<div class="container mx-auto px-4 lg:px-6 py-3 max-w-3xl">
+
+  {# ── Breadcrumb ── #}
+  <div class="mb-3">
+    <a href="{{ movie.get_absolute_url }}"
+       class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400
+              hover:text-primary-600 dark:hover:text-primary-400
+              bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm
+              border border-gray-200/60 dark:border-gray-700/60
+              px-3 py-1.5 rounded-2xl shadow-sm transition-all duration-300
+              hover:border-primary-300 dark:hover:border-primary-700 hover:-translate-x-0.5">
+      <i class="fas fa-arrow-left text-xs"></i>
+      Back to
+      <span class="font-medium text-gray-700 dark:text-gray-300 truncate max-w-[160px]">{{ movie.title }}</span>
+    </a>
+  </div>
+
+  {# ── Movie identity strip ── #}
+  <div class="flex items-center gap-4 p-3 mb-3
+              bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm
+              border border-gray-200/60 dark:border-gray-700/60
+              rounded-3xl shadow-lg">
+    {% if movie.image_url %}
+      <img src="{{ movie.image_url }}" alt="{{ movie.title }}"
+           class="w-14 h-[84px] object-cover rounded-2xl flex-shrink-0 shadow-md ring-2 ring-primary-500/20">
+    {% else %}
+      <div class="w-14 h-[84px] rounded-2xl flex-shrink-0 bg-gradient-to-br from-primary-100 to-accent-100 dark:from-primary-900/40 dark:to-accent-900/40 flex items-center justify-center shadow-md">
+        <i class="fas fa-film text-primary-400 dark:text-primary-500 text-xl"></i>
+      </div>
+    {% endif %}
+    <div class="min-w-0 flex-1">
+      <p class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">
+        Now Streaming
+      </p>
+      <h1 class="font-bold text-gray-900 dark:text-gray-100 text-base leading-snug line-clamp-2">
+        {{ movie.title }}
+      </h1>
+      {% if seo_type %}
+        <p class="mt-1.5 text-xs text-gray-400 dark:text-gray-500">{{ seo_type }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Player card ── #}
+  <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm
+              border border-gray-200/60 dark:border-gray-700/60
+              rounded-3xl shadow-xl overflow-hidden mb-4">
+    <div class="card-top-bar"></div>
+
+    {# Header #}
+    <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-gray-700/50">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-r from-primary-500 to-accent-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary-500/25">
+        <i class="fas fa-play text-white text-sm"></i>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-900 dark:text-gray-100 leading-tight">Stream Online — Free HD</p>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Watch2D · No download needed</p>
+      </div>
+      <div class="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full
+                  bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/40">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+        <span class="text-xs font-semibold text-green-600 dark:text-green-400">Live</span>
+      </div>
+    </div>
+
+    {# Player (click poster to load the embed) #}
+    <div class="sg-player-wrap" id="sg-player">
+      <div class="sg-poster" id="sg-poster"
+           style="background-image:url('{{ movie.image_url }}');">
+        <div class="sg-play-btn"><i class="fas fa-play"></i></div>
+        <div class="sg-play-label">Tap to play</div>
+      </div>
+    </div>
+
+    {# Episode selector — shown for series once episodes load #}
+    <div id="sg-episodes" style="display:none;" class="px-4 pt-4">
+      <p class="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Episodes</p>
+      <div id="sg-ep-list" class="sg-ep-grid"></div>
+    </div>
+
+    {# Hint #}
+    <p class="text-center text-[11px] text-gray-400 dark:text-gray-500 flex items-center justify-center gap-1.5 px-4 py-3">
+      <i class="fas fa-info-circle flex-shrink-0" style="font-size:10px;"></i>
+      Tap to play. If the clean player can't load, it falls back automatically.
+    </p>
+
+    {# Footer #}
+    <div class="px-5 py-3.5 border-t border-gray-100 dark:border-gray-700/50 flex justify-center">
+      <a href="https://t.me/+wUlsP5Yv8h9iZDJk" target="_blank" rel="nofollow"
+         class="inline-flex items-center gap-2 text-xs font-medium text-gray-400 dark:text-gray-500
+                hover:text-primary-600 dark:hover:text-primary-400
+                bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-700/50
+                px-4 py-2 rounded-2xl transition-all duration-300
+                hover:border-primary-300 dark:hover:border-primary-700">
+        <i class="fab fa-telegram text-sm"></i>
+        More movies on our Telegram
+      </a>
+    </div>
+  </div>
+
+  {# ── Related movies ── #}
+  {% if related_movies %}
+  <div class="pt-2">
+    <div class="flex items-center gap-2 mb-3">
+      <i class="fas fa-fire text-sm" style="color:#f59e0b;"></i>
+      <span class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">You may also like</span>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(6px,1.2vw,10px);">
+      {% for rel in related_movies|slice:":8" %}
+        <a href="{{ rel.get_absolute_url }}" class="rel-gc">
+          <div class="rel-gc-img">
+            {% if rel.image_url %}
+              <img src="{{ rel.image_url }}" alt="{{ rel.title }}" loading="lazy">
+            {% endif %}
+          </div>
+          <p class="rel-gc-ttl">{{ rel.title }}</p>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/*
+ * Ad-free own-player.
+ * The video stream lives behind moviebox's API (host h5-api.aoneroom.com), whose
+ * CORS allows calls from this origin. A visitor's (residential) browser can
+ * resolve the real HLS URL — our server can't (it's IP-gated). So we resolve
+ * client-side and play in hls.js, with NO netfilm page = NO ads. If resolution
+ * or playback fails for any reason, we fall back to the netfilm iframe (today's
+ * behaviour). The play response is logged to the console for diagnosis.
+ */
+(function () {
+  'use strict';
+  var sg     = document.getElementById('sg');
+  var EMBED  = sg ? sg.dataset.stream : '';
+  var TITLE  = sg ? (sg.dataset.title || 'Player') : 'Player';
+  var wrap   = document.getElementById('sg-player');
+  var poster = document.getElementById('sg-poster');
+  var epBox  = document.getElementById('sg-episodes');
+  var epList = document.getElementById('sg-ep-list');
+  if (!EMBED || !wrap || !poster) return;
+
+  var API = 'https://h5-api.aoneroom.com/wefeed-h5api-bff';
+
+  function tz(){ try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch(e){ return 'Africa/Lagos'; } }
+  function headers(xsrc){ return { 'Accept':'application/json', 'X-Client-Info': JSON.stringify({timezone: tz()}), 'X-Source': xsrc }; }
+
+  // Pull subjectId / detailPath / type out of the stored netfilm embed URL.
+  function parseEmbed(u){
+    try {
+      var url = new URL(u);
+      var parts = url.pathname.split('/').filter(Boolean);
+      var type  = url.searchParams.get('type') || '/movie/detail';
+      return { id: url.searchParams.get('id'), detailPath: parts[parts.length-1] || '', isTv: type.indexOf('/tv/') === 0 };
+    } catch(e){ return null; }
+  }
+  var INFO = parseEmbed(EMBED);
+
+  function loading(msg){
+    wrap.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;gap:8px;">'
+      + '<i class="fas fa-spinner fa-spin"></i> ' + (msg || 'Loading…') + '</div>';
+  }
+
+  // play responses vary in shape — accept strings, {url|playUrl|src}, {resolutions:[{url}]}
+  function pickUrl(d){
+    var lists = [d.hls, d.streams, d.dash];
+    for (var i=0;i<lists.length;i++){
+      var L = lists[i];
+      if (!Array.isArray(L)) continue;
+      for (var k=L.length-1;k>=0;k--){
+        var it = L[k];
+        if (typeof it === 'string') return it;
+        if (it && (it.url || it.playUrl || it.src)) return it.url || it.playUrl || it.src;
+        if (it && Array.isArray(it.resolutions) && it.resolutions.length){
+          var r = it.resolutions[it.resolutions.length-1];
+          if (r && (r.url || r.playUrl)) return r.url || r.playUrl;
+        }
+      }
+    }
+    return null;
+  }
+
+  function resolve(se, ep){
+    var srcs = ['h5', 'web', ''];
+    var i = 0;
+    function tryNext(){
+      if (i >= srcs.length) return Promise.resolve(null);
+      var xsrc = srcs[i++];
+      var u = API + '/subject/play?subjectId=' + INFO.id + '&se=' + se + '&ep=' + ep
+            + '&detailPath=' + encodeURIComponent(INFO.detailPath);
+      return fetch(u, { headers: headers(xsrc) })
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          console.log('[stream] play se=' + se + ' ep=' + ep + ' X-Source=' + JSON.stringify(xsrc), j);
+          var d = j && j.data;
+          if (d && d.hasResource){ var url = pickUrl(d); if (url){ console.log('[stream] resolved:', url); return url; } }
+          return tryNext();
+        })
+        .catch(function(e){ console.warn('[stream] play error', e); return tryNext(); });
+    }
+    return tryNext();
+  }
+
+  var hlsInst = null;
+  function destroyHls(){ if (hlsInst){ try { hlsInst.destroy(); } catch(e){} hlsInst = null; } }
+
+  function playUrl(url){
+    destroyHls();
+    var v = document.createElement('video');
+    v.controls = true; v.autoplay = true; v.playsInline = true;
+    v.style.cssText = 'width:100%;height:100%;background:#000;';
+    wrap.innerHTML = ''; wrap.appendChild(v);
+    var isHls = /m3u8/i.test(url);
+    if (isHls && window.Hls && window.Hls.isSupported()){
+      hlsInst = new Hls({ maxBufferLength: 30 });
+      hlsInst.loadSource(url);
+      hlsInst.attachMedia(v);
+      hlsInst.on(window.Hls.Events.ERROR, function(_e, data){
+        if (data && data.fatal){ console.warn('[stream] hls fatal → fallback', data); destroyHls(); loadIframe(); }
+      });
+    } else if (v.canPlayType('application/vnd.apple.mpegurl') || !isHls){
+      v.src = url;
+      v.addEventListener('error', loadIframe);
+    } else {
+      loadIframe();
+    }
+  }
+
+  function loadIframe(){
+    destroyHls();
+    var f = document.createElement('iframe');
+    f.src = EMBED; f.title = TITLE + ' player';
+    f.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture');
+    f.setAttribute('allowfullscreen', 'true');
+    f.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+    // No allow-popups / allow-top-navigation → blocks popunder + redirect ads.
+    f.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-forms allow-pointer-lock');
+    f.style.cssText = 'width:100%;height:100%;border:0;';
+    wrap.innerHTML = ''; wrap.appendChild(f);
+  }
+
+  function playEpisode(se, ep, btn){
+    loading('Loading episode…');
+    if (btn && epList){ Array.prototype.forEach.call(epList.children, function(c){ c.classList.remove('sg-ep-active'); }); btn.classList.add('sg-ep-active'); }
+    resolve(se, ep).then(function(url){ if (url) playUrl(url); else loadIframe(); });
+  }
+
+  function buildEpisodes(){
+    if (!INFO || !INFO.isTv || !epBox || !epList) return;
+    fetch(API + '/detail?subjectId=' + INFO.id, { headers: headers('h5') })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        var d = j && j.data;
+        var seasons = (d && d.resource && d.resource.seasons) || [];
+        if (!seasons.length) return;
+        var multi = seasons.length > 1;
+        epList.innerHTML = '';
+        seasons.forEach(function(ss){
+          var se = ss.se || 1, maxEp = ss.maxEp || 1;
+          for (var ep = 1; ep <= maxEp; ep++){
+            (function(se, ep){
+              var b = document.createElement('button');
+              b.className = 'sg-ep';
+              b.textContent = (multi ? ('S' + se + ' ') : '') + 'E' + ep;
+              b.addEventListener('click', function(){ playEpisode(se, ep, b); });
+              epList.appendChild(b);
+            })(se, ep);
+          }
+        });
+        epBox.style.display = '';
+        if (epList.firstChild) epList.firstChild.classList.add('sg-ep-active');
+      })
+      .catch(function(e){ console.warn('[stream] episodes load failed', e); });
+  }
+
+  poster.addEventListener('click', function start(){
+    if (!INFO || !INFO.id){ loadIframe(); return; }
+    loading();
+    if (INFO.isTv){
+      buildEpisodes();
+      playEpisode(1, 1, null);                 // start at S1E1
+    } else {
+      resolve(0, 1)
+        .then(function(url){ return url || resolve(1, 1); })   // movies: try season 0 then 1
+        .then(function(url){ if (url) playUrl(url); else loadIframe(); });
+    }
+  });
+})();
+</script>
+{% endblock %}

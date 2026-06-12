@@ -1524,3 +1524,91 @@ class DownloadGateView(DetailView):
             'disable_global_popunder': True,
         })
         return context
+
+
+class StreamGateView(DetailView):
+    """
+    Dedicated streaming page for a movie that has a `stream_url`
+    (set by the moviebox / streamimdb scrapers — separate from downloads).
+
+    URL:  /movie/<pk>/stream/
+
+    Renders stream_gate.html, which embeds the streaming player in an iframe.
+    The actual stream is fetched client-side by the embedded player in the
+    viewer's browser; we only hand it the embed URL.
+    """
+
+    model = Movie
+    template_name = 'movies/stream_gate.html'
+
+    def get_queryset(self):
+        return Movie.objects.prefetch_related('categories')
+
+    def get_object(self, queryset=None):
+        if queryset is None:
+            queryset = self.get_queryset()
+        return get_object_or_404(queryset, pk=self.kwargs['pk'])
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        # No stream → bounce back to the detail page.
+        if not self.object.stream_url:
+            return redirect(self.object.get_absolute_url())
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        movie   = context['object']
+
+        # ── SEO type (same logic as the download gate) ────────────────────────
+        movie_categories = list(movie.categories.all())
+        category_names   = [c.name.lower() for c in movie_categories]
+        country          = (movie.vi_country or '').lower()
+
+        if 'chinese drama' in category_names or 'chinese' in country:
+            seo_type = 'Chinese Drama'
+        elif 'korean drama' in category_names or 'k drama' in category_names or 'korean' in country:
+            seo_type = 'Korean Drama'
+        elif 'thai drama' in category_names or 'thai' in country:
+            seo_type = 'Thai Drama'
+        elif 'anime' in category_names:
+            seo_type = 'Anime Series'
+        elif 'tv series' in category_names or 'series' in category_names:
+            seo_type = 'TV Series'
+        elif 'bollywood' in category_names or 'bollywood movies' in category_names:
+            seo_type = 'Bollywood Movie'
+        elif 'nollywood movie' in category_names or 'nollywood movies' in category_names or 'nollywood' in category_names:
+            seo_type = 'Nollywood Movie'
+        elif 'hollywood movie' in category_names or 'hollywood movies' in category_names or 'hollywood' in category_names:
+            seo_type = 'Hollywood Movie'
+        else:
+            seo_type = 'Movie'
+
+        # ── Related movies ────────────────────────────────────────────────────
+        if movie_categories:
+            related_movies = list(
+                Movie.objects
+                .only('id', 'title', 'slug', 'image_url')
+                .filter(categories__in=movie_categories)
+                .exclude(pk=movie.pk)
+                .distinct()
+                .order_by('-created_at')[:8]
+            )
+        else:
+            related_movies = list(
+                Movie.objects
+                .only('id', 'title', 'slug', 'image_url')
+                .exclude(pk=movie.pk)
+                .order_by('-created_at')[:8]
+            )
+
+        context.update({
+            'movie':          movie,
+            'stream_url':     movie.stream_url,
+            'seo_type':       seo_type,
+            'related_movies': related_movies,
+            'categories':     get_sidebar_categories(),
+            'disable_global_popunder': True,
+        })
+        return context
