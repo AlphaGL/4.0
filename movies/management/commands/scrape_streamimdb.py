@@ -366,7 +366,32 @@ def infer_db_cats(parsed: dict) -> list[str]:
 
 
 def clean_title(raw: str) -> str:
-    return re.sub(r'\s+', ' ', raw or '').strip()
+    """Plain show/movie name: collapse whitespace, drop any [..] tags."""
+    t = re.sub(r'\s+', ' ', raw or '').strip()
+    t = re.sub(r'\s*\[[^\]]*\]\s*', ' ', t)
+    return re.sub(r'\s+', ' ', t).strip()
+
+
+# Reduce any stored title to its bare SHOW name, so streamimdb's single
+# whole-show entry can find every per-season record you already have:
+#   "From Season 1 (Complete)"           -> "from"
+#   "From (Episode 3 Added) | TV Series" -> "from"
+#   "From (2022)"                        -> "from"
+_SHOW_KEY_SUBS = [
+    re.compile(r'\((?:19|20)\d\d\)'),                        # (year)
+    re.compile(r'\(?\s*(?:complete|completed)\s*\)?', re.I),
+    re.compile(r'\(?\s*episode[^)]*\)?', re.I),              # (Episode 3 Added)
+    re.compile(r'[\-–|:]?\s*\bTV\s*Series\b.*$', re.I),
+    re.compile(r'\bS(?:eason)?\s*0*\d{1,2}\b.*$', re.I),     # Season N / S01 onward
+]
+
+
+def show_key(title: str) -> str:
+    t = title or ''
+    for rx in _SHOW_KEY_SUBS:
+        t = rx.sub(' ', t)
+    t = re.sub(r'[^a-z0-9]+', ' ', t.lower())
+    return re.sub(r'\s+', ' ', t).strip()
 
 
 # ══════════════════════════════════════════════════════════════
@@ -376,20 +401,27 @@ def clean_title(raw: str) -> str:
 def save_item(parsed: dict, embed_url: str, db_cats: list[str],
               no_social: bool = False, update_only: bool = False) -> tuple[Movie | None, str]:
     """
-    Add streaming to a movie from a parsed streamimdb title.
+    Add streaming to your catalog, honoring how you already store titles:
 
-    • EXISTING movie (matched by title): ENRICH — set stream_url + backfill only
-      empty metadata. Never touches download links/url, categories, title, or
-      is_series (so it coexists with your download scrapers).
-    • NO match: create a stream-only Movie (unless update_only=True → skip).
+    • SERIES — your shows are stored PER-SEASON ("From Season 1", "From Season 2"),
+      while streamimdb has ONE whole-show player. So we attach the stream to
+      EVERY existing season-record of that show. Only if you have none do we
+      create a single whole-show record.
+    • MOVIE — matched as "Name (Year)" (falling back to a bare-name match with a
+      compatible year); enriched, or created as "Name (Year)".
+
+    Never touches download links/url, categories, title, or is_series — so it
+    coexists with your 9jarocks / nkiri download scrapers.
 
     Returns (movie | None, status):
       'enriched' | 'created' | 'unchanged' | 'skipped-no-match'.
     """
-    title = clean_title(parsed['title_raw'])
+    is_series = bool(parsed.get('is_series'))
+    name      = clean_title(parsed['title_raw'])
+    year      = parsed.get('vi_year', '')
 
     vi_fields = dict(
-        vi_year     = parsed.get('vi_year', '')[:10],
+        vi_year     = year[:10],
         vi_country  = parsed.get('vi_country', '')[:120],
         vi_language = parsed.get('vi_language', '')[:120],
         vi_subtitle = parsed.get('vi_subtitle', '')[:60],
@@ -401,64 +433,77 @@ def save_item(parsed: dict, embed_url: str, db_cats: list[str],
         vi_filesize = parsed.get('vi_filesize', '')[:30],
     )
 
+    def _enrich(mv):
+        changed = False
+        if mv.stream_url != embed_url:
+            mv.stream_url = embed_url[:600]; changed = True
+        if not mv.image_url and parsed['image_url']:
+            mv.image_url = parsed['image_url'][:500]; changed = True
+        if not mv.description and parsed['description']:
+            mv.description = parsed['description']; changed = True
+        for f, v in vi_fields.items():
+            if v and not getattr(mv, f, ''):
+                setattr(mv, f, v); changed = True
+        if changed:
+            mv.save()
+        return changed
+
+    def _create(title):
+        mv = None
+        for cand in [title[:200], f"{title} [{parsed['tmdb_id']}]"]:
+            try:
+                mv = Movie.objects.create(
+                    title       = cand[:200],
+                    description = parsed['description'],
+                    video_url   = '',                       # not a trailer
+                    stream_url  = embed_url[:600],
+                    image_url   = (parsed['image_url'] or '')[:500],
+                    is_series   = is_series,
+                    scraped     = True,
+                    **vi_fields,
+                )
+                break
+            except IntegrityError:
+                continue
+        if not mv:
+            raise IntegrityError(f"Could not create a unique title for '{title}'")
+        assign_db_categories(mv, scraped_cats=[], forced_db_cats=db_cats)
+        print(f"      ✅ Created (stream-only): {mv.title}")
+        if not no_social:
+            _post_to_all_platforms(mv, is_new=True)
+        return mv
+
+    # ── SERIES: enrich EVERY existing season-record of the show ────────────
+    if is_series:
+        key     = show_key(name)
+        # Narrow with a prefix query, then exact show-key match (handles
+        # "Season 1 (Complete)", "(Episode N Added)", "| TV Series", etc.)
+        matches = [mv for mv in Movie.objects.filter(is_series=True,
+                                                     title__istartswith=name[:30])
+                   if show_key(mv.title) == key]
+        if matches:
+            n = 0
+            for mv in matches:
+                if _enrich(mv):
+                    n += 1
+                    print(f"      🔗 stream added → {mv.title}")
+            return matches[0], ('enriched' if n else 'unchanged')
+        if update_only:
+            return None, 'skipped-no-match'
+        return _create(name), 'created'
+
+    # ── MOVIE: a single "Name (Year)" record ──────────────────────────────
+    title = f"{name} ({year})" if year else name
     movie = find_existing_movie(title)
-
-    # ── ENRICH an existing movie (preserve its download data + categories) ──
+    if not movie:
+        cand = find_existing_movie(name)         # DB may store it without a year
+        if cand and (not year or not cand.vi_year or cand.vi_year == year):
+            movie = cand
     if movie:
-        updated = False
-        if movie.stream_url != embed_url:
-            movie.stream_url = embed_url[:600]
-            updated = True
-        if not movie.image_url and parsed['image_url']:
-            movie.image_url = parsed['image_url'][:500]
-            updated = True
-        if not movie.description and parsed['description']:
-            movie.description = parsed['description']
-            updated = True
-        for field, value in vi_fields.items():
-            if value and not getattr(movie, field, ''):
-                setattr(movie, field, value)
-                updated = True
-        if updated:
-            movie.save()
-        return movie, ('enriched' if updated else 'unchanged')
-
-    # ── No match: create a stream-only title (unless update_only) ──────────
+        return movie, ('enriched' if _enrich(movie) else 'unchanged')
     if update_only:
         return None, 'skipped-no-match'
-
-    create_title = title[:200]
-    # Movie.title is unique — a same-named title from another source would
-    # collide. Disambiguate with the year, then the tmdb id as last resort.
-    for candidate in [
-        create_title,
-        f"{create_title} ({parsed.get('vi_year')})" if parsed.get('vi_year') else None,
-        f"{create_title} [{parsed['tmdb_id']}]",
-    ]:
-        if not candidate:
-            continue
-        try:
-            movie = Movie.objects.create(
-                title       = candidate[:200],
-                description = parsed['description'],
-                video_url   = '',                       # not a trailer
-                stream_url  = embed_url[:600],
-                image_url   = (parsed['image_url'] or '')[:500],
-                is_series   = parsed['is_series'],
-                scraped     = True,
-                **vi_fields,
-            )
-            break
-        except IntegrityError:
-            continue
-    if not movie:
-        raise IntegrityError(f"Could not create a unique title for '{title}'")
-
-    assign_db_categories(movie, scraped_cats=[], forced_db_cats=db_cats)
-    print(f"      ✅ Created (stream-only): {movie.title}")
-    if not no_social:
-        _post_to_all_platforms(movie, is_new=True)
-    return movie, 'created'
+    return _create(title), 'created'
 
 
 def resolve_category_arg(cat_arg: str) -> list[str] | None:

@@ -73,6 +73,8 @@ from .scrape_9jarocks import (
     assign_db_categories,
     # _post_to_all_platforms,
 )
+# Shared show-name normalizer (per-season → whole-show matching).
+from .scrape_streamimdb import show_key
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -400,42 +402,9 @@ def clean_name(raw: str) -> str:
     return re.sub(r'\s+', ' ', t).strip()
 
 
-def build_title(parsed: dict) -> str:
-    """
-    Build the stored title in the SAME convention as the 9jarocks/nkiri scrapers
-    (confirmed against the live DB):
-      • Movie  -> "Name (Year)"      e.g. "Mortal Kombat (2021)"
-      • Series -> "Name Season N"    e.g. "Teach You A Lesson Season 1"
-    """
-    name = clean_name(parsed['title_raw'])
-    if parsed.get('is_series'):
-        return f"{name} Season {parsed.get('season_num') or 1}"
-    year = parsed.get('vi_year', '')
-    return f"{name} ({year})" if year else name
-
-
 # Back-compat alias (other modules import clean_title).
 def clean_title(raw: str) -> str:
     return clean_name(raw)
-
-
-def match_existing(parsed: dict):
-    """
-    Find an existing DB movie using the same title convention, trying a couple of
-    forms so streaming enriches the right download record:
-      • the convention title  ("Name (Year)" / "Name Season N")
-      • the bare name         (in case the stored title omits year/season)
-    find_existing_movie already covers season-spelling + "(Complete)" variants.
-    """
-    candidates = [build_title(parsed), clean_name(parsed['title_raw'])]
-    seen = set()
-    for cand in candidates:
-        if cand and cand not in seen:
-            seen.add(cand)
-            movie = find_existing_movie(cand)
-            if movie:
-                return movie
-    return None
 
 
 def resolve_category_arg(cat_arg: str) -> list[str] | None:
@@ -454,22 +423,25 @@ def resolve_category_arg(cat_arg: str) -> list[str] | None:
 def save_item(parsed: dict, stream_url: str, db_cats: list[str],
               no_social: bool = False, update_only: bool = False) -> tuple[Movie | None, str]:
     """
-    Add streaming to a movie.
+    Add streaming to your catalog, honoring per-season storage (same behaviour as
+    the streamimdb scraper):
 
-    • EXISTING movie (matched by title): ENRICH it — set stream_url and backfill
-      only empty metadata fields. Never touches its download links, download_url,
-      categories, title, or is_series. This is the "scrape downloads first, then
-      add streaming to the same movie" flow.
-    • NO match: create a new stream-only Movie (unless update_only=True, in which
-      case skip — we only enrich existing download titles).
+    • SERIES — your shows are stored per-season ("Teach You a Lesson Season 1",
+      "...Season 2"); moviebox has ONE whole-show player. So we attach the stream
+      to EVERY existing season-record of the show. Create one whole-show record
+      only if you have none.
+    • MOVIE  — matched as "Name (Year)" (bare-name fallback with a compatible
+      year); enriched or created.
 
-    Returns (movie | None, status) where status is one of:
-      'enriched' | 'created' | 'unchanged' | 'skipped-no-match'.
+    Never touches download links/url, categories, title, or is_series.
+    Returns (movie | None, status): 'enriched' | 'created' | 'unchanged' | 'skipped-no-match'.
     """
-    title = build_title(parsed)
+    is_series = bool(parsed.get('is_series'))
+    name      = clean_name(parsed['title_raw'])
+    year      = parsed.get('vi_year', '')
 
     vi_fields = dict(
-        vi_year     = parsed.get('vi_year', '')[:10],
+        vi_year     = year[:10],
         vi_country  = parsed.get('vi_country', '')[:120],
         vi_language = parsed.get('vi_language', '')[:120],
         vi_subtitle = parsed.get('vi_subtitle', '')[:60],
@@ -481,63 +453,74 @@ def save_item(parsed: dict, stream_url: str, db_cats: list[str],
         vi_filesize = parsed.get('vi_filesize', '')[:30],
     )
 
-    movie = match_existing(parsed)
+    def _enrich(mv):
+        changed = False
+        if mv.stream_url != stream_url:
+            mv.stream_url = stream_url[:600]; changed = True
+        if not mv.image_url and parsed['image_url']:
+            mv.image_url = parsed['image_url'][:500]; changed = True
+        if not mv.description and parsed['description']:
+            mv.description = parsed['description']; changed = True
+        for f, v in vi_fields.items():
+            if v and not getattr(mv, f, ''):
+                setattr(mv, f, v); changed = True
+        if changed:
+            mv.save()
+        return changed
 
-    # ── ENRICH an existing (download) movie ────────────────────────────────
+    def _create(title):
+        mv = None
+        for cand in [title[:200], f"{title} [{parsed['subject_id']}]"]:
+            try:
+                mv = Movie.objects.create(
+                    title       = cand[:200],
+                    description = parsed['description'],
+                    video_url   = '',
+                    stream_url  = stream_url[:600],
+                    image_url   = (parsed['image_url'] or '')[:500],
+                    is_series   = is_series,
+                    scraped     = True,
+                    **vi_fields,
+                )
+                break
+            except IntegrityError:
+                continue
+        if not mv:
+            raise IntegrityError(f"Could not create a unique title for '{title}'")
+        assign_db_categories(mv, scraped_cats=[], forced_db_cats=db_cats)
+        print(f"      ✅ Created (stream-only): {mv.title}")
+        # (social posting intentionally disabled for moviebox — see import block)
+        return mv
+
+    # ── SERIES: enrich EVERY existing season-record of the show ────────────
+    if is_series:
+        key     = show_key(name)
+        matches = [mv for mv in Movie.objects.filter(is_series=True,
+                                                     title__istartswith=name[:30])
+                   if show_key(mv.title) == key]
+        if matches:
+            n = 0
+            for mv in matches:
+                if _enrich(mv):
+                    n += 1
+                    print(f"      🔗 stream added → {mv.title}")
+            return matches[0], ('enriched' if n else 'unchanged')
+        if update_only:
+            return None, 'skipped-no-match'
+        return _create(name), 'created'
+
+    # ── MOVIE: a single "Name (Year)" record ──────────────────────────────
+    title = f"{name} ({year})" if year else name
+    movie = find_existing_movie(title)
+    if not movie:
+        cand = find_existing_movie(name)
+        if cand and (not year or not cand.vi_year or cand.vi_year == year):
+            movie = cand
     if movie:
-        updated = False
-        if movie.stream_url != stream_url:
-            movie.stream_url = stream_url[:600]
-            updated = True
-        # Backfill ONLY empty metadata — never overwrite the download scraper's
-        # data, categories, title, is_series, or download links.
-        if not movie.image_url and parsed['image_url']:
-            movie.image_url = parsed['image_url'][:500]
-            updated = True
-        if not movie.description and parsed['description']:
-            movie.description = parsed['description']
-            updated = True
-        for field, value in vi_fields.items():
-            if value and not getattr(movie, field, ''):
-                setattr(movie, field, value)
-                updated = True
-        if updated:
-            movie.save()
-        return movie, ('enriched' if updated else 'unchanged')
-
-    # ── No match: create a stream-only title (unless update_only) ──────────
+        return movie, ('enriched' if _enrich(movie) else 'unchanged')
     if update_only:
         return None, 'skipped-no-match'
-
-    for candidate in [
-        title[:200],
-        f"{title} [{parsed['subject_id']}]",   # last-resort uniqueness
-    ]:
-        if not candidate:
-            continue
-        try:
-            movie = Movie.objects.create(
-                title       = candidate[:200],
-                description = parsed['description'],
-                video_url   = '',                       # not a trailer
-                stream_url  = stream_url[:600],
-                image_url   = (parsed['image_url'] or '')[:500],
-                is_series   = parsed['is_series'],
-                scraped     = True,
-                **vi_fields,
-            )
-            break
-        except IntegrityError:
-            continue
-    if not movie:
-        raise IntegrityError(f"Could not create a unique title for '{title}'")
-
-    # Only stream-only NEW movies get categories assigned (inferred).
-    assign_db_categories(movie, scraped_cats=[], forced_db_cats=db_cats)
-    print(f"      ✅ Created (stream-only): {movie.title}")
-    if not no_social:
-        _post_to_all_platforms(movie, is_new=True)
-    return movie, 'created'
+    return _create(title), 'created'
 
 
 # ══════════════════════════════════════════════════════════════

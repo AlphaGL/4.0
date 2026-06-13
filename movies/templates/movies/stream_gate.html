@@ -10,9 +10,6 @@
 <script>(function(s){s.dataset.zone='10895418',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 <script src="https://5gvci.com/act/files/tag.min.js?z=10895420" data-cfasync="false" async></script>
 
-<!-- hls.js for the ad-free own-player (falls back to the iframe if unavailable) -->
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
-
 <style>
   .card-top-bar {
     height: 3px;
@@ -74,7 +71,8 @@
 {% block content %}
 
 {# Data island — the embed URL is loaded into the iframe on user click #}
-<div id="sg" data-stream="{{ stream_url }}" data-title="{{ movie.title }}" class="hidden"></div>
+<div id="sg" data-stream="{{ stream_url }}" data-title="{{ movie.title }}"
+     data-sublang="{{ subtitle_lang|default:'en' }}" class="hidden"></div>
 
 <div class="container mx-auto px-4 lg:px-6 py-3 max-w-3xl">
 
@@ -150,16 +148,10 @@
       </div>
     </div>
 
-    {# Episode selector — shown for series once episodes load #}
-    <div id="sg-episodes" style="display:none;" class="px-4 pt-4">
-      <p class="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Episodes</p>
-      <div id="sg-ep-list" class="sg-ep-grid"></div>
-    </div>
-
     {# Hint #}
     <p class="text-center text-[11px] text-gray-400 dark:text-gray-500 flex items-center justify-center gap-1.5 px-4 py-3">
-      <i class="fas fa-info-circle flex-shrink-0" style="font-size:10px;"></i>
-      Tap to play. If the clean player can't load, it falls back automatically.
+      <i class="fas fa-closed-captioning flex-shrink-0" style="font-size:11px;"></i>
+      Subtitles load automatically — change the language from the <strong>CC</strong> / gear menu in the player.
     </p>
 
     {# Footer #}
@@ -204,170 +196,45 @@
 {% block extra_js %}
 <script>
 /*
- * Ad-free own-player.
- * The video stream lives behind moviebox's API (host h5-api.aoneroom.com), whose
- * CORS allows calls from this origin. A visitor's (residential) browser can
- * resolve the real HLS URL — our server can't (it's IP-gated). So we resolve
- * client-side and play in hls.js, with NO netfilm page = NO ads. If resolution
- * or playback fails for any reason, we fall back to the netfilm iframe (today's
- * behaviour). The play response is logged to the console for diagnosis.
+ * Stream player loader.
+ * Loads the source's embed in a SANDBOXED iframe — the sandbox (no allow-popups /
+ * allow-top-navigation) blocks the popup/redirect ads some sources carry while
+ * still letting the player run. For streamimdb embeds we append ?lang=<code>,
+ * which makes its built-in player auto-load subtitles (wyzie / OpenSubtitles);
+ * viewers can switch language from the player's CC/gear menu.
  */
 (function () {
   'use strict';
-  var sg     = document.getElementById('sg');
-  var EMBED  = sg ? sg.dataset.stream : '';
-  var TITLE  = sg ? (sg.dataset.title || 'Player') : 'Player';
-  var wrap   = document.getElementById('sg-player');
-  var poster = document.getElementById('sg-poster');
-  var epBox  = document.getElementById('sg-episodes');
-  var epList = document.getElementById('sg-ep-list');
+  var sg      = document.getElementById('sg');
+  var EMBED   = sg ? sg.dataset.stream : '';
+  var TITLE   = sg ? (sg.dataset.title || 'Player') : 'Player';
+  var SUBLANG = (sg && sg.dataset.sublang) || 'en';
+  var wrap    = document.getElementById('sg-player');
+  var poster  = document.getElementById('sg-poster');
   if (!EMBED || !wrap || !poster) return;
 
-  var API = 'https://h5-api.aoneroom.com/wefeed-h5api-bff';
-
-  function tz(){ try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch(e){ return 'Africa/Lagos'; } }
-  function headers(xsrc){ return { 'Accept':'application/json', 'X-Client-Info': JSON.stringify({timezone: tz()}), 'X-Source': xsrc }; }
-
-  // Pull subjectId / detailPath / type out of the stored netfilm embed URL.
-  function parseEmbed(u){
-    try {
-      var url = new URL(u);
-      var parts = url.pathname.split('/').filter(Boolean);
-      var type  = url.searchParams.get('type') || '/movie/detail';
-      return { id: url.searchParams.get('id'), detailPath: parts[parts.length-1] || '', isTv: type.indexOf('/tv/') === 0 };
-    } catch(e){ return null; }
-  }
-  var INFO = parseEmbed(EMBED);
-
-  function loading(msg){
-    wrap.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;gap:8px;">'
-      + '<i class="fas fa-spinner fa-spin"></i> ' + (msg || 'Loading…') + '</div>';
-  }
-
-  // play responses vary in shape — accept strings, {url|playUrl|src}, {resolutions:[{url}]}
-  function pickUrl(d){
-    var lists = [d.hls, d.streams, d.dash];
-    for (var i=0;i<lists.length;i++){
-      var L = lists[i];
-      if (!Array.isArray(L)) continue;
-      for (var k=L.length-1;k>=0;k--){
-        var it = L[k];
-        if (typeof it === 'string') return it;
-        if (it && (it.url || it.playUrl || it.src)) return it.url || it.playUrl || it.src;
-        if (it && Array.isArray(it.resolutions) && it.resolutions.length){
-          var r = it.resolutions[it.resolutions.length-1];
-          if (r && (r.url || r.playUrl)) return r.url || r.playUrl;
-        }
-      }
+  // streamimdb's player auto-loads subtitles when ?lang= is present.
+  function withSubs(url){
+    if (/streamimdb\.ru\/embed\//i.test(url) && !/[?&]lang=/i.test(url)){
+      return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'lang=' + encodeURIComponent(SUBLANG);
     }
-    return null;
+    return url;
   }
 
-  function resolve(se, ep){
-    var srcs = ['h5', 'web', ''];
-    var i = 0;
-    function tryNext(){
-      if (i >= srcs.length) return Promise.resolve(null);
-      var xsrc = srcs[i++];
-      var u = API + '/subject/play?subjectId=' + INFO.id + '&se=' + se + '&ep=' + ep
-            + '&detailPath=' + encodeURIComponent(INFO.detailPath);
-      return fetch(u, { headers: headers(xsrc) })
-        .then(function(r){ return r.json(); })
-        .then(function(j){
-          console.log('[stream] play se=' + se + ' ep=' + ep + ' X-Source=' + JSON.stringify(xsrc), j);
-          var d = j && j.data;
-          if (d && d.hasResource){ var url = pickUrl(d); if (url){ console.log('[stream] resolved:', url); return url; } }
-          return tryNext();
-        })
-        .catch(function(e){ console.warn('[stream] play error', e); return tryNext(); });
-    }
-    return tryNext();
-  }
-
-  var hlsInst = null;
-  function destroyHls(){ if (hlsInst){ try { hlsInst.destroy(); } catch(e){} hlsInst = null; } }
-
-  function playUrl(url){
-    destroyHls();
-    var v = document.createElement('video');
-    v.controls = true; v.autoplay = true; v.playsInline = true;
-    v.style.cssText = 'width:100%;height:100%;background:#000;';
-    wrap.innerHTML = ''; wrap.appendChild(v);
-    var isHls = /m3u8/i.test(url);
-    if (isHls && window.Hls && window.Hls.isSupported()){
-      hlsInst = new Hls({ maxBufferLength: 30 });
-      hlsInst.loadSource(url);
-      hlsInst.attachMedia(v);
-      hlsInst.on(window.Hls.Events.ERROR, function(_e, data){
-        if (data && data.fatal){ console.warn('[stream] hls fatal → fallback', data); destroyHls(); loadIframe(); }
-      });
-    } else if (v.canPlayType('application/vnd.apple.mpegurl') || !isHls){
-      v.src = url;
-      v.addEventListener('error', loadIframe);
-    } else {
-      loadIframe();
-    }
-  }
-
-  function loadIframe(){
-    destroyHls();
+  function play(){
     var f = document.createElement('iframe');
-    f.src = EMBED; f.title = TITLE + ' player';
+    f.src = withSubs(EMBED);
+    f.title = TITLE + ' player';
     f.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture');
     f.setAttribute('allowfullscreen', 'true');
     f.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-    // No allow-popups / allow-top-navigation → blocks popunder + redirect ads.
     f.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-forms allow-pointer-lock');
     f.style.cssText = 'width:100%;height:100%;border:0;';
-    wrap.innerHTML = ''; wrap.appendChild(f);
+    wrap.innerHTML = '';
+    wrap.appendChild(f);
   }
 
-  function playEpisode(se, ep, btn){
-    loading('Loading episode…');
-    if (btn && epList){ Array.prototype.forEach.call(epList.children, function(c){ c.classList.remove('sg-ep-active'); }); btn.classList.add('sg-ep-active'); }
-    resolve(se, ep).then(function(url){ if (url) playUrl(url); else loadIframe(); });
-  }
-
-  function buildEpisodes(){
-    if (!INFO || !INFO.isTv || !epBox || !epList) return;
-    fetch(API + '/detail?subjectId=' + INFO.id, { headers: headers('h5') })
-      .then(function(r){ return r.json(); })
-      .then(function(j){
-        var d = j && j.data;
-        var seasons = (d && d.resource && d.resource.seasons) || [];
-        if (!seasons.length) return;
-        var multi = seasons.length > 1;
-        epList.innerHTML = '';
-        seasons.forEach(function(ss){
-          var se = ss.se || 1, maxEp = ss.maxEp || 1;
-          for (var ep = 1; ep <= maxEp; ep++){
-            (function(se, ep){
-              var b = document.createElement('button');
-              b.className = 'sg-ep';
-              b.textContent = (multi ? ('S' + se + ' ') : '') + 'E' + ep;
-              b.addEventListener('click', function(){ playEpisode(se, ep, b); });
-              epList.appendChild(b);
-            })(se, ep);
-          }
-        });
-        epBox.style.display = '';
-        if (epList.firstChild) epList.firstChild.classList.add('sg-ep-active');
-      })
-      .catch(function(e){ console.warn('[stream] episodes load failed', e); });
-  }
-
-  poster.addEventListener('click', function start(){
-    if (!INFO || !INFO.id){ loadIframe(); return; }
-    loading();
-    if (INFO.isTv){
-      buildEpisodes();
-      playEpisode(1, 1, null);                 // start at S1E1
-    } else {
-      resolve(0, 1)
-        .then(function(url){ return url || resolve(1, 1); })   // movies: try season 0 then 1
-        .then(function(url){ if (url) playUrl(url); else loadIframe(); });
-    }
-  });
+  poster.addEventListener('click', play);
 })();
 </script>
 {% endblock %}
