@@ -66,7 +66,7 @@ from movies.models import Movie
 from .scrape_9jarocks import (
     find_existing_movie,
     assign_db_categories,
-    _post_to_all_platforms,
+    # _post_to_all_platforms,
 )
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -278,6 +278,13 @@ def parse_page(html: str, url: str) -> dict | None:
     elif isinstance(co, list) and co and isinstance(co[0], dict):
         country = co[0].get('name', '')
 
+    # YouTube trailer from the hero background player (when present).
+    trailer_url = ''
+    tr = (re.search(r'id="cbBgTrailer"[^>]*src="https://www\.youtube(?:-nocookie)?\.com/embed/([A-Za-z0-9_\-]{6,15})', html)
+          or re.search(r'youtube(?:-nocookie)?\.com/embed/([A-Za-z0-9_\-]{6,15})', html))
+    if tr:
+        trailer_url = f'https://www.youtube.com/watch?v={tr.group(1)}'
+
     is_series = (media_type == 'tv') or (ld.get('@type') == 'TVSeries')
 
     return {
@@ -286,6 +293,7 @@ def parse_page(html: str, url: str) -> dict | None:
         'title_raw':   title_raw,
         'description': description,
         'image_url':   image_url,
+        'trailer_url': trailer_url,
         'is_series':   is_series,
         'vi_year':     year,
         'vi_genre':    genre,
@@ -433,10 +441,14 @@ def save_item(parsed: dict, embed_url: str, db_cats: list[str],
         vi_filesize = parsed.get('vi_filesize', '')[:30],
     )
 
+    trailer = (parsed.get('trailer_url') or '')[:500]
+
     def _enrich(mv):
         changed = False
         if mv.stream_url != embed_url:
             mv.stream_url = embed_url[:600]; changed = True
+        if not mv.video_url and trailer:           # backfill trailer only if empty
+            mv.video_url = trailer; changed = True
         if not mv.image_url and parsed['image_url']:
             mv.image_url = parsed['image_url'][:500]; changed = True
         if not mv.description and parsed['description']:
@@ -455,7 +467,7 @@ def save_item(parsed: dict, embed_url: str, db_cats: list[str],
                 mv = Movie.objects.create(
                     title       = cand[:200],
                     description = parsed['description'],
-                    video_url   = '',                       # not a trailer
+                    video_url   = trailer,                  # trailer (YouTube), if any
                     stream_url  = embed_url[:600],
                     image_url   = (parsed['image_url'] or '')[:500],
                     is_series   = is_series,
@@ -469,8 +481,7 @@ def save_item(parsed: dict, embed_url: str, db_cats: list[str],
             raise IntegrityError(f"Could not create a unique title for '{title}'")
         assign_db_categories(mv, scraped_cats=[], forced_db_cats=db_cats)
         print(f"      ✅ Created (stream-only): {mv.title}")
-        if not no_social:
-            _post_to_all_platforms(mv, is_new=True)
+        # (social posting intentionally disabled for the streaming scrapers — see import block)
         return mv
 
     # ── SERIES: enrich EVERY existing season-record of the show ────────────

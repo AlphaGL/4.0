@@ -521,12 +521,16 @@
       </div>
 
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
-          <div id="video-container" class="w-full aspect-video bg-black"
+          <div id="video-container" class="w-full aspect-video bg-black relative"
                data-video-url="{{ movie.video_url }}" data-poster="{{ movie.image_url }}">
-            <div class="flex items-center justify-center h-full">
-              <div class="text-center text-white">
-                <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
-                <p class="text-sm">Loading video...</p>
+            <div id="trailer-poster" class="absolute inset-0 cursor-pointer flex items-center justify-center"
+                 style="background:#000 url('{{ movie.image_url }}') center/cover no-repeat;">
+              <div class="absolute inset-0 bg-black/45"></div>
+              <div class="relative flex flex-col items-center gap-2">
+                <div class="w-16 h-16 rounded-full bg-red-600/90 hover:bg-red-600 transition-colors flex items-center justify-center text-white text-2xl shadow-xl">
+                  <i class="fas fa-play ml-1"></i>
+                </div>
+                <span class="text-white text-xs font-semibold uppercase tracking-wide drop-shadow">Play Trailer</span>
               </div>
             </div>
           </div>
@@ -535,51 +539,47 @@
   </div>
   {% endif %}
 
-  {# Trailer embed script #}
+  {# Trailer embed script — click the poster to play (autoplay on user gesture) #}
   <script>
     (function() {
-      const container = document.getElementById('video-container');
+      var container = document.getElementById('video-container');
       if (!container) return;
-      const videoUrl  = container.getAttribute('data-video-url');
-      const posterUrl = container.getAttribute('data-poster');
+      var videoUrl  = container.getAttribute('data-video-url');
       if (!videoUrl) return;
 
-      function getYouTubeId(url) {
-        const patterns = [/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\?\/]+)/,/youtube\.com\/watch\?.*v=([^&]+)/];
-        for (const p of patterns) { const m = url.match(p); if (m) return m[1].split('?')[0].split('&')[0]; }
+      function ytId(url) {
+        var pats = [/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?\/]+)/, /[?&]v=([^&]+)/];
+        for (var i = 0; i < pats.length; i++) { var m = url.match(pats[i]); if (m) return m[1].split(/[?&]/)[0]; }
         return null;
       }
-      function getVimeoId(url) {
-        const patterns = [/vimeo\.com\/(\d+)/, /player\.vimeo\.com\/video\/(\d+)/];
-        for (const p of patterns) { const m = url.match(p); if (m) return m[1]; }
-        return null;
-      }
-      function isDirectVideo(url) { return ['.mp4','.webm','.mov','.avi','.mkv'].some(e => url.toLowerCase().includes(e)); }
-      function createIframe(src, title='Video Player') {
-        const f = document.createElement('iframe');
-        f.className='w-full h-full'; f.src=src; f.title=title; f.frameBorder='0'; f.allowFullscreen=true;
-        f.setAttribute('referrerpolicy','strict-origin-when-cross-origin');
-        return f;
-      }
-      function createVideoElement(src, poster) {
-        const v = document.createElement('video');
-        v.className='w-full aspect-video bg-black'; v.controls=true; v.playsInline=true;
-        if (poster) v.poster=poster;
-        const s = document.createElement('source'); s.src=src; s.type='video/mp4'; v.appendChild(s); return v;
-      }
-      let el;
-      const ytId = getYouTubeId(videoUrl);
-      if (ytId) { el = createIframe(`https://www.youtube-nocookie.com/embed/${ytId}`,'Movie Trailer'); el.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'; }
-      else if (videoUrl.includes('vimeo.com')) { const vId=getVimeoId(videoUrl); el=createIframe(vId?`https://player.vimeo.com/video/${vId}`:videoUrl,'Movie Trailer'); el.allow='autoplay; fullscreen; picture-in-picture'; }
-      else if (isDirectVideo(videoUrl)) { el=createVideoElement(videoUrl,posterUrl); }
-      else { el=createIframe(videoUrl,'Movie Trailer'); }
+      function vimeoId(url) { var m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/); return m ? m[1] : null; }
+      function isDirect(url) { return /\.(mp4|webm|mov|m4v|mkv)(\?|$)/i.test(url); }
 
-      if (el) { container.innerHTML=''; container.appendChild(el); }
-      else {
-        container.innerHTML=`<div class="flex items-center justify-center h-full"><div class="text-center text-white p-8">
-          <i class="fas fa-exclamation-triangle text-4xl mb-4 text-yellow-400"></i><p class="mb-2">Unable to load video</p>
-          <a href="${videoUrl}" target="_blank" class="text-blue-400 underline text-sm">Watch on external site</a></div></div>`;
+      function build() {
+        var el, id = ytId(videoUrl), vm;
+        if (id) {
+          el = document.createElement('iframe');
+          el.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&playsinline=1';
+          el.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
+          el.allowFullscreen = true;
+          el.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+        } else if ((vm = vimeoId(videoUrl))) {
+          el = document.createElement('iframe');
+          el.src = 'https://player.vimeo.com/video/' + vm + '?autoplay=1';
+          el.allow = 'autoplay; fullscreen; picture-in-picture'; el.allowFullscreen = true;
+        } else if (isDirect(videoUrl)) {
+          el = document.createElement('video');
+          el.src = videoUrl; el.controls = true; el.autoplay = true; el.playsInline = true;
+        } else {
+          el = document.createElement('iframe'); el.src = videoUrl; el.allowFullscreen = true;
+        }
+        el.className = 'w-full h-full'; el.style.cssText = 'width:100%;height:100%;border:0;background:#000;';
+        container.innerHTML = ''; container.appendChild(el);
       }
+
+      var poster = document.getElementById('trailer-poster');
+      if (poster) poster.addEventListener('click', build);
+      else build();
     })();
   </script>
 
@@ -601,6 +601,7 @@
        called from these buttons
 ═══════════════════════════════════════════════════════════════════════════ #} -->
 
+        {% if movie.download_links.exists or movie.download_url %}
         <div id="download" class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           {% if movie.download_links.exists %}
             <div class="p-6">
@@ -655,12 +656,6 @@
               </div>
             </div>
 
-          {% else %}
-            <div class="p-10 text-center">
-              <i class="fas fa-download text-gray-400 text-4xl mb-4"></i>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Downloads Available</h3>
-              <p class="text-gray-500 dark:text-gray-400 text-sm">Download links are not available yet.</p>
-            </div>
           {% endif %}
         </div>
 
@@ -909,6 +904,7 @@
     }
   }
   </script>
+  {% endif %}{# end download section — hidden entirely when no downloads #}
 
   <!-- ═══════════════════════════════════════════════
      RELATED MOVIES

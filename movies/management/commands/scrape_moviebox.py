@@ -309,6 +309,7 @@ def parse_detail(data: dict) -> dict | None:
 
     genre = (subj.get('genre') or '').replace(',', ', ')
     cover = (subj.get('cover') or {}).get('url', '')
+    trailer_url = (((subj.get('trailer') or {}).get('videoAddress') or {}).get('url') or '')
 
     stars = data.get('stars') or []
     cast_names = []
@@ -340,6 +341,7 @@ def parse_detail(data: dict) -> dict | None:
         'title_raw':   title,
         'description': (subj.get('description') or '').strip(),
         'image_url':   cover,
+        'trailer_url': trailer_url,
         'vi_year':     year,
         'vi_genre':    genre,
         'vi_country':  subj.get('countryName') or '',
@@ -453,10 +455,14 @@ def save_item(parsed: dict, stream_url: str, db_cats: list[str],
         vi_filesize = parsed.get('vi_filesize', '')[:30],
     )
 
+    trailer = (parsed.get('trailer_url') or '')[:500]
+
     def _enrich(mv):
         changed = False
         if mv.stream_url != stream_url:
             mv.stream_url = stream_url[:600]; changed = True
+        if not mv.video_url and trailer:           # backfill trailer only if empty
+            mv.video_url = trailer; changed = True
         if not mv.image_url and parsed['image_url']:
             mv.image_url = parsed['image_url'][:500]; changed = True
         if not mv.description and parsed['description']:
@@ -475,7 +481,7 @@ def save_item(parsed: dict, stream_url: str, db_cats: list[str],
                 mv = Movie.objects.create(
                     title       = cand[:200],
                     description = parsed['description'],
-                    video_url   = '',
+                    video_url   = trailer,                  # trailer (mp4), if any
                     stream_url  = stream_url[:600],
                     image_url   = (parsed['image_url'] or '')[:500],
                     is_series   = is_series,

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(PYTHONIOENCODING=utf-8 python manage.py check)",
+      "Bash(python -c \"import csp; print\\('django-csp installed', csp.__version__ if hasattr\\(csp,'__version__'\\) else ''\\)\")"
+    ]
+  }
+}
