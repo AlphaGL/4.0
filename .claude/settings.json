@@ -28,7 +28,18 @@
       "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -c 'NOTIFY pgrst, '\\\\''reload schema'\\\\'';')",
       "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film\" && rm -f dump_err.log restore_err.log && echo \"Temp logs removed.\")",
       "Bash(curl -s 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_movie?select=id,title&limit=1' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')",
-      "Bash(curl -s 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_movie?select=id,title,movies_category\\(id,name\\)&limit=1' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')"
+      "Bash(curl -s 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_movie?select=id,title,movies_category\\(id,name\\)&limit=1' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')",
+      "Bash(python -m py_compile app.py)",
+      "Bash(curl -s 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_downloadlink?select=label,url&limit=8' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')",
+      "Bash(python -c \"import urllib.parse;print\\(urllib.parse.quote\\('https://downloadwella.com/eo2cy4l0sp7q/Ms.Incognito.E01.\\(NKIRI.COM\\).mkv.html'\\)\\)\")",
+      "Bash(curl -s --max-time 60 https://watch2d-resolver.onrender.com/resolve-download/?url=__CMDSUB_OUTPUT__)",
+      "Bash(python -c \"import urllib.parse;print\\(urllib.parse.quote\\('https://loadedfiles.org/1c82aaea29d3661e'\\)\\)\")",
+      "Bash(python -c \"import urllib.parse;print\\(urllib.parse.quote\\('https://sabishares.com/the-beldham-2025/'\\)\\)\")",
+      "Bash(python -c 'import urllib.parse,sys;print\\(urllib.parse.quote\\(sys.argv[1],safe='\\\\'''\\\\''\\)\\)' https://loadedfiles.org/245b8bd3f84c02ba/Cape.Fear.S01E02.540p.X265.AAC.%5B9jaRocks.Com%5D.mkv)",
+      "Bash(curl -s --max-time 90 https://watch2d-resolver.onrender.com/resolve-download/?url=__CMDSUB_OUTPUT__)",
+      "Bash(python -c \"import urllib.parse;print\\(urllib.parse.quote\\('https://loadedfiles.org/250ed717c2f96aa9',safe=''\\)\\)\")",
+      "Bash(python -c \"import sys,json;print\\(json.load\\(sys.stdin\\)['download_url']\\)\")",
+      "Bash(python -m py_compile movies/views.py)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",

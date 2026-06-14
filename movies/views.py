@@ -358,8 +358,12 @@ def resolve_download_link(request):
         return JsonResponse({'download_url': direct})
  
     # ── already a direct link — return as-is ──────────────────
+    #   Skip this shortcut for hosts whose file PAGES end in .mkv/.html;
+    #   those are handled by their own scrapers below.
     direct_exts = ('.mp4', '.mkv', '.webm', '.avi', '.mov', '.zip', '.rar')
-    if '?pt=' in lower or any(lower.endswith(ext) for ext in direct_exts):
+    gate_hosts  = ('loadedfiles.org', 'downloadwella.com')
+    if not any(g in host for g in gate_hosts) and (
+            '?pt=' in lower or any(lower.endswith(ext) for ext in direct_exts)):
         return JsonResponse({'download_url': landing_url})
  
     # ── passthrough hosts ──────────────────────────────────────
@@ -516,63 +520,61 @@ def _resolve_loadedfiles(landing_url, parsed, debug=False):
             dbg['warm_error'] = str(e)
             # Non-fatal — try the file page anyway
  
-        # ── Step 2: fetch the actual file page with session + 9jarocks Referer
-        resp = session.get(
-            landing_url,
-            timeout=15,
-            allow_redirects=True,
-            headers={'Referer': 'https://9jarocks.net/'},
+        # ── Step 2: follow the token chain to the final CDN file ──────────
+        #   file page → ?pt=A → ?pt=B → 302 redirect OFF loadedfiles to the CDN.
+        #   A redirect off loadedfiles.org IS the real direct download link, so
+        #   the browser downloads it immediately (the 20s countdown is cosmetic).
+        from urllib.parse import urljoin, urlparse as _urlparse
+
+        next_patterns = (
+            r"var\s+downloadUrl\s*=\s*['\"](https?://[^'\"]+)['\"]",
+            r"window\.location(?:\.href)?\s*=\s*['\"](https?://[^'\"]+\?pt=[^'\"]+)['\"]",
+            r"['\"](https?://loadedfiles\.org/[^'\"]+\?pt=[^'\"]+)['\"]",
         )
-        dbg['status']    = resp.status_code
-        dbg['final_url'] = resp.url
- 
-        if resp.status_code != 200:
-            dbg['error'] = f'HTTP {resp.status_code}'
-            if debug:
-                dbg['body_snippet'] = resp.text[:500]
-            return None, dbg
- 
-        html = resp.text
-        dbg['html_length'] = len(html)
- 
-        # ── Pattern 1: var downloadUrl = '...?pt=...' (exact loadedfiles pattern)
-        m = re.search(
-            r"var\s+downloadUrl\s*=\s*['\"]"
-            r"(https?://[^'\"]+\?pt=[^'\"]+)['\"]",
-            html, re.IGNORECASE
-        )
-        if m:
-            dbg['pattern'] = 'downloadUrl_var'
-            return m.group(1).strip(), dbg
- 
-        # ── Pattern 2: window.location.href = '...?pt=...'
-        m = re.search(
-            r"window\.location(?:\.href)?\s*=\s*['\"]"
-            r"(https?://[^'\"]+\?pt=[^'\"]+)['\"]",
-            html, re.IGNORECASE
-        )
-        if m:
-            dbg['pattern'] = 'window_location_pt'
-            return m.group(1).strip(), dbg
- 
-        # ── Pattern 3: any quoted loadedfiles URL with ?pt= (broadest)
-        m = re.search(
-            r"['\"]"
-            r"(https?://loadedfiles\.org/[^'\"]+\?pt=[^'\"]+)"
-            r"['\"]",
-            html, re.IGNORECASE
-        )
-        if m:
-            dbg['pattern'] = 'quoted_pt'
-            return m.group(1).strip(), dbg
- 
-        # ── Nothing found — attach snippet for debug diagnosis
-        dbg['error'] = 'no_pt_pattern_found'
-        dbg['has_downloadUrl_var'] = 'var downloadUrl' in html
-        dbg['has_pt_anywhere']     = '?pt=' in html
-        dbg['cf_block']            = 'cf-browser-verification' in html or 'just a moment' in html.lower()
-        if debug:
-            dbg['html_snippet'] = html[:3000]
+        referer = 'https://9jarocks.net/'
+        current = landing_url
+        last_pt = None
+
+        for hop in range(6):
+            resp = session.get(current, timeout=15, allow_redirects=False,
+                               headers={'Referer': referer})
+            code = resp.status_code
+            dbg['hop_%d' % hop] = code
+
+            # A redirect off loadedfiles.org is the real CDN file link.
+            if code in (301, 302, 303, 307, 308):
+                loc = resp.headers.get('Location', '')
+                if not loc:
+                    break
+                target = urljoin(current, loc)
+                if 'loadedfiles.org' not in _urlparse(target).netloc.lower():
+                    dbg['pattern'] = 'cdn_redirect'
+                    return target, dbg          # ← direct CDN download URL
+                referer, current = current, target
+                continue
+
+            if code != 200:
+                dbg['error'] = 'HTTP %d' % code
+                break
+
+            html = resp.text
+            nxt = None
+            for pat in next_patterns:
+                m = re.search(pat, html, re.IGNORECASE)
+                if m:
+                    nxt = m.group(1).strip()
+                    break
+            if not nxt or nxt == current:
+                break
+            if '?pt=' in nxt:
+                last_pt = nxt
+            referer, current = current, nxt
+
+        # Fallback: deepest ?pt= link (old behaviour) if no CDN redirect reached.
+        if last_pt:
+            dbg['pattern'] = 'pt_fallback'
+            return last_pt, dbg
+        dbg.setdefault('error', 'no_link_found')
         return None, dbg
  
     except Exception as e:
