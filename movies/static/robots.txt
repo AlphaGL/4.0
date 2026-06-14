@@ -1,4 +1,4 @@
 User-agent: *
 Disallow: /watch2D/watch2d_admin/admin/
 
-Sitemap: https://watch2d.net/sitemap.xml
+Sitemap: https://watch2d.org/sitemap.xml

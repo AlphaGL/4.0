@@ -317,7 +317,7 @@ OFFLINE_URL = '/offline.html'
 WEBPUSH_SETTINGS = {
     "VAPID_PUBLIC_KEY": "your-vapid-public-key-here",
     "VAPID_PRIVATE_KEY": "your-vapid-private-key-here",
-    "VAPID_ADMIN_EMAIL": "admin@watch2d.net"
+    "VAPID_ADMIN_EMAIL": "admin@watch2d.org"
 }
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = ["bootstrap5"]

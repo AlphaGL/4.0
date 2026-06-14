@@ -2,7 +2,38 @@
   "permissions": {
     "allow": [
       "Bash(PYTHONIOENCODING=utf-8 python manage.py check)",
-      "Bash(python -c \"import csp; print\\('django-csp installed', csp.__version__ if hasattr\\(csp,'__version__'\\) else ''\\)\")"
+      "Bash(python -c \"import csp; print\\('django-csp installed', csp.__version__ if hasattr\\(csp,'__version__'\\) else ''\\)\")",
+      "PowerShell(flutter --version)",
+      "PowerShell(dart --version)",
+      "PowerShell(flutter create --org net.watch2d --project-name watch2d_app --platforms=android,ios \"C:\\\\Users\\\\Ibeawuchi\\\\Desktop\\\\film\\\\watch2d_app\")",
+      "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/**)",
+      "PowerShell(flutter pub get --directory \"C:\\\\Users\\\\Ibeawuchi\\\\Desktop\\\\film\\\\watch2d_app\")",
+      "PowerShell(flutter analyze --no-pub 2>&1)",
+      "Bash(mkdir -p assets/images)",
+      "Bash(curl -sL \"https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgGDg63ESTUKkQx6xcxK4dBd8LDkHo5VjiLkh1drq5WGGSG1dLVGQdwY7eXuVQ6Rxtz2mVSkcVvK7f7pFk5_4UVQc8uuX5HI_2J5IUZxR7uhvdmjxb-LEBmqR7zDjqiwjJVSmzv1fKtAt6nHr0EiDAMNPTNMq1yUnkdcMsA_9Z4Dasfc8bxJ0pnFLwafJk/s1024/logo%20\\(3\\).png\" -o assets/images/logo.png)",
+      "Read(//c/c/Users/Ibeawuchi/Desktop/film/watch2d_app/assets/images/**)",
+      "Read(//c/c/Users/Ibeawuchi/Desktop/film/watch2d_app/assets/**)",
+      "PowerShell(Push-Location \"C:\\\\Users\\\\Ibeawuchi\\\\Desktop\\\\film\\\\watch2d_app\"; $dart = Join-Path \\(Split-Path \\(Get-Command flutter\\).Source\\) \"dart.bat\"; Write-Output \"Using: $dart\"; & $dart run flutter_native_splash:create; Pop-Location)",
+      "PowerShell(Push-Location \"C:\\\\Users\\\\Ibeawuchi\\\\Desktop\\\\film\\\\watch2d_app\"; $dart = Join-Path \\(Split-Path \\(Get-Command flutter\\).Source\\) \"dart.bat\"; & $dart run flutter_launcher_icons; Pop-Location)",
+      "Bash(pg_dump --version)",
+      "Bash(psql --version)",
+      "Bash(psql postgresql://postgres.scsikofwbmcchkxvrvsw:all_in_one_db@aws-1-eu-west-1.pooler.supabase.com:5432/postgres -tAc 'select count\\(*\\) from movies_movie')",
+      "Bash(psql postgresql://postgres:watch2dapp_project@db.bajioejyqvaqopkeudoj.supabase.co:5432/postgres -tAc 'select 1')",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -tAc 'select '\\\\''OK'\\\\'', version\\(\\)')",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -tAc 'select count\\(*\\) from information_schema.tables where table_schema='\\\\''public'\\\\'' and table_name like '\\\\''movies_%'\\\\''')",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -v ON_ERROR_STOP=1 -f SUPABASE_SETUP.sql)",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -tAc 'select table_name from information_schema.tables where table_schema='\\\\''public'\\\\'' and table_name in \\('\\\\''app_watchlist'\\\\'','\\\\''app_history'\\\\''\\) order by 1')",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -tAc 'select count\\(*\\) || '\\\\'' RLS policies on movie tables'\\\\'' from pg_policies where schemaname='\\\\''public'\\\\'' and tablename like '\\\\''movies_%'\\\\''')",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -tAc ' *)",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -c 'NOTIFY pgrst, '\\\\''reload schema'\\\\'';')",
+      "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film\" && rm -f dump_err.log restore_err.log && echo \"Temp logs removed.\")",
+      "Bash(curl -s 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_movie?select=id,title&limit=1' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')",
+      "Bash(curl -s 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_movie?select=id,title,movies_category\\(id,name\\)&limit=1' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
+      "C:\\Users\\Ibeawuchi\\Desktop\\film",
+      "c:\\c\\Users\\Ibeawuchi\\Desktop\\film"
     ]
   }
 }
