@@ -180,10 +180,10 @@ TELEGRAM_MANGA_CHANNEL  = config('TELEGRAM_MANGA_CHANNEL', default='')
 # One-time login (run this ONCE on your server):
 #   python manage.py scrape_thenkiri --telethon-login
 # ============================================================
-TELETHON_API_ID          = config('TELETHON_API_ID',          default=0,        cast=int)
+TELETHON_API_ID          = config('TELETHON_API_ID',          default=0,        cast=lambda v: int(v) if str(v).strip() else 0)
 TELETHON_API_HASH        = config('TELETHON_API_HASH',        default='')
 TELETHON_SESSION_NAME    = config('TELETHON_SESSION_NAME',    default='uploader')
-TELETHON_PRIVATE_CHANNEL = config('TELETHON_PRIVATE_CHANNEL', default=0,        cast=int)
+TELETHON_PRIVATE_CHANNEL = config('TELETHON_PRIVATE_CHANNEL', default=0,        cast=lambda v: int(v) if str(v).strip() else 0)
 
 # ============================================================
 # TWITTER / X (OAuth 2.0)

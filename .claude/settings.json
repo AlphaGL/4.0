@@ -61,7 +61,10 @@
       "Bash(psql postgresql://postgres.scsikofwbmcchkxvrvsw:all_in_one_db@aws-1-eu-west-1.pooler.supabase.com:5432/postgres -v ON_ERROR_STOP=1 -f /c/Users/Ibeawuchi/Desktop/film/watch2d_app/SUPABASE_SETUP.sql)",
       "Bash(curl -s -o /dev/null -w 'http=%{http_code}\\\\n' 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_movie?select=id&limit=1' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')",
       "Bash(curl -s 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_movie?select=id,title,movies_movie_categories\\(movies_category\\(name\\)\\)&limit=2' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')",
-      "Bash(curl -s 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_category?select=name&order=name&limit=8' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')"
+      "Bash(curl -s 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_category?select=name&order=name&limit=8' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')",
+      "Bash(sed -n '125,165p' movies/management/commands/scrape_thenkiri.py)",
+      "Bash(sed -n '2300,2340p' movies/management/commands/scrape_thenkiri.py)",
+      "Bash(python -m py_compile master/settings.py)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",

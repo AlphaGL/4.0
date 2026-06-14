@@ -24,21 +24,40 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: "🎬 Thenkiri (all categories)"
-            cmd: "python manage.py scrape_thenkiri --category all --max-pages 3"
+          # ── Thenkiri: important categories ──
+          - name: "🎬 Hollywood"
+            cmd: "python manage.py scrape_thenkiri --category hollywood --max-pages 3"
             upload: true
-          - name: "🇳🇬 9jarocks (all categories)"
-            cmd: "python manage.py scrape_9jarocks --category all --max-pages 3"
+          - name: "🇰🇷 Korean (drama + movies)"
+            cmd: "python manage.py scrape_thenkiri --category korean --max-pages 3"
+            upload: true
+          - name: "📺 TV Series"
+            cmd: "python manage.py scrape_thenkiri --category series --max-pages 3"
+            upload: true
+          - name: "🎵 Bollywood"
+            cmd: "python manage.py scrape_thenkiri --category bollywood --max-pages 3"
+            upload: true
+          - name: "🇨🇳 Chinese (movies + drama)"
+            cmd: "python manage.py scrape_thenkiri --category chinese --max-pages 3"
+            upload: true
+          # ── 9jarocks: its strengths ──
+          - name: "🇳🇬 Nollywood"
+            cmd: "python manage.py scrape_9jarocks --category nollywood --max-pages 3"
             upload: false
-          - name: "🎞️ Nkiri"
-            cmd: "python manage.py scrape_nkiri --max-pages 3"
+          - name: "⛩️ Anime"
+            cmd: "python manage.py scrape_9jarocks --category anime --max-pages 3"
             upload: false
-          # - name: "📦 MovieBox (movies + TV)"   # disabled — using StreamIMDB only
-          #   cmd: "python manage.py scrape_moviebox --media both"
-          #   upload: false
+          # ── StreamIMDB ──
           - name: "▶️ StreamIMDB (movies + TV)"
             cmd: "python manage.py scrape_streamimdb --media both --max-pages 3"
             upload: false
+          # ── Disabled ──
+          # - name: "🎞️ Nkiri"            # disabled — not useful
+          #   cmd: "python manage.py scrape_nkiri --max-pages 3"
+          #   upload: false
+          # - name: "📦 MovieBox"         # disabled — using StreamIMDB only
+          #   cmd: "python manage.py scrape_moviebox --media both"
+          #   upload: false
 
     steps:
       - uses: actions/checkout@v4
@@ -82,15 +101,6 @@ jobs:
         run: |
           echo "${{ secrets.TELETHON_SESSION_B64 }}" | base64 --decode > uploader.session
           echo "✅ Telethon session restored ($(wc -c < uploader.session) bytes)"
-
-      # On the secondary (app-DB) account, wait a few minutes so both accounts
-      # don't hit the source sites at the same moment.
-      - name: Stagger start (secondary account only)
-        if: ${{ vars.DATA_ONLY == 'true' }}
-        run: |
-          DELAY=$(( (RANDOM % 600) + 120 ))   # 2–12 minutes
-          echo "⏳ Waiting ${DELAY}s to stagger from the primary account"
-          sleep $DELAY
 
       - name: Run scraper
         run: |
