@@ -69,6 +69,63 @@ def normalize_title(title):
     return t.strip()
 
 
+# Maps the many name variants the scrapers produce to the ONE canonical
+# category name (matching the cleaned-up DB). Keys are lowercased.
+CATEGORY_ALIASES = {
+    'series': 'TV Series', 'tv series': 'TV Series',
+    'hollywood': 'Hollywood Movies', 'hollywood movie': 'Hollywood Movies',
+    'hollywood movies': 'Hollywood Movies',
+    'hollywood tv series': 'Hollywood TV Series',
+    'nollywood': 'Nollywood Movies', 'nollywood movie': 'Nollywood Movies',
+    'nollywood movies': 'Nollywood Movies',
+    'nollywood tv series': 'Nollywood TV Series',
+    'k drama': 'Korean Drama', 'korean drama': 'Korean Drama',
+    'movie': 'Movies', 'movies': 'Movies',
+    '18+ movie': 'Adult (18+)', '18plus': 'Adult (18+)', '18+': 'Adult (18+)',
+    'adult': 'Adult (18+)',
+    'animation': 'Animation', 'animation movie': 'Animation',
+    'bollywood': 'Bollywood Movies', 'bollywood movies': 'Bollywood Movies',
+    'filipino': 'Filipino Drama', 'filipino drama': 'Filipino Drama',
+    'wrestling': 'Wrestling',
+    'other foreign movies': 'Other Foreign Movies',
+    'other foreign series': 'Other Foreign Movies',
+    'other foreign': 'Other Foreign Movies',
+    'chinese drama': 'Chinese Drama',
+    'chinese movie': 'Chinese Movies', 'chinese movies': 'Chinese Movies',
+    'thai drama': 'Thai Drama', 'turkish drama': 'Turkish Drama',
+    'spanish drama': 'Spanish Drama',
+    'sa series': 'SA Series', 'south africa': 'South Africa',
+    'sci-fi': 'Sci-Fi', 'sci fi': 'Sci-Fi', 'scifi': 'Sci-Fi',
+    'reality-tv': 'Reality TV', 'reality tv': 'Reality TV',
+    'ongoing': 'Ongoing', 'anime': 'Anime',
+}
+
+
+def canonical_category_name(name):
+    """Return the canonical category name for any scraper-supplied variant."""
+    raw = (name or '').strip()
+    if not raw:
+        return ''
+    return CATEGORY_ALIASES.get(raw.lower(), raw)
+
+
+def get_or_create_category(name, model=None):
+    """
+    Return the existing canonical Category (case-insensitive), creating it only
+    if it genuinely doesn't exist. Prevents the "Series" vs "TV Series" and
+    "Hollywood movies" vs "Hollywood Movies" duplicate-category problem.
+    """
+    if model is None:
+        from movies.models import Category as model
+    canonical = canonical_category_name(name)
+    if not canonical:
+        return None
+    obj = model.objects.filter(name__iexact=canonical).first()
+    if obj:
+        return obj
+    return model.objects.create(name=canonical)
+
+
 def find_duplicate_movie(title, model=None):
     """
     Return an existing Movie whose normalized title matches `title`, or None.

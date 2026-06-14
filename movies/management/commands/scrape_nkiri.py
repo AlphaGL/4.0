@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from movies.models import Movie, Category, DownloadLink
-from movies.scraper_utils import is_valid_download_url, find_duplicate_movie
+from movies.scraper_utils import is_valid_download_url, find_duplicate_movie, get_or_create_category
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -1215,8 +1215,9 @@ class Command(BaseCommand):
                             r.raise_for_status()
                             cat_name = r.json().get('name')
                             if cat_name:
-                                cat_obj, _ = Category.objects.get_or_create(name=cat_name.capitalize())
-                                movie.categories.add(cat_obj)
+                                cat_obj = get_or_create_category(cat_name)
+                                if cat_obj:
+                                    movie.categories.add(cat_obj)
                                 print(f"📁 Category added: {cat_name}")
                         except Exception:
                             print("⚠️ Category fetch failed.")

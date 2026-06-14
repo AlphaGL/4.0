@@ -36,7 +36,7 @@ Available friendly --category values:
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from movies.models import Movie, Category, DownloadLink
-from movies.scraper_utils import is_valid_download_url
+from movies.scraper_utils import is_valid_download_url, get_or_create_category
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -1104,10 +1104,9 @@ def assign_db_categories(movie, scraped_cats: list[str], forced_db_cats: list[st
     # Resolve the target Category objects
     target_cats = []
     for name in forced_db_cats:
-        cat_obj, created = Category.objects.get_or_create(name=name.strip())
-        target_cats.append(cat_obj)
-        if created:
-            print(f"      🏷  Created new DB category: '{name}'")
+        cat_obj = get_or_create_category(name.strip())
+        if cat_obj:
+            target_cats.append(cat_obj)
 
     # Replace all existing categories with exactly the target set
     movie.categories.set(target_cats)

@@ -12,27 +12,68 @@ links never accumulate again.
 from django.core.management.base import BaseCommand
 from django.db import connection, transaction
 
-from movies.scraper_utils import JUNK_DOWNLOAD_HOSTS
+from movies.scraper_utils import JUNK_DOWNLOAD_HOSTS, canonical_category_name
 
 
 class Command(BaseCommand):
-    help = "Purge junk download links and de-duplicate movies."
+    help = "Purge junk download links, merge duplicate categories, de-duplicate movies."
 
     def add_arguments(self, parser):
         parser.add_argument('--links', action='store_true', help='Only purge junk links')
+        parser.add_argument('--cats', action='store_true', help='Only merge duplicate categories')
         parser.add_argument('--dupes', action='store_true', help='Only de-dupe movies')
         parser.add_argument('--dry-run', action='store_true', help='Report only, change nothing')
 
     def handle(self, *args, **opts):
-        do_links = opts['links'] or not opts['dupes']
-        do_dupes = opts['dupes'] or not opts['links']
+        only = opts['links'] or opts['cats'] or opts['dupes']
         dry = opts['dry_run']
 
-        if do_links:
+        if opts['links'] or not only:
             self._purge_links(dry)
-        if do_dupes:
+        if opts['cats'] or not only:
+            self._dedupe_categories(dry)
+        if opts['dupes'] or not only:
             self._dedupe(dry)
         self.stdout.write(self.style.SUCCESS('cleanse_db done.'))
+
+    # ── duplicate / mis-named categories ─────────────────────────────────────
+    def _dedupe_categories(self, dry):
+        from collections import defaultdict
+        from movies.models import Category
+
+        groups = defaultdict(list)
+        for c in Category.objects.all().order_by('id'):
+            groups[canonical_category_name(c.name).lower()].append(c)
+
+        dupes = sum(len(v) - 1 for v in groups.values() if len(v) > 1)
+        if dry:
+            self.stdout.write(f"[dry-run] would merge {dupes} duplicate categories")
+            return
+        if not dupes:
+            self.stdout.write("no duplicate categories")
+            return
+
+        with transaction.atomic(), connection.cursor() as cur:
+            for cats in groups.values():
+                if len(cats) < 2:
+                    continue
+                canonical = canonical_category_name(cats[0].name)
+                keeper = next((c for c in cats if c.name == canonical), None)
+                if keeper is None:
+                    keeper = max(cats, key=lambda c: c.movies.count())
+                    keeper.name = canonical
+                    keeper.save(update_fields=['name'])
+                for c in cats:
+                    if c.id == keeper.id:
+                        continue
+                    cur.execute(
+                        "UPDATE movies_movie_categories mc SET category_id=%s "
+                        "WHERE mc.category_id=%s AND NOT EXISTS (SELECT 1 FROM "
+                        "movies_movie_categories x WHERE x.movie_id=mc.movie_id AND x.category_id=%s)",
+                        [keeper.id, c.id, keeper.id])
+                    cur.execute("DELETE FROM movies_movie_categories WHERE category_id=%s", [c.id])
+                    c.delete()
+        self.stdout.write(self.style.WARNING(f"merged {dupes} duplicate categories"))
 
     # ── junk download links ──────────────────────────────────────────────────
     def _purge_links(self, dry):
