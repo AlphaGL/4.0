@@ -151,3 +151,11 @@ jobs:
           ENVEOF
       - name: Run cleanse_db
         run: python manage.py cleanse_db
+
+      # One batched "new titles added" push to all app users.
+      # Only the app-DB account (DATA_ONLY=true) sends it, so users get it once.
+      - name: Notify app users of new content
+        if: ${{ vars.DATA_ONLY == 'true' }}
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: python manage.py notify_new_content

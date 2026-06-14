@@ -44,3 +44,5 @@ telethon==1.36.0
 django-redis
 
 sib-api-v3-sdk
+# Push notifications (batched new-content broadcast)
+firebase-admin

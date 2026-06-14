@@ -64,7 +64,9 @@
       "Bash(curl -s 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_category?select=name&order=name&limit=8' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')",
       "Bash(sed -n '125,165p' movies/management/commands/scrape_thenkiri.py)",
       "Bash(sed -n '2300,2340p' movies/management/commands/scrape_thenkiri.py)",
-      "Bash(python -m py_compile master/settings.py)"
+      "Bash(python -m py_compile master/settings.py)",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -v ON_ERROR_STOP=1 -f /c/Users/Ibeawuchi/Desktop/film/watch2d_app/SUPABASE_APP_RELEASE.sql)",
+      "Bash(python -m py_compile movies/management/commands/notify_new_content.py)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
