@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from movies.models import Movie, Category, DownloadLink
+from movies.scraper_utils import is_valid_download_url, find_duplicate_movie
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -1066,6 +1067,10 @@ class Command(BaseCommand):
                         real = extract_real_download_link(href)
                         download_links.append({'url': real, 'label': label})
 
+                # Keep only real file-host links (drop source pages / ads / junk).
+                download_links = [dl for dl in download_links
+                                  if is_valid_download_url(dl['url'])]
+
                 if not download_links:
                     print(f"⛔ No valid links for: {title}")
                     continue
@@ -1086,6 +1091,9 @@ class Command(BaseCommand):
 
                 try:
                     movie   = find_existing_movie(title, is_complete)
+                    if not movie:
+                        # Catch "S01" / "Season 1" / casing twins before creating.
+                        movie = find_duplicate_movie(title)
                     created = False
 
                     if not movie:

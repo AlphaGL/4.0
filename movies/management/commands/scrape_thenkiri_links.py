@@ -75,6 +75,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from movies.models import Movie, Category, DownloadLink
+from movies.scraper_utils import is_valid_download_url
 
 # Re-use everything from the sibling thenkiri scraper.
 # Both files live in the same management/commands/ directory.
@@ -457,7 +458,7 @@ class Command(BaseCommand):
                 # • links in DB but not scraped → remove  (keeps DB clean)
                 # • existing link with changed label → update label
                 existing = {normalize_url(dl.url): dl for dl in movie.download_links.all()}
-                current  = {normalize_url(dl['url']): dl for dl in parsed['download_links']}
+                current  = {normalize_url(dl['url']): dl for dl in parsed['download_links'] if is_valid_download_url(dl['url'])}
                 added    = 0
                 removed  = 0
 

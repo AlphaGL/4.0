@@ -39,7 +39,21 @@
       "Bash(curl -s --max-time 90 https://watch2d-resolver.onrender.com/resolve-download/?url=__CMDSUB_OUTPUT__)",
       "Bash(python -c \"import urllib.parse;print\\(urllib.parse.quote\\('https://loadedfiles.org/250ed717c2f96aa9',safe=''\\)\\)\")",
       "Bash(python -c \"import sys,json;print\\(json.load\\(sys.stdin\\)['download_url']\\)\")",
-      "Bash(python -m py_compile movies/views.py)"
+      "Bash(python -m py_compile movies/views.py)",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -P pager=off -c ' *)",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -tAc 'select count\\(*\\) from movies_movie')",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -v ON_ERROR_STOP=1)",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -P pager=off -c 'select id,title,completed from movies_movie where title ilike '\\\\''husbands of lagos%'\\\\'' or title ilike '\\\\''how dare you%'\\\\'' order by title;')",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -P pager=off -c 'select id,title from movies_movie where title ilike '\\\\''how dare you%'\\\\'' or title ilike '\\\\''husbands of lagos%'\\\\'' order by title;')",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -tAc 'select count\\(*\\) from movies_downloadlink')",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -tAc 'select count\\(*\\) from movies_downloadlink d where not exists \\(select 1 from movies_movie m where m.id=d.movie_id\\)')",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -P pager=off -c 'select id,title from movies_movie where title ~* '\\\\''squid game|money heist|alchemy of souls'\\\\'' order by title limit 12;')",
+      "Bash(psql postgresql://postgres.scsikofwbmcchkxvrvsw:all_in_one_db@aws-1-eu-west-1.pooler.supabase.com:5432/postgres -P pager=off -c ' *)",
+      "Bash(psql postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:5432/postgres -P pager=off -c 'select label, url from movies_downloadlink where url ilike '\\\\''%//9jarocks.net%'\\\\'' or url ilike '\\\\''%//thenkiri.com%'\\\\'' limit 8;')",
+      "Bash(python -m py_compile movies/scraper_utils.py movies/management/commands/cleanse_db.py)",
+      "Bash(python -c ' *)",
+      "Bash(python -m py_compile movies/scraper_utils.py movies/management/commands/cleanse_db.py movies/management/commands/scrape_nkiri.py movies/management/commands/scrape_9jarocks.py movies/management/commands/scrape_9jarocks_links.py movies/management/commands/scrape_thenkiri.py movies/management/commands/scrape_thenkiri_links.py)",
+      "Bash(timeout 120 python manage.py cleanse_db --dry-run)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",

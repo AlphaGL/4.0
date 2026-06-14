@@ -34,6 +34,7 @@ Available friendly --category values:
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from movies.models import Movie, Category, DownloadLink
+from movies.scraper_utils import is_valid_download_url
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -2225,7 +2226,7 @@ class Command(BaseCommand):
 
                         # ── Download link sync ─────────────────────────
                         existing = {normalize_url(dl.url): dl for dl in movie.download_links.all()}
-                        current  = {normalize_url(dl['url']): dl for dl in parsed['download_links']}
+                        current  = {normalize_url(dl['url']): dl for dl in parsed['download_links'] if is_valid_download_url(dl['url'])}
                         added    = 0
 
                         for norm, dl in current.items():
