@@ -33,9 +33,9 @@ jobs:
           - name: "🎞️ Nkiri"
             cmd: "python manage.py scrape_nkiri --max-pages 3"
             upload: false
-          - name: "📦 MovieBox (movies + TV)"
-            cmd: "python manage.py scrape_moviebox --media both"
-            upload: false
+          # - name: "📦 MovieBox (movies + TV)"   # disabled — using StreamIMDB only
+          #   cmd: "python manage.py scrape_moviebox --media both"
+          #   upload: false
           - name: "▶️ StreamIMDB (movies + TV)"
             cmd: "python manage.py scrape_streamimdb --media both --max-pages 3"
             upload: false
