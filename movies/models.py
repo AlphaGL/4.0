@@ -42,6 +42,16 @@ class Movie(models.Model):
     title_b_updated_at = models.DateTimeField(null=True, blank=True)
     is_series  = models.BooleanField(default=False)
     completed  = models.BooleanField(default=False, help_text="Mark if series is complete")
+    # ── Show grouping: every season of a show shares one show_key ──────
+    show_key = models.CharField(
+        max_length=250, blank=True, default='', db_index=True,
+        help_text="Normalized, season-stripped key grouping all seasons of a show "
+                  "(e.g. 'from'). Auto-derived from the title on save."
+    )
+    season_number = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        help_text="Season number parsed from the title, if any."
+    )
     description = models.TextField(blank=True)
     video_url   = models.URLField("Video/Embed URL", max_length=500)
     download_url = models.URLField("Download URL", blank=True, null=True, max_length=500)
@@ -150,6 +160,13 @@ class Movie(models.Model):
         # Preserves manually-set slugs and never rewrites an existing one.
         if not self.slug:
             self.slug = self._generate_unique_slug()
+        # Auto-derive the show grouping key so all seasons of a show line up.
+        if not self.show_key:
+            from movies.scraper_utils import parse_show
+            key, season = parse_show(self.title)
+            self.show_key = key
+            if self.season_number is None:
+                self.season_number = season
         super().save(*args, **kwargs)
 
 

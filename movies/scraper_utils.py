@@ -69,6 +69,32 @@ def normalize_title(title):
     return t.strip()
 
 
+def parse_show(title):
+    """
+    Split a title into (show_key, season_number) so every season of a show can
+    be grouped under one parent.
+
+      "From S01"          -> ("from", 1)
+      "From Season 2"     -> ("from", 2)
+      "From S01 (Complete)" -> ("from", 1)
+      "From"              -> ("from", None)
+      "Scary Movie"       -> ("scary-movie", None)
+
+    show_key is a hyphenated, season-stripped slug (built from normalize_title,
+    so it matches the same canonical form used for dedupe). season_number is the
+    int season parsed from the title, or None for movies / unseasoned titles.
+    """
+    norm = normalize_title(title)                       # e.g. "from season 1"
+    season = None
+    m = re.search(r'\bseason (\d+)\b', norm)
+    if m:
+        season = int(m.group(1))
+        norm = re.sub(r'\bseason \d+\b', ' ', norm)     # strip the season part
+    norm = re.sub(r'\s+', ' ', norm).strip()
+    key = re.sub(r'\s+', '-', norm)
+    return key, season
+
+
 # Maps the many name variants the scrapers produce to the ONE canonical
 # category name (matching the cleaned-up DB). Keys are lowercased.
 CATEGORY_ALIASES = {
