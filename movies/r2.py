@@ -8,6 +8,7 @@ Needs these env vars (same values as the APK build):
     R2_BUCKET, R2_PUBLIC_URL   (e.g. https://dl.watch2d.org)
 """
 import os
+import hashlib
 import mimetypes
 from urllib.parse import urlparse
 
@@ -57,9 +58,10 @@ def is_configured():
                 config('R2_PUBLIC_URL', default=''))
 
 
-def rehost_image(image_url, movie_id):
-    """Download [image_url] and upload to R2 as posters/<movie_id>.<ext>.
-    Returns the public URL, or None on any failure."""
+def rehost_image(image_url, movie_id=None):
+    """Download [image_url] and upload to R2. The key is a hash of the source
+    URL, so the same poster is stored once and shared across both DBs (no movie
+    -id collisions). Returns the public URL, or None on any failure."""
     bucket = config('R2_BUCKET', default='')
     public = config('R2_PUBLIC_URL', default='').rstrip('/')
     client = _r2()
@@ -77,7 +79,8 @@ def rehost_image(image_url, movie_id):
                or '.jpg')
         if ext in ('.jpe', '.jpeg'):
             ext = '.jpg'
-        key = f'posters/{movie_id}{ext}'
+        digest = hashlib.md5(image_url.encode('utf-8')).hexdigest()[:20]
+        key = f'posters/{digest}{ext}'
         client.put_object(
             Bucket=bucket,
             Key=key,
