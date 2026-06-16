@@ -70,6 +70,9 @@ def rehost_image(image_url, movie_id=None):
     client = _r2()
     if not (client and bucket and public and image_url):
         return None
+    # Inline data: URIs are lazy-load placeholders, not real images — skip.
+    if image_url.startswith('data:'):
+        return None
     try:
         parsed = urlparse(image_url)
         # Send a Referer/UA so hotlink-protected image hosts don't 403.
@@ -80,7 +83,9 @@ def rehost_image(image_url, movie_id=None):
                           'Chrome/124.0 Safari/537.36',
             'Accept': 'image/avif,image/webp,image/*,*/*;q=0.8',
         }
-        resp = _downloader().get(image_url, timeout=30, headers=headers)
+        # (connect, read) timeouts — fail fast on dead hosts so the run isn't
+        # stuck waiting 30s on every offline image.
+        resp = _downloader().get(image_url, timeout=(8, 25), headers=headers)
         if resp.status_code != 200 or not resp.content:
             return None
         ctype = (resp.headers.get('Content-Type') or '').split(';')[0].strip()

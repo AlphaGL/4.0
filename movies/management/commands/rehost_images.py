@@ -27,6 +27,8 @@ class Command(BaseCommand):
                             help="Only process this many (for batching).")
         parser.add_argument('--workers', type=int, default=8,
                             help="Parallel downloads/uploads (default 8).")
+        parser.add_argument('--verbose', action='store_true',
+                            help="Print each image URL that fails.")
         parser.add_argument('--dry-run', action='store_true')
 
     def handle(self, *args, **opts):
@@ -56,13 +58,15 @@ class Command(BaseCommand):
                 self.stdout.write(f"  …and {total - 30} more")
             return
 
+        verbose = opts['verbose']
+
         def work(m):
             try:
                 new_url = rehost_image(m.image_url)
                 if new_url:
                     Movie.objects.filter(pk=m.id).update(image_url=new_url)
-                    return True
-                return False
+                    return (m, True)
+                return (m, False)
             finally:
                 connections.close_all()  # release this thread's DB connection
 
@@ -70,13 +74,16 @@ class Command(BaseCommand):
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
             futures = [ex.submit(work, m) for m in movies]
             for i, fut in enumerate(concurrent.futures.as_completed(futures), 1):
-                ok = False
                 try:
-                    ok = fut.result()
+                    m, ok = fut.result()
                 except Exception:
-                    ok = False
-                done += 1 if ok else 0
-                failed += 0 if ok else 1
+                    m, ok = None, False
+                if ok:
+                    done += 1
+                else:
+                    failed += 1
+                    if verbose and m is not None:
+                        self.stdout.write(f"  FAIL  {m.id}  {m.image_url[:85]}")
                 if i % 100 == 0:
                     self.stdout.write(f"  …{done} done, {failed} failed ({i}/{total})")
 
