@@ -62,6 +62,15 @@ class Movie(models.Model):
                   "have downloads AND streaming at the same time."
     )
     image_url    = models.URLField("Cover Image URL", blank=True, null=True, max_length=500)
+    # ── TMDB enrichment (rating / trailer / matched id) ───────────────
+    tmdb_id      = models.IntegerField(null=True, blank=True, db_index=True,
+                                       help_text="Matched TheMovieDB id, if any.")
+    tmdb_synced  = models.BooleanField(default=False,
+                                       help_text="TMDB enrichment has been attempted.")
+    rating       = models.FloatField(null=True, blank=True,
+                                     help_text="TMDB rating (0–10).")
+    trailer_url  = models.URLField("Trailer URL", blank=True, null=True, max_length=500,
+                                   help_text="Official YouTube trailer (from TMDB).")
     categories   = models.ManyToManyField(Category, blank=True, related_name='movies')
     added_by     = models.ForeignKey(
         User, null=True, blank=True,
