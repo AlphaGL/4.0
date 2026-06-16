@@ -3,12 +3,16 @@ Re-host movie poster images on Cloudflare R2 so they survive the source site
 going down. Skips images already on your R2 domain. Safe to re-run.
 
     python manage.py rehost_images --dry-run
-    python manage.py rehost_images               # all external images
-    python manage.py rehost_images --limit 500   # in batches
+    python manage.py rehost_images                  # all external images
+    python manage.py rehost_images --workers 16     # faster (more parallel)
+    python manage.py rehost_images --limit 2000     # in batches
 
 Needs R2_* env vars set (see movies/r2.py) and: pip install boto3
 """
+import concurrent.futures
+
 from django.core.management.base import BaseCommand
+from django.db import connections
 from decouple import config
 
 from movies.models import Movie
@@ -16,11 +20,13 @@ from movies.r2 import rehost_image, is_configured
 
 
 class Command(BaseCommand):
-    help = "Re-host external poster images onto Cloudflare R2."
+    help = "Re-host external poster images onto Cloudflare R2 (parallel)."
 
     def add_arguments(self, parser):
         parser.add_argument('--limit', type=int, default=None,
                             help="Only process this many (for batching).")
+        parser.add_argument('--workers', type=int, default=8,
+                            help="Parallel downloads/uploads (default 8).")
         parser.add_argument('--dry-run', action='store_true')
 
     def handle(self, *args, **opts):
@@ -38,22 +44,41 @@ class Command(BaseCommand):
         if opts['limit']:
             qs = qs[:opts['limit']]
         movies = list(qs)
+        total = len(movies)
+        workers = max(1, opts['workers'])
 
-        self.stdout.write(f"{len(movies)} images to re-host...")
-        done = failed = 0
-        for m in movies:
-            if opts['dry_run']:
+        self.stdout.write(f"{total} images to re-host (workers={workers})...")
+
+        if opts['dry_run']:
+            for m in movies[:30]:
                 self.stdout.write(f"  would rehost {m.id}: {m.image_url[:70]}")
-                continue
-            new_url = rehost_image(m.image_url, m.id)
-            if new_url:
-                Movie.objects.filter(pk=m.id).update(image_url=new_url)
-                done += 1
-            else:
-                failed += 1
-            if (done + failed) % 100 == 0 and not opts['dry_run']:
-                self.stdout.write(f"  …{done} done, {failed} failed")
+            if total > 30:
+                self.stdout.write(f"  …and {total - 30} more")
+            return
 
-        if not opts['dry_run']:
-            self.stdout.write(self.style.SUCCESS(
-                f"Re-hosted {done}, failed {failed}, of {len(movies)}."))
+        def work(m):
+            try:
+                new_url = rehost_image(m.image_url)
+                if new_url:
+                    Movie.objects.filter(pk=m.id).update(image_url=new_url)
+                    return True
+                return False
+            finally:
+                connections.close_all()  # release this thread's DB connection
+
+        done = failed = 0
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+            futures = [ex.submit(work, m) for m in movies]
+            for i, fut in enumerate(concurrent.futures.as_completed(futures), 1):
+                ok = False
+                try:
+                    ok = fut.result()
+                except Exception:
+                    ok = False
+                done += 1 if ok else 0
+                failed += 0 if ok else 1
+                if i % 100 == 0:
+                    self.stdout.write(f"  …{done} done, {failed} failed ({i}/{total})")
+
+        self.stdout.write(self.style.SUCCESS(
+            f"Re-hosted {done}, failed {failed}, of {total}."))
