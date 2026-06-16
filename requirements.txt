@@ -30,6 +30,9 @@ requests==2.32.3
 lxml==5.3.0
 cloudscraper==1.2.71
 
+# Re-host poster images on Cloudflare R2 (S3-compatible)
+boto3==1.35.49
+
 # Utilities
 pillow==11.1.0
 python-slugify==8.0.4
