@@ -86,8 +86,15 @@ def details(tmdb_id, media):
                 trailer = f"https://www.youtube.com/watch?v={v['key']}"
                 break
 
-    cast = ', '.join(
-        c['name'] for c in ((data.get('credits') or {}).get('cast') or [])[:8])
+    cast_raw = ((data.get('credits') or {}).get('cast') or [])[:10]
+    cast = ', '.join(c.get('name', '') for c in cast_raw[:8])
+    cast_list = [{
+        'tmdb_id': c['id'],
+        'name': c.get('name', ''),
+        'profile_path': c.get('profile_path'),
+        'character': c.get('character') or '',
+        'order': c.get('order', i),
+    } for i, c in enumerate(cast_raw) if c.get('id') and c.get('name')]
     poster = data.get('poster_path')
     rating = data.get('vote_average')
     year = (data.get('release_date') or data.get('first_air_date') or '')[:4]
@@ -102,6 +109,7 @@ def details(tmdb_id, media):
         'poster_url': f'{IMG}{poster}' if poster else None,
         'trailer_url': trailer,
         'cast': cast,
+        'cast_list': cast_list,
         'overview': (data.get('overview') or '').strip(),
         'genres': ', '.join(g['name'] for g in (data.get('genres') or [])),
         'year': year,

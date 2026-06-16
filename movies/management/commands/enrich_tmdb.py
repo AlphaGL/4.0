@@ -15,9 +15,24 @@ from django.core.management.base import BaseCommand
 from django.db import connections
 from decouple import config
 
-from movies.models import Movie
+from movies.models import Movie, Person, MovieCast
 from movies import tmdb
 from movies.r2 import rehost_image, is_configured as r2_ready
+
+
+def _sync_cast(movie_id, cast_list, r2):
+    """Create Person rows (with re-hosted headshots) + MovieCast links."""
+    for c in cast_list or []:
+        person, created = Person.objects.get_or_create(
+            tmdb_id=c['tmdb_id'], defaults={'name': c['name'][:200]})
+        if created and c.get('profile_path') and r2:
+            img = rehost_image(f"https://image.tmdb.org/t/p/w185{c['profile_path']}")
+            if img:
+                Person.objects.filter(pk=person.pk).update(profile_url=img)
+        MovieCast.objects.update_or_create(
+            movie_id=movie_id, person=person,
+            defaults={'character': (c.get('character') or '')[:200],
+                      'order': c.get('order', 0)})
 
 
 class Command(BaseCommand):
@@ -90,6 +105,7 @@ class Command(BaseCommand):
                         updates['image_url'] = new_img
 
                 Movie.objects.filter(pk=m.id).update(**updates)
+                _sync_cast(m.id, d.get('cast_list'), r2)
                 return (m, True)
             finally:
                 connections.close_all()

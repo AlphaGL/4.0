@@ -252,3 +252,30 @@ class Comment(models.Model):
     @property
     def is_reply(self):
         return self.parent is not None
+
+class Person(models.Model):
+    """An actor/cast member, matched from TMDB."""
+    tmdb_id     = models.IntegerField(unique=True, db_index=True)
+    name        = models.CharField(max_length=200)
+    profile_url = models.URLField(max_length=500, blank=True, null=True,
+                                  help_text="Headshot, re-hosted to R2.")
+
+    def __str__(self):
+        return self.name
+
+
+class MovieCast(models.Model):
+    """Links a Movie to a Person (cast member) with their character + billing."""
+    movie     = models.ForeignKey(Movie, on_delete=models.CASCADE,
+                                  related_name='cast_credits')
+    person    = models.ForeignKey(Person, on_delete=models.CASCADE,
+                                  related_name='roles')
+    character = models.CharField(max_length=200, blank=True)
+    order     = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('movie', 'person')
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.person.name} in {self.movie.title}"
