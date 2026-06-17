@@ -3,13 +3,15 @@
 <html lang="en" class="h-full scroll-smooth">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  {# viewport-fit=cover lets the PWA draw edge-to-edge under the iOS notch/home-bar #}
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
   {# -- PWA Meta Tags -- #}
   <meta name="application-name" content="Watch2D">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  {# black-translucent = immersive: page content runs under the status bar like a native app #}
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Watch2D">
   <meta name="msapplication-TileColor" content="#0ea5e9">
   <meta name="msapplication-tap-highlight" content="no">
@@ -881,17 +883,184 @@
       }
     });
 
-    // Add to Home Screen prompt for iOS
+    // ─────────────────────────────────────────────────────────────────────
+    //  iOS "Add to Home Screen" — iOS gives NO automatic install prompt, so
+    //  we show our own dismissible banner explaining the 2-tap install. This
+    //  is what turns "the website" into an installed, standalone app on iPhone.
+    // ─────────────────────────────────────────────────────────────────────
     function isIOS() {
       return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     }
+    function isInStandalone() {
+      return window.navigator.standalone === true ||
+             window.matchMedia('(display-mode: standalone)').matches;
+    }
 
-    // Show iOS install instructions
-    if (isIOS() && !window.navigator.standalone) {
-      // You can show custom iOS install instructions here
-      console.log('iOS user - can show install instructions');
+    (function iosInstallBanner() {
+      // Only iOS Safari, not already installed, not snoozed in the last 7 days.
+      if (!isIOS() || isInStandalone()) return;
+      var snoozed = parseInt(localStorage.getItem('ios_a2hs_snooze') || '0', 10);
+      if (snoozed && (Date.now() - snoozed) < 7 * 24 * 60 * 60 * 1000) return;
+
+      var ICON = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgGDg63ESTUKkQx6xcxK4dBd8LDkHo5VjiLkh1drq5WGGSG1dLVGQdwY7eXuVQ6Rxtz2mVSkcVvK7f7pFk5_4UVQc8uuX5HI_2J5IUZxR7uhvdmjxb-LEBmqR7zDjqiwjJVSmzv1fKtAt6nHr0EiDAMNPTNMq1yUnkdcMsA_9Z4Dasfc8bxJ0pnFLwafJk/s320/logo%20(3).png';
+      var bar = document.createElement('div');
+      bar.id = 'ios-a2hs';
+      bar.innerHTML =
+        '<button id="ios-a2hs-x" aria-label="Dismiss">&times;</button>' +
+        '<img src="' + ICON + '" alt="Watch2D">' +
+        '<div class="ios-a2hs-txt">' +
+          '<strong>Install Watch2D</strong>' +
+          '<span>Tap <i class="ios-share"></i> below, then <b>Add to Home Screen</b></span>' +
+        '</div>' +
+        '<div class="ios-a2hs-arrow">&#8595;</div>';
+      document.body.appendChild(bar);
+
+      // Slide in after a moment so it doesn't fight first paint.
+      setTimeout(function () { bar.classList.add('show'); }, 1200);
+
+      document.getElementById('ios-a2hs-x').addEventListener('click', function () {
+        bar.classList.remove('show');
+        localStorage.setItem('ios_a2hs_snooze', String(Date.now()));
+        setTimeout(function () { bar.remove(); }, 300);
+      });
+    })();
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  Desktop / Android install banner — fires on Chrome/Edge (desktop too)
+    //  via beforeinstallprompt. One click installs Watch2D as a real windowed
+    //  desktop app (Windows / Mac / Linux) or an Android app. iOS never fires
+    //  this event, so it and the iOS banner above are mutually exclusive.
+    // ─────────────────────────────────────────────────────────────────────
+    (function desktopInstallBanner() {
+      if (isInStandalone()) return;  // already installed
+      var snoozed = parseInt(localStorage.getItem('a2hs_snooze') || '0', 10);
+      if (snoozed && (Date.now() - snoozed) < 7 * 24 * 60 * 60 * 1000) return;
+
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.deferredPrompt = e;            // keep the existing handler working
+        if (document.getElementById('pwa-bar')) return;
+
+        var ICON = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgGDg63ESTUKkQx6xcxK4dBd8LDkHo5VjiLkh1drq5WGGSG1dLVGQdwY7eXuVQ6Rxtz2mVSkcVvK7f7pFk5_4UVQc8uuX5HI_2J5IUZxR7uhvdmjxb-LEBmqR7zDjqiwjJVSmzv1fKtAt6nHr0EiDAMNPTNMq1yUnkdcMsA_9Z4Dasfc8bxJ0pnFLwafJk/s320/logo%20(3).png';
+        var bar = document.createElement('div');
+        bar.id = 'pwa-bar';
+        bar.innerHTML =
+          '<img src="' + ICON + '" alt="Watch2D">' +
+          '<div class="pwa-bar-txt">' +
+            '<strong>Install Watch2D</strong>' +
+            '<span>Get the app for faster access — no browser needed</span>' +
+          '</div>' +
+          '<button id="pwa-bar-install">Install</button>' +
+          '<button id="pwa-bar-x" aria-label="Dismiss">&times;</button>';
+        document.body.appendChild(bar);
+        setTimeout(function () { bar.classList.add('show'); }, 800);
+
+        document.getElementById('pwa-bar-install').addEventListener('click', async function () {
+          var p = window.deferredPrompt;
+          if (!p) return;
+          p.prompt();
+          try { await p.userChoice; } catch (_) {}
+          window.deferredPrompt = null;
+          bar.classList.remove('show');
+          setTimeout(function () { bar.remove(); }, 300);
+        });
+        document.getElementById('pwa-bar-x').addEventListener('click', function () {
+          bar.classList.remove('show');
+          localStorage.setItem('a2hs_snooze', String(Date.now()));
+          setTimeout(function () { bar.remove(); }, 300);
+        });
+      });
+
+      // Once installed, never show it again.
+      window.addEventListener('appinstalled', function () {
+        var b = document.getElementById('pwa-bar');
+        if (b) b.remove();
+      });
+    })();
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  Standalone navigation shim — when launched from the home screen, iOS
+    //  sometimes opens normal links in Safari (breaking the app feel). Force
+    //  same-origin links to navigate inside the standalone window instead.
+    // ─────────────────────────────────────────────────────────────────────
+    if (isInStandalone()) {
+      document.addEventListener('click', function (e) {
+        var a = e.target.closest && e.target.closest('a');
+        if (!a) return;
+        var href = a.getAttribute('href') || '';
+        if (a.target === '_blank' || a.hasAttribute('download')) return;        // let new-tab / downloads behave normally
+        if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+        // Same-origin only — external links should still open out.
+        if (a.host && a.host !== window.location.host) return;
+        e.preventDefault();
+        window.location.href = a.href;
+      }, false);
     }
   </script>
+
+  {# iOS install-banner styles (+ safe-area padding so the immersive status bar doesn't overlap content) #}
+  <style>
+    :root { --safe-top: env(safe-area-inset-top, 0px); }
+    /* Push fixed top chrome below the iOS status bar when running standalone */
+    @media (display-mode: standalone) {
+      body { padding-top: var(--safe-top); }
+    }
+    #ios-a2hs {
+      position: fixed; left: 12px; right: 12px;
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+      z-index: 9999; display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 16px;
+      background: rgba(17, 24, 39, .97); color: #fff;
+      box-shadow: 0 10px 40px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      transform: translateY(140%); opacity: 0;
+      transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .35s;
+    }
+    #ios-a2hs.show { transform: translateY(0); opacity: 1; }
+    #ios-a2hs img { width: 44px; height: 44px; border-radius: 11px; flex: 0 0 auto; }
+    #ios-a2hs .ios-a2hs-txt { display: flex; flex-direction: column; line-height: 1.25; flex: 1; min-width: 0; }
+    #ios-a2hs .ios-a2hs-txt strong { font-size: 14px; }
+    #ios-a2hs .ios-a2hs-txt span { font-size: 12px; color: #cbd5e1; }
+    #ios-a2hs .ios-a2hs-txt b { color: #38bdf8; }
+    #ios-a2hs .ios-a2hs-arrow { font-size: 20px; color: #38bdf8; animation: a2hsBounce 1.4s infinite; }
+    #ios-a2hs #ios-a2hs-x {
+      position: absolute; top: 6px; right: 10px; background: none; border: 0;
+      color: #94a3b8; font-size: 20px; line-height: 1; cursor: pointer;
+    }
+    /* Tiny inline iOS "share" glyph (square with up-arrow) */
+    .ios-share { display: inline-block; width: 11px; height: 14px; vertical-align: -2px; position: relative; }
+    .ios-share::before { content: ""; position: absolute; left: 0; bottom: 0; width: 11px; height: 8px; border: 1.5px solid #38bdf8; border-top: 0; border-radius: 0 0 2px 2px; }
+    .ios-share::after  { content: "↑"; position: absolute; left: 50%; top: -3px; transform: translateX(-50%); font-size: 11px; color: #38bdf8; }
+    @keyframes a2hsBounce { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(4px);} }
+
+    /* Desktop / Android install banner */
+    #pwa-bar {
+      position: fixed; z-index: 9999;
+      left: 50%; transform: translateX(-50%) translateY(160%); opacity: 0;
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+      width: min(420px, calc(100vw - 24px));
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 16px;
+      background: rgba(17, 24, 39, .97); color: #fff;
+      box-shadow: 0 12px 44px rgba(0,0,0,.45); backdrop-filter: blur(10px);
+      transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .35s;
+    }
+    #pwa-bar.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    #pwa-bar img { width: 42px; height: 42px; border-radius: 11px; flex: 0 0 auto; }
+    #pwa-bar .pwa-bar-txt { display: flex; flex-direction: column; line-height: 1.25; flex: 1; min-width: 0; }
+    #pwa-bar .pwa-bar-txt strong { font-size: 14px; }
+    #pwa-bar .pwa-bar-txt span { font-size: 12px; color: #cbd5e1; }
+    #pwa-bar #pwa-bar-install {
+      flex: 0 0 auto; border: 0; cursor: pointer;
+      background: #0ea5e9; color: #fff; font-weight: 700; font-size: 13px;
+      padding: 8px 16px; border-radius: 10px;
+    }
+    #pwa-bar #pwa-bar-install:hover { background: #0284c7; }
+    #pwa-bar #pwa-bar-x {
+      flex: 0 0 auto; background: none; border: 0; color: #94a3b8;
+      font-size: 22px; line-height: 1; cursor: pointer; padding: 0 2px;
+    }
+  </style>
 
   {# PWA Scripts - Load PWA functionality #}
   <script src="{% static 'js/pwa.js' %}" defer></script>
