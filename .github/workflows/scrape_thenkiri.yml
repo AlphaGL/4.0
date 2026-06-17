@@ -226,3 +226,12 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: python manage.py notify_upcoming_arrivals
+
+      # Fulfil "Request a Title" submissions: match the catalogue or targeted-
+      # scrape 9jarocks → thenkiri, then push the requester.
+      - name: Process title requests
+        if: ${{ vars.DATA_ONLY == 'true' }}
+        continue-on-error: true
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: python manage.py process_requests
