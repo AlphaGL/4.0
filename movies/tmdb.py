@@ -66,6 +66,47 @@ def search(title, year=None, is_series=False):
     return None
 
 
+def trailer(tmdb_id, media):
+    """Best YouTube trailer URL for a title, or None."""
+    data = _get(f'/{media}/{tmdb_id}/videos')
+    vids = (data or {}).get('results') or []
+    for want in ('Trailer', None):
+        for v in vids:
+            if v.get('site') == 'YouTube' and (want is None or v.get('type') == want):
+                return f"https://www.youtube.com/watch?v={v['key']}"
+    return None
+
+
+def upcoming(media='movie', pages=1):
+    """Genuinely upcoming titles (future release / first-air date)."""
+    import datetime
+    today = datetime.date.today().isoformat()
+    out = []
+    for p in range(1, pages + 1):
+        if media == 'movie':
+            data = _get('/movie/upcoming', {'page': p})
+        else:
+            data = _get('/discover/tv', {
+                'page': p,
+                'first_air_date.gte': today,
+                'sort_by': 'popularity.desc',
+            })
+        for it in (data or {}).get('results') or []:
+            rel = (it.get('release_date') or it.get('first_air_date') or '')
+            if not it.get('id') or not rel or rel < today:
+                continue  # must have a future date
+            out.append({
+                'tmdb_id': it['id'],
+                'media': media,
+                'title': (it.get('title') or it.get('name') or '').strip(),
+                'overview': (it.get('overview') or '').strip(),
+                'poster_url': f"{IMG}{it['poster_path']}" if it.get('poster_path') else None,
+                'release_date': rel,
+                'rating': round(it.get('vote_average') or 0, 1),
+            })
+    return out
+
+
 def details(tmdb_id, media):
     """Fetch full metadata for a matched title. Returns a dict or None."""
     data = _get(f'/{media}/{tmdb_id}',

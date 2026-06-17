@@ -279,3 +279,23 @@ class MovieCast(models.Model):
 
     def __str__(self):
         return f"{self.person.name} in {self.movie.title}"
+
+
+class UpcomingTitle(models.Model):
+    """A not-yet-released TMDB movie/show shown in 'Coming Soon'. Auto-removed
+    once a Movie with the same tmdb_id enters the catalogue."""
+    tmdb_id      = models.IntegerField(unique=True, db_index=True)
+    media_type   = models.CharField(max_length=10)  # movie / tv
+    title        = models.CharField(max_length=255)
+    overview     = models.TextField(blank=True)
+    release_date = models.CharField(max_length=20, blank=True)
+    poster_url   = models.URLField(max_length=500, blank=True, null=True)
+    trailer_url  = models.URLField(max_length=500, blank=True, null=True)
+    rating       = models.FloatField(null=True, blank=True)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['release_date']
+
+    def __str__(self):
+        return f"{self.title} ({self.release_date})"
