@@ -99,7 +99,18 @@
       "Bash(python -m json.tool)",
       "Bash(python manage.py fetch_upcoming --pages 1)",
       "Bash(python manage.py fetch_upcoming --pages 2)",
-      "Bash(curl -s 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_upcomingtitle?select=tmdb_id,title,release_date,media_type,poster_url&order=release_date.asc&limit=3' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')"
+      "Bash(curl -s 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_upcomingtitle?select=tmdb_id,title,release_date,media_type,poster_url&order=release_date.asc&limit=3' -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-')",
+      "Bash(sed -n '/^dependencies:/,/^dev_dependencies:/p' pubspec.yaml)",
+      "Bash(ls -d android ios windows macos linux web)",
+      "Bash(ls lib/services/download_manager.dart lib/screens/downloads_screen.dart)",
+      "Bash(wc -l lib/screens/movie_detail_screen.dart lib/services/download_manager.dart lib/services/firebase_service.dart lib/services/supabase_service.dart)",
+      "Bash(command -v flutter)",
+      "Bash(flutter --version)",
+      "Bash(command -v dart)",
+      "Bash(flutter analyze *)",
+      "Bash(command -v psql)",
+      "Bash(PGCONNECT_TIMEOUT=20 psql \"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" -v ON_ERROR_STOP=1 -f SUPABASE_UPCOMING_NOTIFY.sql)",
+      "Bash(PGCONNECT_TIMEOUT=20 psql \"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" -c \"select version_code, version_name, mandatory, created_at from app_release order by version_code desc limit 5;\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
