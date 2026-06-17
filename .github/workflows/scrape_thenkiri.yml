@@ -209,3 +209,11 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: python manage.py notify_new_content
+
+      # Personalized: only ping users who watchlisted a series that got a new ep.
+      - name: Personalized new-episode push
+        if: ${{ vars.DATA_ONLY == 'true' }}
+        continue-on-error: true
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: python manage.py notify_new_episodes --hours 13
