@@ -158,11 +158,11 @@ jobs:
 
   # ── After all scrapers: merge dup categories/movies + purge junk links ──────
   cleanse:
-    name: "🧹 Cleanse DB"
+    name: "🧹 Cleanse + Enrich"
     needs: scrape
     if: always()
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -181,9 +181,26 @@ jobs:
           DATABASE_URL=${{ secrets.DATABASE_URL }}
           REDIS_URL=${{ secrets.REDIS_URL }}
           SITE_URL=${{ secrets.SITE_URL }}
+          TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+          R2_ACCOUNT_ID=${{ vars.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID=${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY=${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET=${{ vars.R2_BUCKET }}
+          R2_PUBLIC_URL=${{ vars.R2_PUBLIC_URL }}
           ENVEOF
       - name: Run cleanse_db
         run: python manage.py cleanse_db
+
+      # ── Auto-enrichment (each runs only on new/un-done rows, so it's quick) ──
+      - name: Re-host new images to R2
+        continue-on-error: true
+        run: python manage.py rehost_images --workers 8
+      - name: Enrich new titles from TMDB (rating/trailer/cast/poster)
+        continue-on-error: true
+        run: python manage.py enrich_tmdb --workers 6
+      - name: Refresh Coming Soon
+        continue-on-error: true
+        run: python manage.py fetch_upcoming --pages 3
 
       # One batched "new titles added" push to all app users.
       # Only the app-DB account (DATA_ONLY=true) sends it, so users get it once.
