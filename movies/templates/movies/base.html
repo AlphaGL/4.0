@@ -270,7 +270,12 @@
               <i class="fas fa-home mr-2"></i>
               <span>Home</span>
             </a>
-            
+
+            <a href="{% url 'movies:coming_soon' %}" class="nav-link {% if request.resolver_match.url_name == 'coming_soon' %}active{% endif %}">
+              <i class="fas fa-clock mr-2"></i>
+              <span>Coming Soon</span>
+            </a>
+
             {# Dynamic Categories #}
             {% for category in categories %}
               <a href="{% url 'movies:category_movies' category.id category.slug %}" 
@@ -352,7 +357,20 @@
                     </div>
                     <i class="fas fa-chevron-right text-gray-400"></i>
                   </a>
-                  
+
+                  <a href="{% url 'movies:coming_soon' %}" class="mobile-nav-link {% if request.resolver_match.url_name == 'coming_soon' %}active{% endif %}">
+                    <div class="flex items-center">
+                      <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-fuchsia-600 rounded-xl flex items-center justify-center mr-3">
+                        <i class="fas fa-clock text-white text-sm"></i>
+                      </div>
+                      <div>
+                        <span class="font-medium">Coming Soon</span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Upcoming releases</p>
+                      </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                  </a>
+
                   {# Dynamic Categories Mobile #}
                   {% for category in categories %}
                     <a href="{% url 'movies:category_movies' category.id category.slug %}" 

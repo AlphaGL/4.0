@@ -227,11 +227,19 @@
             {% if movie.title_b %}
               <h2 class="text-sm text-gray-300 mb-2">{{ movie.title_b }}</h2>
             {% endif %}
-            {% if movie.year %}
-              <span class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-0.5 rounded-full text-xs font-semibold shadow">
-                {{ movie.year }}
-              </span>
-            {% endif %}
+            <div class="flex flex-wrap items-center gap-2">
+              {% if movie.year %}
+                <span class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-0.5 rounded-full text-xs font-semibold shadow">
+                  {{ movie.year }}
+                </span>
+              {% endif %}
+              {% if movie.rating %}
+                <span class="inline-flex items-center gap-1 bg-yellow-400/90 text-gray-900 px-2.5 py-0.5 rounded-full text-xs font-bold shadow"
+                      title="TMDB rating">
+                  <i class="fas fa-star text-[10px]"></i>{{ movie.rating|floatformat:1 }}
+                </span>
+              {% endif %}
+            </div>
           </div>
 
           {# Categories #}
@@ -507,7 +515,8 @@
   <!-- ═══════════════════════════════════════════════
      TRAILER SECTION
   ════════════════════════════════════════════════ -->
-  {% if movie.video_url %}
+  {% with trailer_src=movie.trailer_url|default:movie.video_url %}
+  {% if trailer_src %}
   <div id="trailer-section" class="container mx-auto px-4 py-4">
     <div class="max-w-4xl mx-auto">
       <div class="text-center mb-4">
@@ -522,7 +531,7 @@
 
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
           <div id="video-container" class="w-full aspect-video bg-black relative"
-               data-video-url="{{ movie.video_url }}" data-poster="{{ movie.image_url }}">
+               data-video-url="{{ trailer_src }}" data-poster="{{ movie.image_url }}">
             <div id="trailer-poster" class="absolute inset-0 cursor-pointer flex items-center justify-center"
                  style="background:#000 url('{{ movie.image_url }}') center/cover no-repeat;">
               <div class="absolute inset-0 bg-black/45"></div>
@@ -538,6 +547,7 @@
     </div>
   </div>
   {% endif %}
+  {% endwith %}
 
   {# Trailer embed script — click the poster to play (autoplay on user gesture) #}
   <script>
@@ -905,6 +915,42 @@
   }
   </script>
   {% endif %}{# end download section — hidden entirely when no downloads #}
+
+  <!-- ═══════════════════════════════════════════════
+     CAST  (TMDB-enriched)
+  ════════════════════════════════════════════════ -->
+{% if cast %}
+<section class="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-2">
+  <h2 class="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2 mb-4 sm:mb-5">
+    <i class="fas fa-users text-purple-500"></i>
+    Cast
+  </h2>
+  <div class="flex gap-3 sm:gap-4 overflow-x-auto pb-3 -mx-1 px-1 cast-scroll">
+    {% for credit in cast %}
+    <a href="{{ credit.person.get_absolute_url }}" class="group shrink-0 w-20 sm:w-24 text-center">
+      <div class="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-md group-hover:ring-2 group-hover:ring-purple-500 transition-all">
+        {% if credit.person.profile_url %}
+          <img src="{{ credit.person.profile_url }}" alt="{{ credit.person.name }}"
+               class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+               loading="lazy" />
+        {% else %}
+          <div class="w-full h-full flex items-center justify-center">
+            <i class="fas fa-user text-gray-400 text-xl"></i>
+          </div>
+        {% endif %}
+      </div>
+      <p class="mt-1.5 font-semibold text-[10px] sm:text-xs text-gray-900 dark:text-white line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+        {{ credit.person.name }}
+      </p>
+      {% if credit.character %}
+        <p class="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1">{{ credit.character }}</p>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
 
   <!-- ═══════════════════════════════════════════════
      RELATED MOVIES

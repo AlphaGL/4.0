@@ -8,7 +8,7 @@ from django.contrib.auth import login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from .models import Movie, Category, Comment
+from .models import Movie, Category, Comment, Person, MovieCast, UpcomingTitle
 from .forms import MovieForm, CommentForm, DownloadLinkFormSet
 from django.db.models import Q, Prefetch, Count
 from django.templatetags.static import static
@@ -962,6 +962,19 @@ class HomeView(ListView):
             self.request.GET.get('completed_page', 1)
         )
 
+        # ── Coming Soon teaser (cached) — first few un-released TMDB titles ───
+        upcoming_cached = cache.get('home_upcoming_v1')
+        if upcoming_cached is None:
+            from django.utils import timezone
+            today = timezone.now().date().isoformat()
+            upcoming_cached = list(
+                UpcomingTitle.objects
+                .filter(release_date__gte=today)
+                .order_by('release_date')[:12]
+            )
+            cache.set('home_upcoming_v1', upcoming_cached, MOVIES_HOME_CACHE_TTL)
+        context['upcoming'] = upcoming_cached
+
         return context
 
 
@@ -1135,6 +1148,15 @@ class MovieDetailView(DetailView):
             )
 
         context['related_movies'] = related_movies
+
+        # ── Cast (TMDB-enriched). Top-billed first; capped for the row. ───────
+        context['cast'] = list(
+            MovieCast.objects
+            .filter(movie=movie)
+            .select_related('person')
+            .order_by('order')[:18]
+        )
+
         context['categories']     = get_sidebar_categories()
         context['full_image_url'] = request.build_absolute_uri(movie.image_url)
         context['full_video_url'] = request.build_absolute_uri(movie.video_url)
@@ -1760,4 +1782,67 @@ class StreamGateView(DetailView):
             'categories':     get_sidebar_categories(),
             'disable_global_popunder': True,
         })
+        return context
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  ACTOR / CAST PAGE  —  /actor/<pk>/<slug>/
+#  Every cast member becomes an SEO-friendly page listing the titles they're in.
+# ════════════════════════════════════════════════════════════════════════════
+class ActorView(DetailView):
+    model = Person
+    template_name = 'movies/actor.html'
+    context_object_name = 'person'
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        # Canonicalise the slug (301 to the correct one) for SEO.
+        if kwargs.get('slug', '') != self.object.slug:
+            return redirect(self.object.get_absolute_url(), permanent=True)
+        return self.render_to_response(self.get_context_data(object=self.object))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        person = context['person']
+        credits = (
+            MovieCast.objects
+            .filter(person=person)
+            .select_related('movie')
+            .order_by('order', '-movie__created_at')
+        )
+        # De-dup movies (a person can have one credit per movie via unique_together,
+        # but guard anyway) and keep their character label.
+        seen, titles = set(), []
+        for c in credits:
+            if c.movie_id in seen:
+                continue
+            seen.add(c.movie_id)
+            titles.append({'movie': c.movie, 'character': c.character})
+        context['titles'] = titles
+        context['title_count'] = len(titles)
+        return context
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  COMING SOON  —  /coming-soon/
+#  Not-yet-released TMDB titles; auto-removed once they enter the catalogue.
+# ════════════════════════════════════════════════════════════════════════════
+class ComingSoonView(ListView):
+    model = UpcomingTitle
+    template_name = 'movies/coming_soon.html'
+    context_object_name = 'upcoming'
+    paginate_by = 24
+
+    def get_queryset(self):
+        from django.utils import timezone
+        today = timezone.now().date().isoformat()
+        return (
+            UpcomingTitle.objects
+            .filter(release_date__gte=today)
+            .order_by('release_date')
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = get_sidebar_categories()
         return context

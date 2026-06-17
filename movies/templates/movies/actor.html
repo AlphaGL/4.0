@@ -1,0 +1,71 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block title %}{{ person.name }} — Movies & TV Shows | Watch2D{% endblock %}
+{% block meta_description %}Browse {{ title_count }} movies and TV shows starring {{ person.name }}. Stream or download in HD on Watch2D.{% endblock %}
+{% block meta_keywords %}{{ person.name }}, {{ person.name }} movies, {{ person.name }} tv shows, watch {{ person.name }}{% endblock %}
+{% block canonical_block %}<link rel="canonical" href="{{ request.build_absolute_uri }}" />{% endblock %}
+{% block og_title %}{{ person.name }} — Movies & TV Shows{% endblock %}
+{% block og_description %}Browse {{ title_count }} titles starring {{ person.name }} on Watch2D.{% endblock %}
+{% if person.profile_url %}{% block og_image %}{{ person.profile_url }}{% endblock %}{% endif %}
+
+{% block content %}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+
+  {# ── Actor header ───────────────────────────────────────────────── #}
+  <div class="flex items-center gap-4 sm:gap-6 mb-8">
+    <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg shrink-0">
+      {% if person.profile_url %}
+        <img src="{{ person.profile_url }}" alt="{{ person.name }}" class="w-full h-full object-cover" />
+      {% else %}
+        <div class="w-full h-full flex items-center justify-center">
+          <i class="fas fa-user text-gray-400 text-3xl"></i>
+        </div>
+      {% endif %}
+    </div>
+    <div>
+      <h1 class="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white">{{ person.name }}</h1>
+      <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
+        <i class="fas fa-film mr-1 text-purple-500"></i>{{ title_count }} title{{ title_count|pluralize }} on Watch2D
+      </p>
+    </div>
+  </div>
+
+  {# ── Their titles ───────────────────────────────────────────────── #}
+  {% if titles %}
+  <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-3 lg:gap-4">
+    {% for t in titles %}
+    <a href="{{ t.movie.get_absolute_url }}" class="group">
+      <div class="relative aspect-[2/3] rounded-lg sm:rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 mb-1 sm:mb-1.5 shadow-md group-hover:shadow-xl transition-shadow">
+        {% if t.movie.image_url %}
+          <img src="{{ t.movie.image_url }}" alt="{{ t.movie.title }}"
+               class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+        {% else %}
+          <div class="w-full h-full flex items-center justify-center">
+            <i class="fas fa-film text-gray-400 text-2xl"></i>
+          </div>
+        {% endif %}
+        {% if t.movie.rating %}
+          <div class="absolute top-1.5 right-1.5">
+            <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-400/95 text-gray-900 text-[8px] sm:text-[9px] font-bold rounded shadow">
+              <i class="fas fa-star"></i>{{ t.movie.rating|floatformat:1 }}
+            </span>
+          </div>
+        {% endif %}
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
+      </div>
+      <h4 class="font-semibold text-[10px] sm:text-xs text-gray-900 dark:text-white line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+        {{ t.movie.title }}
+      </h4>
+      {% if t.character %}
+        <p class="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1">as {{ t.character }}</p>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-500 dark:text-gray-400 text-center py-16">No titles for {{ person.name }} yet.</p>
+  {% endif %}
+
+</div>
+{% endblock %}

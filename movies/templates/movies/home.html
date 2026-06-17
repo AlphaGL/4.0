@@ -469,6 +469,34 @@
   </div>
   {% endif %} -->
 
+  {# ═══ COMING SOON ROW ═══ #}
+  {% if upcoming %}
+  <div class="row-s" id="coming-soon-section">
+    <div class="row-hd">
+      <span class="row-ttl">🔜 Coming Soon</span>
+      <a href="{% url 'movies:coming_soon' %}" class="row-see" style="opacity:1;transform:none;font-size:.68rem;color:#7c3aed;font-weight:600;text-decoration:none;margin-left:auto;white-space:nowrap;">See All &rsaquo;</a>
+    </div>
+    <div class="srow-wrap">
+      <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="srow">
+        {% for item in upcoming %}
+        <a href="{% url 'movies:coming_soon' %}" class="card">
+          <div class="card-img shim">
+            {% if item.poster_url %}<img src="{{ item.poster_url }}" alt="{{ item.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
+            <div class="c-ov"></div>
+            <span class="cbadge cbtl" style="background:#7c3aed;color:#fff;">SOON</span>
+            {% if item.rating %}<span class="cbadge cbtr" style="background:#facc15;color:#111;">★ {{ item.rating|floatformat:1 }}</span>{% endif %}
+          </div>
+          <div class="card-ttl">{{ item.title }}</div>
+          {% if item.release_date %}<div class="card-sub" style="color:#7c3aed;">{{ item.release_date }}</div>{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      <button class="sarr sarr-r" onclick="doScroll(this,1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+  {% endif %}
+
   {# ═══ ONGOING SERIES GRID ═══ #}
   {% if ongoing_series %}
   <div class="grid-s" id="ongoing-section">

@@ -263,6 +263,14 @@ class Person(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def slug(self):
+        return slugify(self.name) or 'actor'
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('movies:actor', kwargs={'pk': self.pk, 'slug': self.slug})
+
 
 class MovieCast(models.Model):
     """Links a Movie to a Person (cast member) with their character + billing."""

@@ -1,0 +1,81 @@
+{% extends 'movies/base.html' %}
+{% load static %}
+
+{% block title %}Coming Soon — Upcoming Movies & TV Shows | Watch2D{% endblock %}
+{% block meta_description %}See what's coming soon to Watch2D. Upcoming movie and TV show releases with trailers, ratings and release dates — updated daily.{% endblock %}
+{% block meta_keywords %}coming soon movies, upcoming movies, upcoming tv shows, new releases, movie release dates{% endblock %}
+{% block canonical_block %}<link rel="canonical" href="{{ request.build_absolute_uri }}" />{% endblock %}
+{% block og_title %}Coming Soon — Upcoming Movies & TV Shows{% endblock %}
+{% block og_description %}Upcoming releases with trailers, ratings and dates on Watch2D.{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+
+  <div class="text-center mb-8">
+    <h1 class="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white flex items-center justify-center gap-2">
+      <i class="fas fa-clock text-purple-500"></i> Coming Soon
+    </h1>
+    <p class="text-gray-500 dark:text-gray-400 text-sm mt-2">Upcoming releases — added to the catalogue the moment they drop.</p>
+  </div>
+
+  {% if upcoming %}
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+    {% for item in upcoming %}
+    <div class="group">
+      <div class="relative aspect-[2/3] rounded-lg sm:rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 mb-1.5 shadow-md">
+        {% if item.poster_url %}
+          <img src="{{ item.poster_url }}" alt="{{ item.title }}"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+        {% else %}
+          <div class="w-full h-full flex items-center justify-center">
+            <i class="fas fa-film text-gray-400 text-2xl"></i>
+          </div>
+        {% endif %}
+        <div class="absolute top-1.5 left-1.5">
+          <span class="px-1.5 py-0.5 bg-purple-600 text-white text-[9px] font-bold rounded shadow uppercase">{{ item.media_type|default:"movie" }}</span>
+        </div>
+        {% if item.rating %}
+          <div class="absolute top-1.5 right-1.5">
+            <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-400/95 text-gray-900 text-[9px] font-bold rounded shadow">
+              <i class="fas fa-star"></i>{{ item.rating|floatformat:1 }}
+            </span>
+          </div>
+        {% endif %}
+        {% if item.trailer_url %}
+          <a href="{{ item.trailer_url }}" target="_blank" rel="noopener"
+             class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors">
+            <span class="opacity-0 group-hover:opacity-100 transition-opacity w-12 h-12 rounded-full bg-red-600/90 flex items-center justify-center text-white text-lg">
+              <i class="fas fa-play ml-0.5"></i>
+            </span>
+          </a>
+        {% endif %}
+      </div>
+      <h4 class="font-semibold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-2">{{ item.title }}</h4>
+      {% if item.release_date %}
+        <p class="text-[10px] sm:text-xs text-purple-600 dark:text-purple-400 font-medium">
+          <i class="far fa-calendar mr-1"></i>{{ item.release_date }}
+        </p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ── Pagination ──────────────────────────────────────────────────── #}
+  {% if is_paginated %}
+  <div class="flex justify-center items-center gap-2 mt-8">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-600 hover:text-white transition-colors text-sm font-semibold">Previous</a>
+    {% endif %}
+    <span class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-600 hover:text-white transition-colors text-sm font-semibold">Next</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <p class="text-gray-500 dark:text-gray-400 text-center py-16">No upcoming titles right now — check back soon.</p>
+  {% endif %}
+
+</div>
+{% endblock %}

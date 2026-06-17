@@ -10,12 +10,20 @@ from .views import (
     old_category_redirect, report_broken_link,    # ← handles legacy /category/<pk>/ URLs (301 → slug URL)
     DownloadGateView,         # ← monetised download gate
     StreamGateView,           # ← NEW: streaming player gate (moviebox / streamimdb)
+    ActorView,                # ← NEW: cast member / actor page
+    ComingSoonView,           # ← NEW: Coming Soon (TMDB upcoming)
 )
 
 app_name = 'movies'
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
+
+    # ── Coming Soon (TMDB upcoming) ─────────────────────────────────────────
+    path('coming-soon/', ComingSoonView.as_view(), name='coming_soon'),
+
+    # ── Actor / cast member page (SEO) ──────────────────────────────────────
+    path('actor/<int:pk>/<slug:slug>/', ActorView.as_view(), name='actor'),
 
     path('category/<int:cat_id>/<slug:slug>/', CategoryMoviesView.as_view(), name='category_movies'),
 
