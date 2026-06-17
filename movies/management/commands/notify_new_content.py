@@ -36,17 +36,15 @@ class Command(BaseCommand):
             self.stdout.write(f"No new content in the last {opts['hours']}h — no push.")
             return
 
-        titles = list(qs.values_list('title', flat=True)[:3])
-        body = f"{count} new title{'s' if count != 1 else ''} added"
-        if titles:
-            body += " — " + ", ".join(titles)
-            if count > len(titles):
-                body += " & more"
-        body += "!"
+        # Feature the newest title that has artwork — the app renders this as a
+        # Netflix-style card ("<name>'s New Arrival", big picture, action row).
+        featured = (qs.exclude(image_url='').exclude(image_url__isnull=True)
+                    .only('id', 'title', 'slug', 'image_url').first() or
+                    qs.only('id', 'title', 'slug', 'image_url').first())
 
-        self._send('🎬 New on Watch2D', body, count)
+        self._send(featured, count)
 
-    def _send(self, title, body, count):
+    def _send(self, movie, count):
         sa = (os.environ.get('FIREBASE_SERVICE_ACCOUNT') or '').strip()
         if not sa:
             self.stderr.write("FIREBASE_SERVICE_ACCOUNT not set — skipping push.")
@@ -58,12 +56,20 @@ class Command(BaseCommand):
             if not firebase_admin._apps:
                 firebase_admin.initialize_app(credentials.Certificate(json.loads(sa)))
 
+            # DATA message: the app builds the rich, personalized notification.
             message = messaging.Message(
-                notification=messaging.Notification(title=title, body=body),
+                data={
+                    'type': 'new_arrival',
+                    'movie_id': str(movie.id),
+                    'title': movie.title,
+                    'image': movie.image_url or '',
+                    'slug': movie.slug or '',
+                },
                 topic='all_users',
                 android=messaging.AndroidConfig(priority='high'),
             )
             resp = messaging.send(message)
-            self.stdout.write(self.style.SUCCESS(f"Push sent for {count} titles: {resp}"))
+            self.stdout.write(self.style.SUCCESS(
+                f"Push sent (featured '{movie.title}', {count} new): {resp}"))
         except Exception as e:
             self.stderr.write(f"Push failed (non-fatal): {e}")

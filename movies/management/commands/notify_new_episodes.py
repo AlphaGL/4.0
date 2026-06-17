@@ -65,15 +65,21 @@ class Command(BaseCommand):
             if not tokens:
                 continue
 
-            body = m.title_b or 'New episode out now'
+            # DATA message → the app builds the rich, Netflix-style card.
+            data = {
+                'type': 'new_episode',
+                'movie_id': str(m.id),
+                'title': m.title,
+                'image': m.image_url or '',
+                'slug': m.slug or '',
+            }
             for batch in _chunks(tokens, 500):
                 try:
                     resp = messaging.send_each_for_multicast(
                         messaging.MulticastMessage(
                             tokens=batch,
-                            notification=messaging.Notification(
-                                title=f"📺 {m.title}", body=body),
-                            data={'movie_id': str(m.id)},
+                            data=data,
+                            android=messaging.AndroidConfig(priority='high'),
                         ))
                     sent += resp.success_count
                 except Exception as e:

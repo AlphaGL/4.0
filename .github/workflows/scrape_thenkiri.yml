@@ -217,3 +217,12 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: python manage.py notify_new_episodes --hours 13
+
+      # Personalized: ping users who tapped "Notify me" on a Coming Soon title
+      # that has now entered the catalogue.
+      - name: Notify Coming Soon "notify me" arrivals
+        if: ${{ vars.DATA_ONLY == 'true' }}
+        continue-on-error: true
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: python manage.py notify_upcoming_arrivals
