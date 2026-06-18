@@ -198,6 +198,9 @@ jobs:
       - name: Enrich new titles from TMDB (rating/trailer/cast/poster)
         continue-on-error: true
         run: python manage.py enrich_tmdb --workers 6
+      - name: Refresh Netflix/Prime availability (TMDB watch-providers, NG)
+        continue-on-error: true
+        run: python manage.py fetch_providers --region NG --days 7 --workers 6
       - name: Refresh Coming Soon
         continue-on-error: true
         run: python manage.py fetch_upcoming --pages 3

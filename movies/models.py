@@ -71,6 +71,13 @@ class Movie(models.Model):
                                      help_text="TMDB rating (0–10).")
     trailer_url  = models.URLField("Trailer URL", blank=True, null=True, max_length=500,
                                    help_text="Official YouTube trailer (from TMDB).")
+    # ── Streaming availability (TMDB watch/providers → JustWatch data) ─
+    on_netflix   = models.BooleanField(default=False, db_index=True,
+                                       help_text="Also streaming on Netflix (region NG).")
+    on_prime     = models.BooleanField(default=False, db_index=True,
+                                       help_text="Also streaming on Amazon Prime Video (region NG).")
+    providers_checked_at = models.DateTimeField(null=True, blank=True,
+                                       help_text="When watch-provider availability was last refreshed.")
     categories   = models.ManyToManyField(Category, blank=True, related_name='movies')
     added_by     = models.ForeignKey(
         User, null=True, blank=True,

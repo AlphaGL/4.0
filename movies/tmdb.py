@@ -77,6 +77,22 @@ def trailer(tmdb_id, media):
     return None
 
 
+# TMDB watch-provider ids (data is JustWatch-sourced). Amazon Prime Video shows
+# up under both 9 and 119 depending on the title/region, so we accept either.
+NETFLIX_IDS = {8}
+PRIME_IDS = {9, 119}
+
+
+def watch_providers(tmdb_id, media, region='NG'):
+    """Return (on_netflix, on_prime) for a title in `region`, looking only at
+    subscription ('flatrate') availability — not rent/buy."""
+    data = _get(f'/{media}/{tmdb_id}/watch/providers')
+    region_data = ((data or {}).get('results') or {}).get(region) or {}
+    flatrate = region_data.get('flatrate') or []
+    ids = {p.get('provider_id') for p in flatrate}
+    return bool(ids & NETFLIX_IDS), bool(ids & PRIME_IDS)
+
+
 def upcoming(media='movie', pages=1):
     """Genuinely upcoming titles (future release / first-air date)."""
     import datetime
