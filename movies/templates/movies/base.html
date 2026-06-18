@@ -535,11 +535,16 @@
             Your ultimate destination for streaming and downloading movies, series, anime, and more. 
             Fresh content updated daily in high quality.
           </p>
-          {# PWA Info in Footer #}
+          {# Get the App #}
           <div class="pt-4 border-t border-gray-700">
-            <p class="text-xs text-gray-400 flex items-center">
+            <a href="https://dl.watch2d.org/watch2d-latest.apk"
+               class="footer-btn inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-sm font-semibold shadow-lg transition-all duration-300">
+              <i class="fab fa-android text-base"></i>
+              Download Android App
+            </a>
+            <p class="text-xs text-gray-400 mt-2 flex items-center">
               <i class="fas fa-mobile-alt mr-2 text-primary-400"></i>
-              Available as a mobile app - Install for offline access
+              Free APK · downloads, notifications &amp; offline viewing
             </p>
           </div>
         </div>
@@ -891,6 +896,9 @@
     function isIOS() {
       return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     }
+    function isAndroid() {
+      return /Android/i.test(navigator.userAgent);
+    }
     function isInStandalone() {
       return window.navigator.standalone === true ||
              window.matchMedia('(display-mode: standalone)').matches;
@@ -939,6 +947,9 @@
       window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
         window.deferredPrompt = e;            // keep the existing handler working
+        // On Android we offer the real native APK instead (better app), so the
+        // PWA banner is suppressed there and the #apk-bar below takes over.
+        if (isAndroid()) return;
         if (document.getElementById('pwa-bar')) return;
 
         var ICON = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgGDg63ESTUKkQx6xcxK4dBd8LDkHo5VjiLkh1drq5WGGSG1dLVGQdwY7eXuVQ6Rxtz2mVSkcVvK7f7pFk5_4UVQc8uuX5HI_2J5IUZxR7uhvdmjxb-LEBmqR7zDjqiwjJVSmzv1fKtAt6nHr0EiDAMNPTNMq1yUnkdcMsA_9Z4Dasfc8bxJ0pnFLwafJk/s320/logo%20(3).png';
@@ -975,6 +986,47 @@
       window.addEventListener('appinstalled', function () {
         var b = document.getElementById('pwa-bar');
         if (b) b.remove();
+      });
+    })();
+
+    // ─────────────────────────────────────────────────────────────────────
+    //  Android native-app (APK) banner — Android users get the REAL app
+    //  (https://dl.watch2d.org/watch2d-latest.apk) instead of the PWA, since
+    //  the native build has in-app downloads, push notifications & offline
+    //  playback. Shown only on Android browsers, not when already standalone,
+    //  with a 7-day snooze. The footer button offers the same APK to everyone.
+    // ─────────────────────────────────────────────────────────────────────
+    (function androidApkBanner() {
+      var APK_URL = 'https://dl.watch2d.org/watch2d-latest.apk';
+      if (!isAndroid() || isInStandalone()) return;
+      var snoozed = parseInt(localStorage.getItem('apk_snooze') || '0', 10);
+      if (snoozed && (Date.now() - snoozed) < 7 * 24 * 60 * 60 * 1000) return;
+
+      var ICON = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgGDg63ESTUKkQx6xcxK4dBd8LDkHo5VjiLkh1drq5WGGSG1dLVGQdwY7eXuVQ6Rxtz2mVSkcVvK7f7pFk5_4UVQc8uuX5HI_2J5IUZxR7uhvdmjxb-LEBmqR7zDjqiwjJVSmzv1fKtAt6nHr0EiDAMNPTNMq1yUnkdcMsA_9Z4Dasfc8bxJ0pnFLwafJk/s320/logo%20(3).png';
+      var bar = document.createElement('div');
+      bar.id = 'apk-bar';
+      bar.innerHTML =
+        '<img src="' + ICON + '" alt="Watch2D">' +
+        '<div class="apk-bar-txt">' +
+          '<strong>Get the Watch2D app</strong>' +
+          '<span>Free Android app — downloads, notifications &amp; offline</span>' +
+        '</div>' +
+        '<a id="apk-bar-get" href="' + APK_URL + '" download rel="noopener">' +
+          '<i class="fab fa-android"></i>Install</a>' +
+        '<button id="apk-bar-x" aria-label="Dismiss">&times;</button>';
+      document.body.appendChild(bar);
+      setTimeout(function () { bar.classList.add('show'); }, 900);
+
+      // Tapping Install downloads the APK and snoozes the banner.
+      document.getElementById('apk-bar-get').addEventListener('click', function () {
+        localStorage.setItem('apk_snooze', String(Date.now()));
+        bar.classList.remove('show');
+        setTimeout(function () { bar.remove(); }, 400);
+      });
+      document.getElementById('apk-bar-x').addEventListener('click', function () {
+        bar.classList.remove('show');
+        localStorage.setItem('apk_snooze', String(Date.now()));
+        setTimeout(function () { bar.remove(); }, 300);
       });
     })();
 
@@ -1057,6 +1109,35 @@
     }
     #pwa-bar #pwa-bar-install:hover { background: #0284c7; }
     #pwa-bar #pwa-bar-x {
+      flex: 0 0 auto; background: none; border: 0; color: #94a3b8;
+      font-size: 22px; line-height: 1; cursor: pointer; padding: 0 2px;
+    }
+
+    /* Android native-app (APK) banner */
+    #apk-bar {
+      position: fixed; z-index: 9999;
+      left: 50%; transform: translateX(-50%) translateY(160%); opacity: 0;
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+      width: min(440px, calc(100vw - 24px));
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 16px;
+      background: rgba(17, 24, 39, .97); color: #fff;
+      box-shadow: 0 12px 44px rgba(0,0,0,.45); backdrop-filter: blur(10px);
+      transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .35s;
+    }
+    #apk-bar.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    #apk-bar img { width: 42px; height: 42px; border-radius: 11px; flex: 0 0 auto; }
+    #apk-bar .apk-bar-txt { display: flex; flex-direction: column; line-height: 1.25; flex: 1; min-width: 0; }
+    #apk-bar .apk-bar-txt strong { font-size: 14px; }
+    #apk-bar .apk-bar-txt span { font-size: 12px; color: #cbd5e1; }
+    #apk-bar #apk-bar-get {
+      flex: 0 0 auto; border: 0; cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #22c55e; color: #fff; font-weight: 700; font-size: 13px;
+      padding: 8px 16px; border-radius: 10px;
+    }
+    #apk-bar #apk-bar-get:hover { background: #16a34a; }
+    #apk-bar #apk-bar-x {
       flex: 0 0 auto; background: none; border: 0; color: #94a3b8;
       font-size: 22px; line-height: 1; cursor: pointer; padding: 0 2px;
     }
