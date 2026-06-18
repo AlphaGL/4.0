@@ -97,17 +97,9 @@ class Watch2DPWA {
 
   // Show install prompt UI
   showInstallPrompt() {
-    if (this.isInstalled) return;
-    
-    // Create install banner if it doesn't exist
-    let banner = document.getElementById('pwa-install-banner');
-    if (!banner) {
-      banner = this.createInstallBanner();
-      document.body.appendChild(banner);
-    }
-    
-    banner.style.display = 'block';
-    setTimeout(() => banner.classList.add('show'), 100);
+    // Top install bar disabled — it covered the search/nav. The floating
+    // bottom banner (#pwa-bar in base.html) is now the only install prompt.
+    return;
   }
 
   // Create install banner
