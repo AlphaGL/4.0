@@ -133,7 +133,11 @@
       "Bash(ls lib/services/rewards_service.dart lib/models/reward.dart)",
       "Bash(grep -rln \"rewards\\\\|Rewarded\\\\|showRewarded\\\\|isPremium\\\\|premium\" lib/screens lib/services lib/models)",
       "Bash(PGCONNECT_TIMEOUT=25 psql \"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" -f SUPABASE_REWARD_ADFREE.sql)",
-      "Bash(PGCONNECT_TIMEOUT=25 psql \"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" -tA -c \"select proname from pg_proc where proname='reward_grant_adfree';\")"
+      "Bash(PGCONNECT_TIMEOUT=25 psql \"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" -tA -c \"select proname from pg_proc where proname='reward_grant_adfree';\")",
+      "Bash(python -c \"import django; django.setup\\(\\)\")",
+      "Bash(DATABASE_URL=\"sqlite:///dev.sqlite3\" python manage.py check)",
+      "Bash(cp intro.json intro.json.bak)",
+      "Bash(python -c \"import json;[print\\(l.get\\('nm'\\)\\) for l in json.load\\(open\\('intro.json'\\)\\)['layers']]\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
