@@ -114,7 +114,17 @@
       "Bash(grep -nE \"Movie\\\\.objects|\\\\.create\\\\\\(|update_or_create|DownloadLink\\\\.objects|find_existing_movie|assign_db_categories|BASE_URL *=|SEARCH|/\\\\?s=\" movies/management/commands/scrape_9jarocks.py)",
       "Bash(PYTHONIOENCODING=utf-8 python -c ' *)",
       "Bash(PGCONNECT_TIMEOUT=20 psql \"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" -v ON_ERROR_STOP=1 -f SUPABASE_TITLE_REQUESTS.sql)",
-      "Bash(PGCONNECT_TIMEOUT=20 psql \"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" -c \"\\\\d public.app_title_request\")"
+      "Bash(PGCONNECT_TIMEOUT=20 psql \"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" -c \"\\\\d public.app_title_request\")",
+      "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film\" *)",
+      "Read(//c/Users/Ibeawuchi/Downloads/**)",
+      "Bash(cp \"/c/Users/Ibeawuchi/Downloads/watch2d_intro.json\" assets/splash/intro.json)",
+      "Bash(python -c \"import json;json.load\\(open\\('assets/splash/intro.json'\\)\\);print\\('valid lottie json'\\)\")",
+      "Bash(python -c \"from decouple import config; print\\('TMDB_API_KEY set:', bool\\(config\\('TMDB_API_KEY', default=''\\)\\)\\)\")",
+      "Bash(DATABASE_URL=\"postgresql://postgres.scsikofwbmcchkxvrvsw:all_in_one_db@aws-1-eu-west-1.pooler.supabase.com:6543/postgres\" python manage.py migrate movies --noinput)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" python manage.py migrate movies --noinput)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" python manage.py fetch_providers --region NG --limit 30 --workers 8)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" python manage.py fetch_providers --region NG --workers 8)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.scsikofwbmcchkxvrvsw:all_in_one_db@aws-1-eu-west-1.pooler.supabase.com:6543/postgres\" python manage.py fetch_providers --region NG --workers 8)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
