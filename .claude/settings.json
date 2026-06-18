@@ -124,7 +124,16 @@
       "Bash(DATABASE_URL=\"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" python manage.py migrate movies --noinput)",
       "Bash(DATABASE_URL=\"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" python manage.py fetch_providers --region NG --limit 30 --workers 8)",
       "Bash(DATABASE_URL=\"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" python manage.py fetch_providers --region NG --workers 8)",
-      "Bash(DATABASE_URL=\"postgresql://postgres.scsikofwbmcchkxvrvsw:all_in_one_db@aws-1-eu-west-1.pooler.supabase.com:6543/postgres\" python manage.py fetch_providers --region NG --workers 8)"
+      "Bash(DATABASE_URL=\"postgresql://postgres.scsikofwbmcchkxvrvsw:all_in_one_db@aws-1-eu-west-1.pooler.supabase.com:6543/postgres\" python manage.py fetch_providers --region NG --workers 8)",
+      "Bash(PGCONNECT_TIMEOUT=20 psql \"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" -tA -c \"select count\\(*\\) filter \\(where on_netflix\\) netflix, count\\(*\\) filter \\(where on_prime\\) prime, count\\(*\\) filter \\(where providers_checked_at is null and tmdb_id is not null\\) still_pending from movies_movie;\")",
+      "Bash(PGCONNECT_TIMEOUT=20 psql \"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" -tA -c \"select title from movies_movie where on_netflix order by views desc limit 5;\")",
+      "Bash(DATABASE_URL=\"postgresql://postgres.bsbhsfxghlgjmkscmarz:thecodeguy_project@aws-1-eu-west-1.pooler.supabase.com:6543/postgres\" python manage.py fetch_providers --region NG --all --workers 8)",
+      "Bash(PGCONNECT_TIMEOUT=20 psql \"postgresql://postgres.bsbhsfxghlgjmkscmarz:thecodeguy_project@aws-1-eu-west-1.pooler.supabase.com:6543/postgres\" -tA -c \"select count\\(*\\) filter \\(where on_netflix\\) netflix, count\\(*\\) filter \\(where on_prime\\) prime, count\\(*\\) filter \\(where providers_checked_at is null and tmdb_id is not null\\) pending from movies_movie;\")",
+      "Bash(grep -rn \"startapp\" android/app/src/main/AndroidManifest.xml)",
+      "Bash(ls lib/services/rewards_service.dart lib/models/reward.dart)",
+      "Bash(grep -rln \"rewards\\\\|Rewarded\\\\|showRewarded\\\\|isPremium\\\\|premium\" lib/screens lib/services lib/models)",
+      "Bash(PGCONNECT_TIMEOUT=25 psql \"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" -f SUPABASE_REWARD_ADFREE.sql)",
+      "Bash(PGCONNECT_TIMEOUT=25 psql \"postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres\" -tA -c \"select proname from pg_proc where proname='reward_grant_adfree';\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
