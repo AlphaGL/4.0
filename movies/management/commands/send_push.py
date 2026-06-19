@@ -20,8 +20,8 @@ Env needed:
 Either one missing just skips that half (with a notice) — the other still runs.
 """
 import json
-import os
 
+from decouple import config
 from django.core.management.base import BaseCommand
 
 
@@ -49,7 +49,7 @@ class Command(BaseCommand):
 
     # ── Inbox (chat Supabase project) ──────────────────────────────────────
     def _save_to_inbox(self, title, body, movie_id, image):
-        url = (os.environ.get('CHAT_DATABASE_URL') or '').strip()
+        url = config('CHAT_DATABASE_URL', default='').strip()
         if not url:
             self.stderr.write("CHAT_DATABASE_URL not set — skipping inbox save.")
             return
@@ -69,7 +69,7 @@ class Command(BaseCommand):
 
     # ── Push (FCM, topic all_users) ────────────────────────────────────────
     def _send_push(self, title, body, movie_id):
-        sa = (os.environ.get('FIREBASE_SERVICE_ACCOUNT') or '').strip()
+        sa = config('FIREBASE_SERVICE_ACCOUNT', default='').strip()
         if not sa:
             self.stderr.write("FIREBASE_SERVICE_ACCOUNT not set — skipping FCM push.")
             return
