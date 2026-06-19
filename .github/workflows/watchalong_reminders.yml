@@ -32,3 +32,12 @@ jobs:
           CHAT_DATABASE_URL: ${{ secrets.CHAT_DATABASE_URL }}
           APP_DATABASE_URL: ${{ secrets.APP_DATABASE_URL }}
         run: python manage.py notify_watchalongs
+
+      - name: Notify hosts of new RSVPs
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          CHAT_DATABASE_URL: ${{ secrets.CHAT_DATABASE_URL }}
+          APP_DATABASE_URL: ${{ secrets.APP_DATABASE_URL }}
+        run: python manage.py notify_rsvps
