@@ -19,6 +19,10 @@ app_name = 'movies'
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
 
+    # ── Privacy policy (required for app-store listings) ────────────────────
+    path('privacy/', TemplateView.as_view(template_name='movies/privacy.html'),
+         name='privacy'),
+
     # ── Coming Soon (TMDB upcoming) ─────────────────────────────────────────
     path('coming-soon/', ComingSoonView.as_view(), name='coming_soon'),
 
