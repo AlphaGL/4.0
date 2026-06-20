@@ -173,7 +173,8 @@
       "Bash(venv/Scripts/python.exe -c ' *)",
       "Bash(grep -vE \"staticfiles|urls.W005|System check|WARNINGS|^\\\\?:|^$\")",
       "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/watch2d_app\" *)",
-      "Read(//c/Users/Ibeawuchi/.android/**)"
+      "Read(//c/Users/Ibeawuchi/.android/**)",
+      "Bash(PGCONNECT_TIMEOUT=25 psql postgresql://postgres.xbotchxmlcavhzhbdoff:watch2d_app_chat_system@aws-0-eu-west-1.pooler.supabase.com:6543/postgres -tA -c ' *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
