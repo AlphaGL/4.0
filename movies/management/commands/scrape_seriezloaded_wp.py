@@ -64,6 +64,20 @@ WORDPRESS ONE-TIME SETUP (required for smart dedup / update):
                       changes, so SEO is preserved across updates.
         - NEW      : if no combined post exists yet for that show → CREATE one.
 
+    Post titles:
+        - MOVIES : "Title (Year) (Category) | Mp4 Mkv DOWNLOAD"
+                   e.g. "Michael (2026) (Hollywood Movie) | Mp4 Mkv DOWNLOAD"
+        - SERIES : "Show Season N (Episode M Added) (Category) | Mp4 Mkv DOWNLOAD"
+                   e.g. "My Royal Nemesis Season 1 (Episode 10 Added) (Korean Drama) | Mp4 Mkv DOWNLOAD"
+                   The episode number always reflects the LATEST episode
+                   resolved so far, and is rebuilt automatically every time
+                   the combined post is updated with a new episode.
+
+    Post body also opens with an italic SEO paragraph (before the poster
+    image), matching the naijadeleys.com.ng style, e.g.:
+        "Mp4 Download Title (Year) Episode N Added) (Category, Title (Year),
+         x265 x264, torrent, HD bluray popcorn, magnet Title (Year) mkv Download"
+
 Available --category aliases:
     hollywood, nollywood, nollywood_series, hollywood_series,
     kdrama, chinese_drama, thai_drama, anime, all  (default: all)
@@ -1081,6 +1095,37 @@ def _episode_map_to_download_links(episode_map: dict) -> list:
     return links
 
 
+def _latest_season_episode(episode_map: dict) -> tuple:
+    """
+    From a merged episode map, return (latest_season_num, latest_ep_num,
+    is_multi_season) — used to build the combined post's title, e.g.
+    "Show Season 1 (Episode 10 Added)".
+
+    'Latest' = the highest season number present, and within that season,
+    the highest episode number present. If the map is empty, returns
+    (1, 0, False).
+    """
+    if not episode_map:
+        return 1, 0, False
+
+    season_nums = []
+    for s in episode_map:
+        m = re.search(r'(\d+)', s)
+        season_nums.append(int(m.group(1)) if m else 1)
+    is_multi_season = len([s for s, eps in episode_map.items() if eps]) > 1
+
+    latest_season_num = max(season_nums) if season_nums else 1
+    latest_season_label = next(
+        (s for s in episode_map if (re.search(r'(\d+)', s) and
+         int(re.search(r'(\d+)', s).group(1)) == latest_season_num)),
+        None
+    )
+    eps = episode_map.get(latest_season_label, []) if latest_season_label else []
+    latest_ep_num = max((e['ep_num'] for e in eps), default=0)
+
+    return latest_season_num, latest_ep_num, is_multi_season
+
+
 # ══════════════════════════════════════════════════════════════
 # WORDPRESS API HELPERS
 # ══════════════════════════════════════════════════════════════
@@ -1506,6 +1551,56 @@ def _make_slug(text: str, is_series: bool = False) -> str:
     return text.strip('-')
 
 
+def _category_label_for_title(wp_cat_name: str) -> str:
+    """
+    Clean, title-cased category label for use inside a post title, e.g.
+        'korean series'       -> 'Korean Drama'    (via _SL_CAT_MAP)
+        'Nollywood tv series' -> 'Nollywood TV Series'
+        'Hollywood movie'     -> 'Hollywood Movie'
+
+    Applies the same _SL_CAT_MAP used for WP category assignment, so this
+    always reflects the real target category (e.g. "Korean Drama") even
+    when given raw, unmapped text scraped straight off the source site
+    (e.g. a generic breadcrumb crumb like "Series"). This keeps the title
+    label and the actual assigned WP category in sync.
+    """
+    raw = (wp_cat_name or '').strip()
+    if not raw:
+        return ''
+    label = _SL_CAT_MAP.get(raw.lower(), raw)
+    words = label.split()
+    fixed = []
+    for w in words:
+        if w.lower() == 'tv':
+            fixed.append('TV')
+        else:
+            fixed.append(w[:1].upper() + w[1:].lower())
+    return ' '.join(fixed)
+
+
+def _build_series_title(show_name: str, episode_map: dict, wp_cat_name: str) -> str:
+    """
+    Build the combined series post's title, always reflecting the LATEST
+    season + episode found in episode_map, plus the category — matching
+    the naijadeleys.com.ng style:
+
+        "My Royal Nemesis Season 1 (Episode 10 Added) (Korean Drama) | Mp4 Mkv DOWNLOAD"
+
+    Re-running this on every update naturally keeps the title current as
+    new episodes are merged in — no separate "update title" step needed.
+    """
+    season_num, ep_num, _ = _latest_season_episode(episode_map)
+    cat_label = _category_label_for_title(wp_cat_name)
+
+    parts = [show_name, f'Season {season_num}']
+    if ep_num:
+        parts.append(f'(Episode {ep_num} Added)')
+    if cat_label:
+        parts.append(f'({cat_label})')
+
+    return ' '.join(parts) + ' | Mp4 Mkv DOWNLOAD'
+
+
 # ══════════════════════════════════════════════════════════════
 # WP CONTENT BUILDER
 # ══════════════════════════════════════════════════════════════
@@ -1513,12 +1608,14 @@ def _make_slug(text: str, is_series: bool = False) -> str:
 def _build_wp_content(title: str, title_b: str, description: str,
                       meta_info: dict, image_url: str, video_url: str,
                       download_links: list, is_series: bool,
-                      wp_image_url: str = '') -> str:
+                      wp_image_url: str = '', wp_cat_name: str = '',
+                      latest_ep_num: int = 0) -> str:
     """
     Build the HTML post body matching the SeriezLoaded.com.ng post design.
 
     Layout:
       0.  Notice warning box
+      0a. Italic "Mp4 Download {title}..." SEO paragraph
       0b. Poster image centred
       1.  Synopsis / description paragraph
       2.  VIDEO INFORMATION heading + blockquote card
@@ -1541,6 +1638,32 @@ def _build_wp_content(title: str, title_b: str, description: str,
     #     'Annoying To Users. Kindly Close Any Unwanted Tab That Pops Up.'
     #     '</div>'
     # )
+
+    # ── 0a. Italic SEO paragraph — shown on every post, before the
+    #         poster image (matches the naijadeleys.com.ng style):
+    #   "Mp4 Download {Title} ({Year}) Episode {N} Added) ({Category},
+    #    {Title} ({Year}), x265 x264, torrent, HD bluray popcorn,
+    #    magnet {Title} ({Year}) mkv Download"
+    cat_label = _category_label_for_title(wp_cat_name)
+    _seo_title = re.sub(r'\s*\(\d{4}\)\s*$', '', title).strip()
+    _yr_part = f' ({year})' if year else ''
+
+    if is_series and latest_ep_num:
+        seo_line = (
+            f'Mp4 Download {_seo_title}{_yr_part} Episode {latest_ep_num} Added)'
+            + (f' ({cat_label}, ' if cat_label else ' (')
+            + f'{_seo_title}{_yr_part}, x265 x264, torrent, HD bluray popcorn, '
+            f'magnet {_seo_title}{_yr_part} mkv Download'
+        )
+    else:
+        seo_line = (
+            f'Mp4 Download {_seo_title}{_yr_part}'
+            + (f' ({cat_label}, ' if cat_label else ' (')
+            + f'{_seo_title}{_yr_part}, x265 x264, torrent, HD bluray popcorn, '
+            f'magnet {_seo_title}{_yr_part} mkv Download'
+        )
+
+    parts.append(f'<p><em>{seo_line}</em></p>')
 
     # ── 0b. Poster image ──────────────────────────────────────────
     _inline_img_src = wp_image_url or image_url
@@ -1939,7 +2062,7 @@ def _post_combined_series_to_wordpress(
             print(f"    ⛔ No resolved episodes for '{show_name}' — skipping.")
             return False
 
-        full_title = f'{show_name} | Mp4 Mkv DOWNLOAD'
+        full_title = _build_series_title(show_name, episode_map, wp_cat_name)
         excerpt_text = description[:300] if description else ''
 
         import json
@@ -1978,10 +2101,12 @@ def _post_combined_series_to_wordpress(
             if not wp_image_url:
                 wp_image_url = image_url
 
+        _, _latest_ep, _ = _latest_season_episode(episode_map)
         content = _build_wp_content(
             show_name, '', description, meta_info,
             image_url, video_url, download_links, True,
-            wp_image_url=wp_image_url,
+            wp_image_url=wp_image_url, wp_cat_name=wp_cat_name,
+            latest_ep_num=_latest_ep,
         )
         rank_math_meta = _build_rank_math_seo(
             show_name, '', description, meta_info, categories, True
@@ -2123,9 +2248,14 @@ def process_series_episode(parsed: dict, post_url: str, post_html: str,
 
     merged_map = _merge_episode_maps(prev_map, fresh_map)
 
-    wp_cat = (
-        parsed['categories'][0] if parsed['categories'] else wp_cat_name
-    )
+    # IMPORTANT: wp_cat_name (passed in from the category-crawl loop, e.g.
+    # cat_def['wp_cat'] == 'Korean Drama') is the already-mapped TARGET WP
+    # category and must win. The raw scraped parsed['categories'][0] is
+    # whatever breadcrumb/og:section text SeriezLoaded itself used (often
+    # just "Series" or a flag-derived label) and is only a last resort —
+    # using it first is what caused every show to land in one generic
+    # "Series" bucket instead of its real genre/category.
+    wp_cat = wp_cat_name or (parsed['categories'][0] if parsed['categories'] else '')
 
     return _post_combined_series_to_wordpress(
         show_name=show_name, base_slug=base_slug,
@@ -2154,9 +2284,14 @@ def _post_to_wordpress(
             print("    ⚠️ WP_SITE_URL not configured — skipping.")
             return False
 
+        cat_label  = _category_label_for_title(wp_cat_name)
         full_title = (
-            f'{title} ({title_b}) | Mp4 Mkv DOWNLOAD'
+            f'{title} ({title_b}) ({cat_label}) | Mp4 Mkv DOWNLOAD'
+            if is_series and title_b and cat_label
+            else f'{title} ({title_b}) | Mp4 Mkv DOWNLOAD'
             if is_series and title_b
+            else f'{title} ({cat_label}) | Mp4 Mkv DOWNLOAD'
+            if cat_label
             else f'{title} | Mp4 Mkv DOWNLOAD'
         )
         excerpt_text = description[:300] if description else ''
@@ -2216,7 +2351,7 @@ def _post_to_wordpress(
         content = _build_wp_content(
             title, title_b, description, meta_info,
             image_url, video_url, download_links, is_series,
-            wp_image_url=wp_image_url,
+            wp_image_url=wp_image_url, wp_cat_name=wp_cat_name,
         )
         rank_math_meta = _build_rank_math_seo(
             title, title_b, description, meta_info, categories, is_series
