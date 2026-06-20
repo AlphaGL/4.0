@@ -171,7 +171,9 @@
       "Bash(grep -vE \"staticfiles.W004|urls.W005|System check|WARNINGS|^\\\\?:|^$\")",
       "Bash(venv/Scripts/python.exe manage.py check)",
       "Bash(venv/Scripts/python.exe -c ' *)",
-      "Bash(grep -vE \"staticfiles|urls.W005|System check|WARNINGS|^\\\\?:|^$\")"
+      "Bash(grep -vE \"staticfiles|urls.W005|System check|WARNINGS|^\\\\?:|^$\")",
+      "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/watch2d_app\" *)",
+      "Read(//c/Users/Ibeawuchi/.android/**)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
