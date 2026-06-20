@@ -168,7 +168,10 @@
       "Bash(grep -vE \"staticfiles.W004|urls.W005|System check|^$\")",
       "Bash(python -c \"import ast,io; ast.parse\\(io.open\\('movies/management/commands/notify_rsvps.py', encoding='utf-8'\\).read\\(\\)\\); print\\('notify_rsvps.py syntax OK'\\)\")",
       "Bash(APP_DATABASE_URL=postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres venv/Scripts/python.exe manage.py notify_rsvps)",
-      "Bash(grep -vE \"staticfiles.W004|urls.W005|System check|WARNINGS|^\\\\?:|^$\")"
+      "Bash(grep -vE \"staticfiles.W004|urls.W005|System check|WARNINGS|^\\\\?:|^$\")",
+      "Bash(venv/Scripts/python.exe manage.py check)",
+      "Bash(venv/Scripts/python.exe -c ' *)",
+      "Bash(grep -vE \"staticfiles|urls.W005|System check|WARNINGS|^\\\\?:|^$\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",

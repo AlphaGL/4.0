@@ -23,7 +23,8 @@ Usage:
 
 WORDPRESS ONE-TIME SETUP (required for smart dedup / update):
     Add this to your theme's functions.php so the script can store and query
-    the original SeriezLoaded source URL on each post:
+    the original SeriezLoaded source URL on each post, PLUS the two extra
+    fields the combined-series-post pipeline uses:
 
         add_action('init', function() {
             register_post_meta('post', '_seriezloaded_source_url', [
@@ -32,13 +33,36 @@ WORDPRESS ONE-TIME SETUP (required for smart dedup / update):
                 'type'         => 'string',
                 'auth_callback' => '__return_true',
             ]);
+            register_post_meta('post', '_seriezloaded_show_base_slug', [
+                'show_in_rest' => true,
+                'single'       => true,
+                'type'         => 'string',
+                'auth_callback' => '__return_true',
+            ]);
+            register_post_meta('post', '_seriezloaded_episode_map', [
+                'show_in_rest' => true,
+                'single'       => true,
+                'type'         => 'string',   // JSON-encoded
+                'auth_callback' => '__return_true',
+            ]);
         });
 
     How it works:
-        - MOVIES  : if the source URL already exists on your WP site → SKIP
-        - SERIES  : if source URL already exists → UPDATE (new episode count,
-                    fresh download links, slug/URL never changes)
-        - NEW     : if not found → CREATE a new published post
+        - MOVIES   : if the source URL already exists on your WP site → SKIP
+        - SERIES   : every episode of a show is combined into ONE WordPress
+                      post (keyed on the show's base slug, e.g.
+                      'fifties-professionals' — independent of which episode
+                      the crawler lands on, or in what order). Whenever the
+                      crawler visits ANY episode of a show, it reads that
+                      episode's "Browse" widget to discover every episode
+                      link for the whole show, resolves the real download
+                      URL ONLY for episodes not already stored on the
+                      combined post (fast re-runs — known episodes are
+                      never re-fetched), merges old + new, and
+                      republishes the single combined post with one
+                      download button per episode. The post's slug never
+                      changes, so SEO is preserved across updates.
+        - NEW      : if no combined post exists yet for that show → CREATE one.
 
 Available --category aliases:
     hollywood, nollywood, nollywood_series, hollywood_series,
@@ -386,6 +410,150 @@ def has_next_page(html: str) -> bool:
         ):
             return True
     return False
+
+
+# ══════════════════════════════════════════════════════════════
+# EPISODE BROWSER WIDGET PARSER  (combined-series-post feature)
+# ══════════════════════════════════════════════════════════════
+
+def parse_episode_browser(soup: BeautifulSoup, page_url: str) -> dict:
+    """
+    Extract every episode link from a series post's "Browse" widget.
+
+        <div class="episode-browser">
+          <button class="season-btn" data-season="S01">S01</button>
+          <div class="episodes" id="S01">
+            <a href=".../show-season-1-episode-9/" class="ep-box active">E09</a>
+            <a href=".../show-season-1-episode-8/" class="ep-box">E08</a>
+            ...
+          </div>
+        </div>
+
+    Returns {season_label: [{'ep_num': int, 'episode_url': str}, ...], ...}
+    e.g. {'S01': [{'ep_num': 1, 'episode_url': '...'}, ...]}
+
+    season_label is always normalised to 'S01', 'S02', etc. (zero-padded,
+    uppercase). Episodes are sorted ascending by ep_num within each season.
+    Returns {} if no episode-browser widget is present (movies, or series
+    posts that don't expose the widget).
+    """
+    browser = soup.find('div', class_='episode-browser')
+    if not browser:
+        return {}
+
+    seasons: dict = {}
+
+    # Each "episodes" container carries the season id (id="S01" or
+    # data-season="S01" on a sibling button). Walk every <a class="ep-box">
+    # found anywhere inside the widget and infer its season from the
+    # nearest ancestor with an id/data-season attribute, falling back to
+    # parsing season/episode numbers straight out of the URL slug.
+    ep_anchors = browser.find_all('a', class_=re.compile(r'\bep-box\b'))
+    if not ep_anchors:
+        ep_anchors = browser.find_all('a', href=True)
+
+    for a in ep_anchors:
+        href = a.get('href', '').strip()
+        if not href:
+            continue
+        href = _normalise_sl_url(href)
+
+        # Season: prefer the containing .episodes block's id/data-season attr
+        season_label = ''
+        container = a.find_parent(class_=re.compile(r'\bepisodes\b'))
+        if container:
+            season_label = (container.get('id') or
+                             container.get('data-season') or '').strip()
+
+        # Fallback: parse Sxx / season-x straight out of the URL
+        ep_num = None
+        m = re.search(r'season-(\d+)-episode-(\d+)', href, re.IGNORECASE)
+        if m:
+            if not season_label:
+                season_label = f'S{int(m.group(1)):02d}'
+            ep_num = int(m.group(2))
+        else:
+            m2 = re.search(r'[Ss](\d+)[Ee](\d+)', href)
+            if m2:
+                if not season_label:
+                    season_label = f'S{int(m2.group(1)):02d}'
+                ep_num = int(m2.group(2))
+
+        if ep_num is None:
+            # Last resort: pull the number from the button text (E09 → 9)
+            btn_text = a.get_text(strip=True)
+            m3 = re.search(r'E?(\d+)$', btn_text, re.IGNORECASE)
+            if m3:
+                ep_num = int(m3.group(1))
+
+        if ep_num is None:
+            continue   # can't place this link reliably — skip it
+
+        if not season_label:
+            season_label = 'S01'
+        else:
+            # Normalise "S1" / "s01" / "1" → "S01"
+            sm = re.search(r'(\d+)', season_label)
+            season_label = f'S{int(sm.group(1)):02d}' if sm else season_label.upper()
+
+        seasons.setdefault(season_label, [])
+        if not any(e['episode_url'] == href for e in seasons[season_label]):
+            seasons[season_label].append({'ep_num': ep_num, 'episode_url': href})
+
+    # Sort episodes ascending within each season
+    for season_label in seasons:
+        seasons[season_label].sort(key=lambda e: e['ep_num'])
+
+    return seasons
+
+
+def derive_show_base_url(url: str) -> str:
+    """
+    Strip the season/episode suffix from a post URL to get the show's
+    stable base slug, used as the dedup key for combined series posts.
+
+        .../fifties-professionals-season-1-episode-9/
+            → 'fifties-professionals'
+        .../blood-sisters-season-2-episode-1-4-complete/
+            → 'blood-sisters'
+    """
+    url = _normalise_sl_url(url.strip().rstrip('/'))
+    path = url[len(SITE_URL):].strip('/')
+    slug = path.split('/')[-1] if path else ''
+
+    slug = re.sub(
+        r'-season-\d+.*$', '', slug, flags=re.IGNORECASE
+    ).strip('-')
+    # Some posts may omit "season" and go straight to "-episode-"
+    slug = re.sub(
+        r'-episode-[\d\-]+.*$', '', slug, flags=re.IGNORECASE
+    ).strip('-')
+    # Trailing "-complete" / "-completed" with no season/episode marker
+    slug = re.sub(r'-complet(?:e|ed)$', '', slug, flags=re.IGNORECASE).strip('-')
+
+    return slug
+
+
+def derive_show_name(title_raw: str) -> str:
+    """
+    Bare show name with no season/episode/complete info — used as the
+    combined post's title.
+
+        "Fifties Professionals Season 1 Episode 9" → "Fifties Professionals"
+        "Blood Sisters Season 2 (Complete)"         → "Blood Sisters"
+    """
+    name = re.sub(r'\s+', ' ', title_raw).strip()
+    name = re.sub(
+        r'\s*[\(\[]?\s*Season\s*\d+.*$', '', name, flags=re.IGNORECASE
+    ).strip()
+    name = re.sub(
+        r'\s*[\(\[]?\s*S\d{1,2}\b.*$', '', name, flags=re.IGNORECASE
+    ).strip()
+    name = re.sub(
+        r'\s*[\(\[]?\s*Episode\s*\d+.*$', '', name, flags=re.IGNORECASE
+    ).strip()
+    name = re.sub(r'\s*\(Complet(?:e|ed)\)\s*$', '', name, flags=re.IGNORECASE).strip()
+    return name
 
 
 # ══════════════════════════════════════════════════════════════
@@ -754,17 +922,30 @@ def parse_post_page(html: str, url: str) -> dict | None:
         if m_yr:
             vi['vi_year'] = m_yr.group(1)
 
+    # ── Episode browser widget (series only) ──────────────────────
+    # SeriezLoaded series posts include a "Browse" widget listing every
+    # episode of the show across all seasons:
+    #   <div class="episode-browser">
+    #     <button class="season-btn" data-season="S01">S01</button>
+    #     <div class="episodes" id="S01">
+    #       <a href=".../show-season-1-episode-9/" class="ep-box">E09</a>
+    #       ...
+    #     </div>
+    #   </div>
+    episode_browser = parse_episode_browser(soup, url)
+
     return {
-        'title_raw':      title_raw,
-        'description':    description,
-        'image_url':      image_url,
-        'video_url':      video_url,
-        'download_links': download_links,
-        'categories':     categories,
-        'is_series':      is_series,
-        'is_complete':    is_complete,
-        'source_url':     url,      # stored in WP meta for dedup
-        'meta':           meta,
+        'title_raw':       title_raw,
+        'description':     description,
+        'image_url':       image_url,
+        'video_url':       video_url,
+        'download_links':  download_links,
+        'categories':      categories,
+        'is_series':       is_series,
+        'is_complete':     is_complete,
+        'source_url':      url,      # stored in WP meta for dedup
+        'meta':            meta,
+        'episode_browser': episode_browser,
         **vi,
     }
 
@@ -834,6 +1015,70 @@ def _resolve_all_download_links(parsed: dict, scraper) -> None:
         if not wrapper:
             continue
         dl['url'] = _resolve_sl_download_link(wrapper, scraper)
+
+
+# ══════════════════════════════════════════════════════════════
+# COMBINED-SERIES-POST EPISODE MAP HELPERS
+# ══════════════════════════════════════════════════════════════
+
+def _merge_episode_maps(old_map: dict, new_map: dict) -> dict:
+    """
+    Merge two episode maps ({season_label: [{'ep_num', 'episode_url',
+    'download_url'}, ...]}), deduping by (season_label, ep_num). Entries
+    from new_map win on conflict (fresher data). Result is sorted
+    ascending by ep_num within each season, and seasons are sorted
+    ascending by season number.
+    """
+    merged: dict = {}
+    for season_label, episodes in (old_map or {}).items():
+        merged[season_label] = {e['ep_num']: dict(e) for e in episodes}
+
+    for season_label, episodes in (new_map or {}).items():
+        merged.setdefault(season_label, {})
+        for e in episodes:
+            merged[season_label][e['ep_num']] = dict(e)
+
+    out: dict = {}
+    for season_label in sorted(merged.keys(), key=lambda s: int(re.search(r'(\d+)', s).group(1)) if re.search(r'(\d+)', s) else 0):
+        out[season_label] = sorted(merged[season_label].values(), key=lambda e: e['ep_num'])
+
+    return out
+
+
+def _episode_map_to_download_links(episode_map: dict) -> list:
+    """
+    Convert a merged episode map into the same `download_links` list shape
+    that _build_wp_content already knows how to render — so the combined
+    series post reuses all existing rendering logic with zero duplication.
+
+    Season-aware labelling (per show, decided once for the whole map):
+      - Single season  → ep_label = 'E01', 'E02', ...
+      - Multiple seasons → ep_label = 'S01E01', 'S02E01', ... ('S' prefix)
+
+    Only episodes that actually have a resolved download_url are included.
+    Episodes are ordered season-ascending, then episode-ascending.
+    """
+    multi_season = len([s for s, eps in episode_map.items() if eps]) > 1
+
+    links = []
+    for season_label in sorted(
+        episode_map.keys(),
+        key=lambda s: int(re.search(r'(\d+)', s).group(1)) if re.search(r'(\d+)', s) else 0
+    ):
+        sn = int(re.search(r'(\d+)', season_label).group(1)) if re.search(r'(\d+)', season_label) else 1
+        for ep in episode_map[season_label]:
+            url = ep.get('download_url') or ''
+            if not url:
+                continue
+            en = ep['ep_num']
+            ep_label = f'S{sn:02d}E{en:02d}' if multi_season else f'E{en:02d}'
+            links.append({
+                'url':      url,
+                'label':    f'DOWNLOAD {ep_label}',
+                'ep_label': ep_label,
+            })
+
+    return links
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1067,6 +1312,84 @@ def _wp_find_by_source_url(source_url: str, headers: dict, wp_base: str) -> dict
     except Exception as exc:
         print(f"    ⚠️ WP source-URL lookup error: {exc}")
     return None
+
+
+def _wp_find_series_by_base_slug(base_slug: str, headers: dict, wp_base: str) -> dict | None:
+    """
+    Dedup key for COMBINED SERIES POSTS: query WP for a post whose custom
+    meta field '_seriezloaded_show_base_slug' matches *base_slug* (e.g.
+    'fifties-professionals'). This is independent of which episode the
+    crawler happens to land on first, so re-visiting any episode of a show
+    always finds — and updates — the same single combined post.
+
+    Requires functions.php registration of '_seriezloaded_show_base_slug'
+    and '_seriezloaded_episode_map' the same way '_seriezloaded_source_url'
+    is registered (see module docstring).
+    """
+    if not base_slug:
+        return None
+    try:
+        r = requests.get(
+            f'{wp_base}/wp-json/wp/v2/posts',
+            params={
+                'meta_key':   '_seriezloaded_show_base_slug',
+                'meta_value': base_slug,
+                'per_page':   5,
+                'status':     'any',
+                '_fields':    'id,title,slug,categories,meta',
+                'context':    'edit',
+            },
+            headers=headers, timeout=10,
+        )
+        if r.status_code == 200:
+            for post in r.json():
+                post_meta = post.get('meta', {})
+                stored = post_meta.get('_seriezloaded_show_base_slug', '') if isinstance(post_meta, dict) else ''
+                if (stored or '').strip() == base_slug:
+                    print(f"    🔎 Found combined series post by base slug (ID {post['id']})")
+                    return post
+
+        # Wider scan fallback (meta_key filtering not supported server-side)
+        r2 = requests.get(
+            f'{wp_base}/wp-json/wp/v2/posts',
+            params={
+                'per_page': 50,
+                'status':   'any',
+                '_fields':  'id,title,slug,categories,meta',
+                'context':  'edit',
+            },
+            headers=headers, timeout=15,
+        )
+        if r2.status_code == 200:
+            for post in r2.json():
+                post_meta = post.get('meta', {})
+                stored = post_meta.get('_seriezloaded_show_base_slug', '') if isinstance(post_meta, dict) else ''
+                if (stored or '').strip() == base_slug:
+                    print(f"    🔎 Found combined series post by meta scan (ID {post['id']})")
+                    return post
+    except Exception as exc:
+        print(f"    ⚠️ WP base-slug lookup error: {exc}")
+    return None
+
+
+def _get_stored_episode_map(post: dict) -> dict:
+    """
+    Read the previously-resolved episode map back out of a combined series
+    post's '_seriezloaded_episode_map' meta field (stored as a JSON string).
+    Returns {} if missing, empty, or unparseable.
+    """
+    if not post:
+        return {}
+    post_meta = post.get('meta', {})
+    raw = post_meta.get('_seriezloaded_episode_map', '') if isinstance(post_meta, dict) else ''
+    if not raw:
+        return {}
+    try:
+        import json
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
 
 
 def _strip_episode_suffix(text: str) -> str:
@@ -1497,6 +1820,323 @@ def _build_rank_math_seo(title: str, title_b: str, description: str,
 
 
 # ══════════════════════════════════════════════════════════════
+# COMBINED-SERIES-POST PIPELINE
+# ══════════════════════════════════════════════════════════════
+#
+# Instead of one WordPress post per episode, every episode of a show is
+# combined into ONE post. Whenever the scraper lands on ANY episode of a
+# show, it:
+#   1. Reads that page's "Browse" episode-browser widget to discover every
+#      episode link for the show (all seasons).
+#   2. Compares against episodes already resolved & stored on the show's
+#      combined WP post (meta '_seriezloaded_episode_map', JSON-encoded).
+#   3. Fetches + resolves the real download link ONLY for episodes not
+#      already stored (fast re-runs — known episodes are never re-fetched).
+#   4. Merges old + newly-resolved episodes and republishes the single
+#      combined post — title, content, and download buttons rebuilt from
+#      the full merged list every time.
+#
+# Dedup key: the show's base slug (e.g. 'fifties-professionals'), stored
+# in '_seriezloaded_show_base_slug' — NOT per-episode, so it doesn't matter
+# which episode the crawler happens to visit first or in what order.
+
+def _collect_show_episodes(landing_url: str, landing_html: str, scraper,
+                            known_episode_urls: set) -> dict:
+    """
+    Starting from the page the crawler already fetched (landing_url /
+    landing_html), discover every episode link via the episode-browser
+    widget, then fetch + resolve the download link for any episode whose
+    URL is NOT already in known_episode_urls (those are skipped entirely
+    — no HTTP request made for them at all).
+
+    Returns a fresh episode map: {season_label: [{'ep_num', 'episode_url',
+    'download_url'}, ...]} containing ONLY newly-resolved episodes (the
+    caller merges this with the previously-stored map via
+    _merge_episode_maps). Episodes that fail to resolve are still included
+    with whatever URL the resolver returned (which falls back to the
+    sl-download wrapper URL on failure — never silently dropped).
+    """
+    soup = BeautifulSoup(landing_html, 'html.parser')
+    browser_map = parse_episode_browser(soup, landing_url)
+
+    if not browser_map:
+        # No browse widget on this page — at minimum treat the landing
+        # page itself as a single-episode "map" so it still gets resolved.
+        return {}
+
+    fresh_map: dict = {}
+    new_count = 0
+
+    for season_label, episodes in browser_map.items():
+        for ep in episodes:
+            ep_url = ep['episode_url']
+            if ep_url in known_episode_urls:
+                continue   # already resolved & stored — skip entirely
+
+            new_count += 1
+            print(f"      🆕 New episode found: {season_label} E{ep['ep_num']:02d} — {ep_url}")
+
+            # The landing page IS one of these episodes — reuse its HTML
+            # instead of re-fetching it.
+            if ep_url.rstrip('/') == _normalise_sl_url(landing_url).rstrip('/'):
+                ep_html = landing_html
+            else:
+                try:
+                    time.sleep(0.8)
+                    r = scraper.get(ep_url, timeout=25)
+                    if r.status_code != 200:
+                        print(f"         ⚠️ HTTP {r.status_code} — skipping this episode")
+                        continue
+                    ep_html = r.text
+                except Exception as e:
+                    print(f"         ❌ Fetch error: {e} — skipping this episode")
+                    continue
+
+            ep_parsed = parse_post_page(ep_html, ep_url)
+            if not ep_parsed or not ep_parsed['download_links']:
+                print("         ⚠️ Could not parse / no download link — skipping this episode")
+                continue
+
+            # Resolve the first usable download link on that episode page
+            wrapper = ep_parsed['download_links'][0]['url']
+            download_url = _resolve_sl_download_link(wrapper, scraper)
+
+            fresh_map.setdefault(season_label, [])
+            fresh_map[season_label].append({
+                'ep_num':       ep['ep_num'],
+                'episode_url':  ep_url,
+                'download_url': download_url,
+            })
+
+    if new_count == 0:
+        print("      ✅ No new episodes — show already fully up to date")
+
+    return fresh_map
+
+
+def _post_combined_series_to_wordpress(
+    show_name: str, base_slug: str, description: str,
+    meta_info: dict, image_url: str, video_url: str,
+    episode_map: dict, categories: list, wp_cat_name: str,
+) -> bool:
+    """
+    Create or update the ONE combined WordPress post for a show, given the
+    full (already-merged) episode_map. Mirrors _post_to_wordpress's
+    create/update logic but keyed on base_slug rather than source_url, and
+    stores the resolved episode_map back as JSON so future runs can skip
+    already-resolved episodes.
+    """
+    try:
+        headers = _get_wp_auth_header()
+        wp_base = _get_wp_base_url()
+
+        if not wp_base:
+            print("    ⚠️ WP_SITE_URL not configured — skipping.")
+            return False
+
+        total_eps  = sum(len(eps) for eps in episode_map.values())
+        if total_eps == 0:
+            print(f"    ⛔ No resolved episodes for '{show_name}' — skipping.")
+            return False
+
+        full_title = f'{show_name} | Mp4 Mkv DOWNLOAD'
+        excerpt_text = description[:300] if description else ''
+
+        import json
+        episode_map_json = json.dumps(episode_map)
+
+        existing_post = _wp_find_series_by_base_slug(base_slug, headers, wp_base)
+
+        download_links = _episode_map_to_download_links(episode_map)
+
+        # ── Skip if nothing changed since last publish ────────────
+        if existing_post:
+            prev_map = _get_stored_episode_map(existing_post)
+            prev_total = sum(len(eps) for eps in prev_map.values())
+            if prev_total == total_eps and prev_map == episode_map:
+                print(f"    ⏭️  '{show_name}' already up to date "
+                      f"({total_eps} episodes, ID {existing_post['id']}) — skipping.")
+                return True
+            print(f"    🆕  '{show_name}': {prev_total} → {total_eps} episode(s) "
+                  f"— updating post (ID {existing_post['id']})...")
+
+        # ── Image upload (new posts, or whenever we're about to write) ──
+        wp_media_id  = None
+        wp_image_url = ''
+        if image_url:
+            wp_media_id = _wp_upload_image(image_url, show_name, headers, wp_base)
+            if wp_media_id:
+                try:
+                    _mr = requests.get(
+                        f'{wp_base}/wp-json/wp/v2/media/{wp_media_id}',
+                        headers=headers, timeout=10,
+                    )
+                    if _mr.status_code == 200:
+                        wp_image_url = _mr.json().get('source_url', '')
+                except Exception:
+                    pass
+            if not wp_image_url:
+                wp_image_url = image_url
+
+        content = _build_wp_content(
+            show_name, '', description, meta_info,
+            image_url, video_url, download_links, True,
+            wp_image_url=wp_image_url,
+        )
+        rank_math_meta = _build_rank_math_seo(
+            show_name, '', description, meta_info, categories, True
+        )
+
+        cat_id  = _wp_get_or_create_category(wp_cat_name, headers, wp_base, is_series=True)
+        cat_ids = [cat_id] if cat_id else []
+
+        meta_payload = {
+            **rank_math_meta,
+            '_seriezloaded_show_base_slug': base_slug,
+            '_seriezloaded_episode_map':    episode_map_json,
+            # Keep a source_url too (first/landing episode) for compatibility
+            # with the generic source-url dedup lookup used elsewhere.
+            '_seriezloaded_source_url':     meta_info.get('source_url', ''),
+        }
+
+        # ── UPDATE existing combined post ──────────────────────────
+        if existing_post:
+            post_id = existing_post['id']
+            from datetime import datetime, timezone as tz
+            now_utc = datetime.now(tz.utc)
+            patch: dict = {
+                'title':    full_title,
+                'content':  content,
+                'date':     now_utc.strftime('%Y-%m-%dT%H:%M:%S'),
+                'date_gmt': now_utc.strftime('%Y-%m-%dT%H:%M:%S'),
+                'meta':     meta_payload,
+            }
+            if excerpt_text:
+                patch['excerpt'] = excerpt_text
+            if cat_ids:
+                existing_cats       = existing_post.get('categories', [])
+                patch['categories'] = list(set(existing_cats + cat_ids))
+            if wp_media_id:
+                patch['featured_media'] = wp_media_id
+
+            r = requests.post(
+                f'{wp_base}/wp-json/wp/v2/posts/{post_id}',
+                headers=headers, json=patch, timeout=15,
+            )
+            if r.status_code == 200:
+                print(f"    ✏️  WP combined series updated (ID {post_id}) — "
+                      f"{full_title} [{total_eps} episodes]")
+                return True
+            else:
+                print(f"    ⚠️ WP update failed: {r.status_code} {r.text[:150]}")
+                return False
+
+        # ── CREATE new combined post ────────────────────────────────
+        post_data: dict = {
+            'title':   full_title,
+            'slug':    _make_slug(show_name, is_series=True),
+            'content': content,
+            'status':  'publish',
+            'format':  'video',
+            'excerpt': excerpt_text or '',
+            'meta':    meta_payload,
+        }
+        if cat_ids:
+            post_data['categories'] = cat_ids
+        if wp_media_id:
+            post_data['featured_media'] = wp_media_id
+
+        r = requests.post(
+            f'{wp_base}/wp-json/wp/v2/posts',
+            headers=headers, json=post_data, timeout=20,
+        )
+        if r.status_code == 201:
+            wp_id = r.json().get('id')
+            print(f"    ✅ WP combined series created (ID {wp_id}) — "
+                  f"{full_title} [{total_eps} episodes]")
+            return True
+        else:
+            print(f"    ⚠️ WP create failed: {r.status_code} {r.text[:150]}")
+            return False
+
+    except Exception as e:
+        print(f"    ⚠️ WordPress error: {e}")
+        return False
+
+
+def process_series_episode(parsed: dict, post_url: str, post_html: str,
+                            scraper, wp_cat_name: str) -> bool:
+    """
+    Top-level orchestrator for the combined-series-post pipeline. Called
+    instead of _post_to_wordpress whenever the crawler lands on a series
+    episode (whichever episode it happens to be — order doesn't matter).
+
+    Steps:
+      1. Derive the show's base slug + bare show name from the landing post.
+      2. Look up any existing combined WP post for that base slug, and read
+         back its already-resolved episode map (if any).
+      3. Crawl the episode-browser widget, resolving ONLY episodes not
+         already in that stored map.
+      4. Merge old + new, then create/update the single combined post.
+    """
+    base_slug = derive_show_base_url(post_url)
+    show_name = derive_show_name(parsed['title_raw'])
+
+    if not base_slug or not show_name:
+        print("      ⚠️ Could not derive show base slug/name — skipping series post.")
+        return False
+
+    headers = _get_wp_auth_header()
+    wp_base = _get_wp_base_url()
+    if not wp_base:
+        print("    ⚠️ WP_SITE_URL not configured — skipping.")
+        return False
+
+    existing_post = _wp_find_series_by_base_slug(base_slug, headers, wp_base)
+    prev_map = _get_stored_episode_map(existing_post) if existing_post else {}
+
+    known_urls = {
+        ep['episode_url']
+        for episodes in prev_map.values()
+        for ep in episodes
+    }
+
+    print(f"      📺 Show: '{show_name}'  (base slug: {base_slug})  "
+          f"— {len(known_urls)} episode(s) already stored")
+
+    fresh_map = _collect_show_episodes(post_url, post_html, scraper, known_urls)
+
+    if not fresh_map and not prev_map:
+        # No browse widget AND nothing stored yet — fall back to treating
+        # just this single landing page as episode 1 of season 1 so the
+        # show still gets created rather than silently dropped.
+        wrapper = parsed['download_links'][0]['url'] if parsed['download_links'] else ''
+        if not wrapper:
+            print("      ⛔ No download links and no episode-browser — skipping.")
+            return False
+        download_url = _resolve_sl_download_link(wrapper, scraper)
+        ep_match = re.search(r'episode-(\d+)', post_url, re.IGNORECASE)
+        ep_num   = int(ep_match.group(1)) if ep_match else 1
+        fresh_map = {'S01': [{
+            'ep_num': ep_num, 'episode_url': post_url, 'download_url': download_url,
+        }]}
+
+    merged_map = _merge_episode_maps(prev_map, fresh_map)
+
+    wp_cat = (
+        parsed['categories'][0] if parsed['categories'] else wp_cat_name
+    )
+
+    return _post_combined_series_to_wordpress(
+        show_name=show_name, base_slug=base_slug,
+        description=parsed['description'], meta_info=parsed,
+        image_url=parsed['image_url'], video_url=parsed['video_url'],
+        episode_map=merged_map, categories=parsed['categories'],
+        wp_cat_name=wp_cat,
+    )
+
+
+# ══════════════════════════════════════════════════════════════
 # WORDPRESS POST PUBLISHER  —  with smart dedup
 # ══════════════════════════════════════════════════════════════
 
@@ -1688,9 +2328,6 @@ def _scrape_urls_list(urls: list, delay: float = 1.5):
             print(f"   ⛔ No download links — skipping '{parsed['title_raw']}'")
             continue
 
-        print(f"   🔄 Resolving {len(parsed['download_links'])} download link(s)...")
-        _resolve_all_download_links(parsed, scraper)
-
         title, title_b, is_series = clean_title_parts(parsed['title_raw'])
         if not parsed['is_series']:
             is_series = False
@@ -1705,13 +2342,22 @@ def _scrape_urls_list(urls: list, delay: float = 1.5):
             else ('TV Series' if is_series else 'Movie')
         )
 
-        result = _post_to_wordpress(
-            title=title, title_b=title_b, description=parsed['description'],
-            meta_info=parsed, image_url=parsed['image_url'],
-            video_url=parsed['video_url'], download_links=parsed['download_links'],
-            categories=parsed['categories'], is_series=is_series,
-            wp_cat_name=wp_cat_name,
-        )
+        # ── SERIES: combined-post pipeline (resolves only new episodes) ──
+        if is_series:
+            result = process_series_episode(
+                parsed=parsed, post_url=post_url, post_html=post_html,
+                scraper=scraper, wp_cat_name=wp_cat_name,
+            )
+        else:
+            print(f"   🔄 Resolving {len(parsed['download_links'])} download link(s)...")
+            _resolve_all_download_links(parsed, scraper)
+            result = _post_to_wordpress(
+                title=title, title_b=title_b, description=parsed['description'],
+                meta_info=parsed, image_url=parsed['image_url'],
+                video_url=parsed['video_url'], download_links=parsed['download_links'],
+                categories=parsed['categories'], is_series=is_series,
+                wp_cat_name=wp_cat_name,
+            )
         if result:
             ok += 1
         else:
@@ -1929,9 +2575,6 @@ class Command(BaseCommand):
                         print(f"      ⛔ No download links — skipping '{parsed['title_raw']}'")
                         continue
 
-                    print(f"      🔄 Resolving {len(parsed['download_links'])} download link(s)...")
-                    _resolve_all_download_links(parsed, scraper)
-
                     title, title_b, is_series = clean_title_parts(parsed['title_raw'])
 
                     # Post-level detection overrides category default
@@ -1948,18 +2591,29 @@ class Command(BaseCommand):
 
                     total_scraped += 1
 
-                    ok = _post_to_wordpress(
-                        title          = title,
-                        title_b        = title_b,
-                        description    = parsed['description'],
-                        meta_info      = parsed,
-                        image_url      = parsed['image_url'],
-                        video_url      = parsed['video_url'],
-                        download_links = parsed['download_links'],
-                        categories     = parsed['categories'],
-                        is_series      = is_series,
-                        wp_cat_name    = wp_cat_name,
-                    )
+                    # ── SERIES: combined-post pipeline ────────────────
+                    # Resolves only episodes not already stored on the
+                    # show's combined post — no eager resolve here.
+                    if is_series:
+                        ok = process_series_episode(
+                            parsed=parsed, post_url=post_url, post_html=post_html,
+                            scraper=scraper, wp_cat_name=wp_cat_name,
+                        )
+                    else:
+                        print(f"      🔄 Resolving {len(parsed['download_links'])} download link(s)...")
+                        _resolve_all_download_links(parsed, scraper)
+                        ok = _post_to_wordpress(
+                            title          = title,
+                            title_b        = title_b,
+                            description    = parsed['description'],
+                            meta_info      = parsed,
+                            image_url      = parsed['image_url'],
+                            video_url      = parsed['video_url'],
+                            download_links = parsed['download_links'],
+                            categories     = parsed['categories'],
+                            is_series      = is_series,
+                            wp_cat_name    = wp_cat_name,
+                        )
                     if ok:
                         total_wp_ok += 1
                     else:
