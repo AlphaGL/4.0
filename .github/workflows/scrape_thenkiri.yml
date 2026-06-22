@@ -74,12 +74,18 @@ jobs:
             cmd: "python manage.py scrape_thenkiri --category chinese --max-pages 3"
             upload: true
           # ── 9jarocks: its strengths ──
+          - name: "🎬 Hollywood"
+            cmd: "python manage.py scrape_thenkiri --category hollywood --max-pages 3"
+            upload: true
           - name: "🇳🇬 Nollywood"
             cmd: "python manage.py scrape_9jarocks --category nollywood --max-pages 3"
-            upload: false
+            upload: true
+          - name: "📺 TV Series"
+            cmd: "python manage.py scrape_thenkiri --category series --max-pages 3"
+            upload: true
           - name: "⛩️ Anime"
             cmd: "python manage.py scrape_9jarocks --category anime --max-pages 3"
-            upload: false
+            upload: true
           # ── StreamIMDB ──
           - name: "▶️ StreamIMDB (movies + TV)"
             cmd: "python manage.py scrape_streamimdb --media both --max-pages 3"
