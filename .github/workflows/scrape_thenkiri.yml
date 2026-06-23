@@ -57,34 +57,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # ── Thenkiri: important categories ──
-          - name: "🎬 Hollywood"
-            cmd: "python manage.py scrape_thenkiri --category hollywood --max-pages 3"
+          # ── 9jarocks: MAIN SOURCE — most up-to-date on movies, so it leads
+          #    Hollywood + Series with a deeper crawl (--max-pages 5). ──
+          - name: "🎬 Hollywood (9jarocks · main)"
+            cmd: "python manage.py scrape_9jarocks --category hollywood --max-pages 5"
             upload: true
+          - name: "🇳🇬 Nollywood"
+            cmd: "python manage.py scrape_9jarocks --category nollywood --max-pages 3"
+            upload: true
+          - name: "📺 TV Series (9jarocks · main)"
+            cmd: "python manage.py scrape_9jarocks --category series --max-pages 5"
+            upload: true
+          - name: "⛩️ Anime"
+            cmd: "python manage.py scrape_9jarocks --category anime --max-pages 3"
+            upload: true
+          # ── thenkiri.com: Asian content only — Korean drama+movies, Bollywood,
+          #    Chinese (9jarocks doesn't cover these). Hollywood + Series were
+          #    handed to 9jarocks, the main source. ──
           - name: "🇰🇷 Korean (drama + movies)"
             cmd: "python manage.py scrape_thenkiri --category korean --max-pages 3"
-            upload: true
-          - name: "📺 TV Series"
-            cmd: "python manage.py scrape_thenkiri --category series --max-pages 3"
             upload: true
           - name: "🎵 Bollywood"
             cmd: "python manage.py scrape_thenkiri --category bollywood --max-pages 3"
             upload: true
           - name: "🇨🇳 Chinese (movies + drama)"
             cmd: "python manage.py scrape_thenkiri --category chinese --max-pages 3"
-            upload: true
-          # ── 9jarocks: its strengths ──
-          - name: "🎬 Hollywood"
-            cmd: "python manage.py scrape_9jarocks --category hollywood --max-pages 3"
-            upload: true
-          - name: "🇳🇬 Nollywood"
-            cmd: "python manage.py scrape_9jarocks --category nollywood --max-pages 3"
-            upload: true
-          - name: "📺 TV Series"
-            cmd: "python manage.py scrape_9jarocks --category series --max-pages 3"
-            upload: true
-          - name: "⛩️ Anime"
-            cmd: "python manage.py scrape_9jarocks --category anime --max-pages 3"
             upload: true
           # ── StreamIMDB ──
           - name: "▶️ StreamIMDB (movies + TV)"

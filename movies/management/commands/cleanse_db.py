@@ -20,16 +20,20 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--links', action='store_true', help='Only purge junk links')
+        parser.add_argument('--linkdupes', action='store_true',
+                            help='Only remove duplicate download links (same URL on a movie)')
         parser.add_argument('--cats', action='store_true', help='Only merge duplicate categories')
         parser.add_argument('--dupes', action='store_true', help='Only de-dupe movies')
         parser.add_argument('--dry-run', action='store_true', help='Report only, change nothing')
 
     def handle(self, *args, **opts):
-        only = opts['links'] or opts['cats'] or opts['dupes']
+        only = opts['links'] or opts['linkdupes'] or opts['cats'] or opts['dupes']
         dry = opts['dry_run']
 
         if opts['links'] or not only:
             self._purge_links(dry)
+        if opts['linkdupes'] or not only:
+            self._dedupe_links(dry)
         if opts['cats'] or not only:
             self._dedupe_categories(dry)
         if opts['dupes'] or not only:
@@ -103,6 +107,37 @@ class Command(BaseCommand):
             with transaction.atomic():
                 cur.execute(sql_delete, [junk, junk])
             self.stdout.write(self.style.WARNING(f"removed {n} junk download links"))
+
+    # ── duplicate download links (same URL repeated on one movie) ────────────
+    def _dedupe_links(self, dry):
+        # Two links are duplicates if they belong to the same movie and have the
+        # same URL (case-insensitive, ignoring a trailing slash). Keep lowest id.
+        norm = "lower(regexp_replace(url, '/+$', ''))"
+        count_sql = f"""
+            SELECT coalesce(sum(c-1),0) FROM (
+                SELECT count(*) c FROM movies_downloadlink
+                GROUP BY movie_id, {norm} HAVING count(*) > 1
+            ) t
+        """
+        delete_sql = f"""
+            DELETE FROM movies_downloadlink a
+            USING movies_downloadlink b
+            WHERE a.movie_id = b.movie_id
+              AND a.id > b.id
+              AND {norm.replace('url', 'a.url')} = {norm.replace('url', 'b.url')}
+        """
+        with connection.cursor() as cur:
+            cur.execute(count_sql)
+            n = cur.fetchone()[0]
+            if dry:
+                self.stdout.write(f"[dry-run] would remove {n} duplicate download links")
+                return
+            if not n:
+                self.stdout.write("no duplicate download links")
+                return
+            with transaction.atomic():
+                cur.execute(delete_sql)
+            self.stdout.write(self.style.WARNING(f"removed {n} duplicate download links"))
 
     # ── duplicate movies ─────────────────────────────────────────────────────
     def _dedupe(self, dry):

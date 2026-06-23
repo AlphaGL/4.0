@@ -179,7 +179,9 @@
       "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/4.0\" && grep -n \"class Meta\\\\|db_table\\\\|class .*\\(models.Model\\)\\\\|^    title\\\\|^    slug\\\\|^    tmdb\" movies/models.py | head -40)",
       "Read(//c/c/Users/Ibeawuchi/Desktop/film/4.0/movies/**)",
       "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/4.0\" && grep -n \"class DownloadLink\" -A12 movies/models.py)",
-      "Read(//c/c/Users/Ibeawuchi/Desktop/film/4.0/**)"
+      "Read(//c/c/Users/Ibeawuchi/Desktop/film/4.0/**)",
+      "Bash(python -m py_compile movies/management/commands/cleanse_db.py movies/management/commands/backfill_downloads.py)",
+      "Bash(python -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/scrape_thenkiri.yml'\\)\\); print\\('YAML OK'\\)\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
