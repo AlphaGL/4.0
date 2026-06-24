@@ -1803,11 +1803,12 @@ class StreamGateView(DetailView):
                 .order_by('-created_at')[:8]
             )
 
-        # Support source (streamimdb) built from tmdb_id, offered as a
-        # "Switch source" option if the main embed (vidlink) won't play.
+        # Fallback source (vidlink.pro) built from tmdb_id — the player auto-
+        # switches to it (or via "Switch source") if the main streamimdb embed
+        # won't play.
         from movies.stream_providers import build_stream_url
         stream_fallback = build_stream_url(
-            'streamimdb', movie.tmdb_id,
+            'vidlink', movie.tmdb_id,
             is_series=movie.is_series, season=movie.season_number or 1)
         if stream_fallback == movie.stream_url:
             stream_fallback = ''

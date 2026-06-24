@@ -254,7 +254,8 @@
     }, 17000);
   }
   window.addEventListener('message', function (e){
-    if ((e.origin || '').toLowerCase().indexOf('streamimdb') >= 0){
+    var o = (e.origin || '').toLowerCase();
+    if (o.indexOf('streamimdb') >= 0 || o.indexOf('vidlink') >= 0){
       alive = true;
       clearWatchdog();
     }

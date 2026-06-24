@@ -5,9 +5,8 @@ These are deterministic URL templates — no scraping. A title with a tmdb_id ca
 get a stream instantly by formatting the template. Swapping a provider (when a
 domain dies/rotates) is a one-line change here; nothing else needs to know.
 
-Provider for the player: streamimdb only. (vidlink.pro was removed — it returned
-"couldn't find this content" for titles it didn't carry, with no reliable way to
-detect that server-side. vidsrc/2embed remain as optional alternates.)
+Player chain: streamimdb (primary) → vidlink.pro (fallback, used only when
+streamimdb won't play). vidsrc/2embed remain as optional alternates.
 """
 
 # provider key → {'movie': tmpl, 'tv': tmpl}
@@ -16,6 +15,10 @@ PROVIDERS = {
     'streamimdb': {
         'movie': 'https://streamimdb.ru/embed/movie/{tmdb}',
         'tv':    'https://streamimdb.ru/embed/tv/{tmdb}',
+    },
+    'vidlink': {
+        'movie': 'https://vidlink.pro/movie/{tmdb}',
+        'tv':    'https://vidlink.pro/tv/{tmdb}/{season}/{episode}',
     },
     'vidsrc': {
         'movie': 'https://vidsrc.to/embed/movie/{tmdb}',
@@ -28,9 +31,9 @@ PROVIDERS = {
 }
 
 # The fallback chain, in order. Players try each until one plays.
-# streamimdb only — vidlink.pro removed (it returned "couldn't find this content"
-# for titles it didn't carry, with no reliable way to detect that server-side).
-PROVIDER_ORDER = ['streamimdb']
+# streamimdb leads (it's the in-house embed); vidlink.pro catches the cases where
+# streamimdb is down/slow.
+PROVIDER_ORDER = ['streamimdb', 'vidlink']
 
 
 def build_stream_url(provider, tmdb_id, is_series=False, season=1, episode=1):

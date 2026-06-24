@@ -1,16 +1,4 @@
-// -- Monetag (site verification + push monetization) --
-// This file is what Django serves at /sw.js, so Monetag's required worker lives
-// here -- it can't sit as a static file in the project root, because Django
-// routes /sw.js to a view, not the filesystem. Keep at the top so importScripts
-// runs during service-worker evaluation.
-self.options = {
-    "domain": "3nbf4.com",
-    "zoneId": 11194027
-};
-self.lary = "";
-importScripts('https://3nbf4.com/act/files/service-worker.min.js?r=sw');
-
-// -- Service Worker for Watch2D PWA --
+// Service Worker for Watch2D PWA
 const CACHE_NAME = 'Watch2D-v1.0.0';
 const RUNTIME_CACHE = 'Watch2D-runtime-v1.0.0';
 

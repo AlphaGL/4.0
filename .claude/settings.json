@@ -188,7 +188,11 @@
       "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"=== _downloadButton + download handling in movie_detail ===\" && grep -nE \"_downloadButton|DownloadManager|download|_download|onTap|showModal|DownloadsScreen|progress\" lib/screens/movie_detail_screen.dart | head -30; echo; echo \"=== files: downloads + community ===\" && ls lib/screens/ | grep -iE \"download|community|room|live|chat\"; echo; echo \"=== DownloadManager API ===\" && grep -rnE \"class DownloadManager|Stream|progress|enqueue|startDownload|addDownload|static\" lib/services/download_manager.dart 2>/dev/null | head -30 || find lib -iname \"*download*\")",
       "Read(//c/c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/screens/**)",
       "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"=== roomId origin \\(per-movie?\\) ===\" && grep -rnE \"LiveRoomScreen\\\\\\(|roomId|room_id\" lib/screens/*.dart lib/widgets/*.dart 2>/dev/null | grep -iE \"roomId:|LiveRoomScreen\\\\\\(\" | head; echo \"=== room message + presence providers/service ===\" && grep -rnE \"roomMessages|roomPresence|loadMessages|messages|presence|track\\\\\\(|\\\\.from\\\\\\('|history|limit\\\\\\(\" lib/providers/providers.dart lib/services/*.dart 2>/dev/null | grep -iE \"room|presence|message\" | head -25)",
-      "Read(//c/c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/**)"
+      "Read(//c/c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/**)",
+      "Bash(curl -sS --max-time 20 -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_upcomingtitle?select=*&order=release_date&limit=3')",
+      "Bash(curl -sS --max-time 15 -o /dev/null -w \"poster: HTTP %{http_code} | %{content_type} | %{size_download}b\\\\n\" \"https://dl.watch2d.org/posters/449f7e96ebcc7d400022.webp\")",
+      "Bash(curl -sS --max-time 20 -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_upcomingtitle?select=title,release_date,poster_url&order=release_date.desc&limit=20')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('rows:',len\\(d\\),'| with poster:',sum\\(1 for x in d if x.get\\('poster_url'\\)\\)\\)\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
