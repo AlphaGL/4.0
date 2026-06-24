@@ -9,6 +9,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from movies.views import robots_txt, app_ads_txt, ad_tag
+from main.pwa_views import service_worker_view
 from master.sitemaps import sitemaps
 
 
@@ -38,7 +39,9 @@ urlpatterns = [
     # Declared before the /main/ redirect so service-worker and manifest
     # are always served from their canonical root paths.
     path('manifest.json',  include('main.urls')),
-    path('sw.js',          include('main.urls')),
+    # Direct route so /sw.js serves the actual service worker (Monetag worker +
+    # PWA). The include() form resolved to the homepage, breaking both.
+    path('sw.js',          service_worker_view, name='service_worker'),
     path('offline.html',   include('main.urls')),
     path('api/',           include('main.urls')),   # /api/push-subscribe/
     path('access/',        include('main.urls')),   # ping view
