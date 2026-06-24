@@ -71,7 +71,10 @@
 {% block content %}
 
 {# Data island — the embed URL is loaded into the iframe on user click #}
-<div id="sg" data-stream="{{ stream_url }}" data-title="{{ movie.title }}"
+<div id="sg" data-stream="{{ stream_url }}" data-fallback="{{ stream_fallback }}"
+     data-tmdb="{{ tmdb_id }}" data-series="{% if is_series %}1{% else %}0{% endif %}"
+     data-seasons="{{ tmdb_seasons }}"
+     data-title="{{ movie.title }}"
      data-sublang="{{ subtitle_lang|default:'en' }}" class="hidden"></div>
 
 <div class="container mx-auto px-4 lg:px-6 py-3 max-w-3xl">
@@ -148,11 +151,26 @@
       </div>
     </div>
 
-    {# Hint #}
-    <p class="text-center text-[11px] text-gray-400 dark:text-gray-500 flex items-center justify-center gap-1.5 px-4 py-3">
+    {# Episode selector — populated by JS for series with a TMDB season map #}
+    <div id="sg-eps" class="hidden px-4 pt-3">
+      <div id="sg-seasons" class="flex gap-2 overflow-x-auto pb-2 mb-2"></div>
+      <div id="sg-ep-grid" class="sg-ep-grid"></div>
+    </div>
+
+    {# Hint + source switch #}
+    <p class="text-center text-[11px] text-gray-400 dark:text-gray-500 flex items-center justify-center gap-1.5 px-4 pt-3 pb-1">
       <i class="fas fa-closed-captioning flex-shrink-0" style="font-size:11px;"></i>
       Subtitles load automatically — change the language from the <strong>CC</strong> / gear menu in the player.
     </p>
+    <div class="text-center pb-3">
+      <button id="sg-switch" type="button" class="hidden inline-flex items-center gap-1.5 text-[11px] font-semibold
+              text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400
+              bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-700/50
+              px-3 py-1.5 rounded-full transition-all">
+        <i class="fas fa-rotate text-[10px]"></i>
+        Not playing? <span id="sg-switch-label">Switch source</span>
+      </button>
+    </div>
 
     {# Footer #}
     <div class="px-5 py-3.5 border-t border-gray-100 dark:border-gray-700/50 flex justify-center">
@@ -205,13 +223,31 @@
  */
 (function () {
   'use strict';
-  var sg      = document.getElementById('sg');
-  var EMBED   = sg ? sg.dataset.stream : '';
-  var TITLE   = sg ? (sg.dataset.title || 'Player') : 'Player';
-  var SUBLANG = (sg && sg.dataset.sublang) || 'en';
+  var sg = document.getElementById('sg');
+  if (!sg) return;
+  var TITLE   = sg.dataset.title || 'Player';
+  var SUBLANG = sg.dataset.sublang || 'en';
+  var TMDB    = (sg.dataset.tmdb || '').trim();
+  var SERIES  = sg.dataset.series === '1';
   var wrap    = document.getElementById('sg-player');
   var poster  = document.getElementById('sg-poster');
-  if (!EMBED || !wrap || !poster) return;
+  var switchBtn   = document.getElementById('sg-switch');
+  var switchLabel = document.getElementById('sg-switch-label');
+  var epsBox  = document.getElementById('sg-eps');
+  var seasRow = document.getElementById('sg-seasons');
+  var epGrid  = document.getElementById('sg-ep-grid');
+  if (!wrap || !poster) return;
+
+  // TMDB season → episode-count map (series only).
+  var SEASONS = {};
+  try { SEASONS = JSON.parse(sg.dataset.seasons || '{}') || {}; } catch (e) { SEASONS = {}; }
+  var seasonKeys = Object.keys(SEASONS).map(Number)
+    .filter(function (n) { return n >= 1; }).sort(function (a, b) { return a - b; });
+  var isEpisodic = SERIES && TMDB && seasonKeys.length > 0 && epsBox && epGrid;
+
+  var SOURCES = [];
+  var idx = 0, watchdog = null, alive = false;
+  var curSeason = isEpisodic ? seasonKeys[0] : 0;
 
   // streamimdb's player auto-loads subtitles when ?lang= is present.
   function withSubs(url){
@@ -221,9 +257,33 @@
     return url;
   }
 
-  function play(){
+  function clearWatchdog(){ if (watchdog){ clearTimeout(watchdog); watchdog = null; } }
+
+  // SOFT-FAILOVER: vidlink returns HTTP 200 even when it has no stream for a
+  // title ("We couldn't find this content"), so a hard load-error never fires.
+  // We wait for the player to signal it's alive (a postMessage); if none arrives
+  // in the window, treat it as a soft failure and advance to the next source.
+  function armWatchdog(){
+    clearWatchdog();
+    alive = false;
+    watchdog = setTimeout(function(){
+      if (!alive && idx < SOURCES.length - 1){ load(idx + 1); }
+    }, 17000);
+  }
+  window.addEventListener('message', function (e){
+    var o = (e.origin || '').toLowerCase();
+    if (o.indexOf('vidlink') >= 0 || o.indexOf('streamimdb') >= 0 ||
+        o.indexOf('vidsrc') >= 0 || o.indexOf('2embed') >= 0){
+      alive = true;
+      clearWatchdog();
+    }
+  });
+
+  function load(i){
+    if (!SOURCES.length) return;
+    idx = i;
     var f = document.createElement('iframe');
-    f.src = withSubs(EMBED);
+    f.src = withSubs(SOURCES[i]);
     f.title = TITLE + ' player';
     f.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture');
     f.setAttribute('allowfullscreen', 'true');
@@ -232,9 +292,81 @@
     f.style.cssText = 'width:100%;height:100%;border:0;';
     wrap.innerHTML = '';
     wrap.appendChild(f);
+    armWatchdog();
+    if (switchBtn && SOURCES.length > 1) {
+      switchBtn.classList.remove('hidden');
+      if (switchLabel) {
+        switchLabel.textContent = 'Switch source (' + (idx + 1) + '/' + SOURCES.length + ')';
+      }
+    }
   }
 
-  poster.addEventListener('click', play);
+  // Movie chain (vidlink → streamimdb), from stored stream_url + fallback.
+  function movieSources(){
+    return [sg.dataset.stream, sg.dataset.fallback]
+      .map(function (s) { return (s || '').trim(); })
+      .filter(function (s, i, a) { return s && a.indexOf(s) === i; });
+  }
+
+  function vidlinkEp(season, ep){
+    return 'https://vidlink.pro/tv/' + TMDB + '/' + season + '/' + ep;
+  }
+
+  function playEpisode(season, ep){
+    curSeason = season;
+    // vidlink needs explicit season/episode; streamimdb keeps its own selector.
+    SOURCES = [vidlinkEp(season, ep), 'https://streamimdb.ru/embed/tv/' + TMDB];
+    renderGrid();
+    load(0);
+  }
+
+  function renderSeasons(){
+    if (seasonKeys.length <= 1){ seasRow.classList.add('hidden'); return; }
+    seasRow.innerHTML = '';
+    seasonKeys.forEach(function (s){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sg-ep' + (s === curSeason ? ' sg-ep-active' : '');
+      b.style.minWidth = '74px';
+      b.textContent = 'Season ' + s;
+      b.addEventListener('click', function(){ curSeason = s; renderSeasons(); renderGrid(); });
+      seasRow.appendChild(b);
+    });
+  }
+
+  function renderGrid(){
+    epGrid.innerHTML = '';
+    var count = SEASONS[curSeason] || 0;
+    var active = SOURCES.length ? SOURCES[0] : '';
+    for (var e = 1; e <= count; e++){
+      (function (ep){
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'sg-ep' + (vidlinkEp(curSeason, ep) === active ? ' sg-ep-active' : '');
+        b.textContent = ep;
+        b.addEventListener('click', function(){ playEpisode(curSeason, ep); });
+        epGrid.appendChild(b);
+      })(e);
+    }
+  }
+
+  function start(){
+    if (isEpisodic){
+      epsBox.classList.remove('hidden');
+      renderSeasons();
+      playEpisode(curSeason, 1);   // default: first season, episode 1
+    } else {
+      SOURCES = movieSources();
+      load(0);
+    }
+  }
+
+  poster.addEventListener('click', start);
+  if (switchBtn) {
+    switchBtn.addEventListener('click', function () {
+      if (SOURCES.length) load((idx + 1) % SOURCES.length);
+    });
+  }
 })();
 </script>
 {% endblock %}

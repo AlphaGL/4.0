@@ -67,6 +67,10 @@ class Movie(models.Model):
                                        help_text="Matched TheMovieDB id, if any.")
     tmdb_synced  = models.BooleanField(default=False,
                                        help_text="TMDB enrichment has been attempted.")
+    tmdb_seasons = models.TextField(
+        blank=True, default='',
+        help_text='JSON map of season_number → episode_count for series, from '
+                  'TMDB (e.g. {"1": 10, "2": 8}). Powers the episode selector.')
     rating       = models.FloatField(null=True, blank=True,
                                      help_text="TMDB rating (0–10).")
     trailer_url  = models.URLField("Trailer URL", blank=True, null=True, max_length=500,

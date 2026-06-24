@@ -79,6 +79,30 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 SITE_URL   = 'https://streamimdb.ru'
 STREAM_API = 'https://streamdata.vaplayer.ru/api.php'
 
+
+def fetch_with_retry(scraper, url, *, tries=3, connect=15, read=60,
+                     backoff=4, **kwargs):
+    """GET that tolerates streamimdb.ru's slow / stalling responses.
+
+    The host frequently connects fast but then stalls mid-body, so a single
+    short timeout gives up too early and zeroes out a whole run. We use a
+    generous read timeout and retry transient timeout / connection errors with
+    linear backoff. Returns the Response, or None if every attempt failed.
+    """
+    last = None
+    for attempt in range(1, tries + 1):
+        try:
+            return scraper.get(url, timeout=(connect, read), **kwargs)
+        except Exception as e:
+            last = e
+            if attempt < tries:
+                wait = backoff * attempt
+                print(f'      ⏳ fetch timed out/failed ({e.__class__.__name__}); '
+                      f'retry {attempt}/{tries - 1} in {wait}s')
+                time.sleep(wait)
+    print(f'      ❌ gave up after {tries} attempts: {last}')
+    return None
+
 # The real player iframe is served from this host; the stream API + the m3u8
 # CDN both gate on this Referer/Origin. We only need it for the liveness check.
 PLAYER_HOST    = 'https://nextgencloudfabric.com'
@@ -326,10 +350,11 @@ def resolve_stream(scraper, tmdb_id: str, media_type: str,
     params = f'?tmdb={tmdb_id}&type={"tv" if is_tv else "movie"}'
     if is_tv:
         params += f'&season={season}&episode={episode}'
+    r = fetch_with_retry(scraper, STREAM_API + params,
+                         headers=PLAYER_HEADERS, tries=2, read=45)
+    if r is None or r.status_code != 200:
+        return None
     try:
-        r = scraper.get(STREAM_API + params, headers=PLAYER_HEADERS, timeout=25)
-        if r.status_code != 200:
-            return None
         j = r.json()
     except Exception:
         return None
@@ -618,14 +643,15 @@ class Command(BaseCommand):
                 print(f'\n{"─" * 60}')
                 print(f'🌐 Listing page {page}: {listing_url}')
 
-                try:
-                    resp = scraper.get(listing_url, timeout=25)
-                    if resp.status_code == 404:
-                        print('   ✅ No more pages (404).')
-                        break
-                    resp.raise_for_status()
-                except Exception as e:
-                    print(f'   ❌ Failed to fetch listing page: {e}')
+                resp = fetch_with_retry(scraper, listing_url)
+                if resp is None:
+                    print('   ❌ Listing page unreachable after retries — ending section.')
+                    break
+                if resp.status_code == 404:
+                    print('   ✅ No more pages (404).')
+                    break
+                if resp.status_code != 200:
+                    print(f'   ⚠️ HTTP {resp.status_code} on listing — ending section.')
                     break
 
                 pages_crawled += 1
@@ -675,7 +701,10 @@ class Command(BaseCommand):
 
     def _process_item(self, scraper, url, media_type,
                       forced_cats, no_social, allow_unver, update_only=False) -> str:
-        resp = scraper.get(url, timeout=25)
+        resp = fetch_with_retry(scraper, url)
+        if resp is None:
+            print('      ❌ Item page unreachable after retries — skipping')
+            return 'skipped'
         if resp.status_code != 200:
             print(f'      ⚠️ HTTP {resp.status_code} — skipping')
             return 'skipped'

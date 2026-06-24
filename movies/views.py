@@ -1774,12 +1774,25 @@ class StreamGateView(DetailView):
                 .order_by('-created_at')[:8]
             )
 
+        # Support source (streamimdb) built from tmdb_id, offered as a
+        # "Switch source" option if the main embed (vidlink) won't play.
+        from movies.stream_providers import build_stream_url
+        stream_fallback = build_stream_url(
+            'streamimdb', movie.tmdb_id,
+            is_series=movie.is_series, season=movie.season_number or 1)
+        if stream_fallback == movie.stream_url:
+            stream_fallback = ''
+
         context.update({
-            'movie':          movie,
-            'stream_url':     movie.stream_url,
-            'seo_type':       seo_type,
-            'related_movies': related_movies,
-            'categories':     get_sidebar_categories(),
+            'movie':           movie,
+            'stream_url':      movie.stream_url,
+            'stream_fallback': stream_fallback,
+            'tmdb_id':         movie.tmdb_id or '',
+            'is_series':       movie.is_series,
+            'tmdb_seasons':    movie.tmdb_seasons or '',
+            'seo_type':        seo_type,
+            'related_movies':  related_movies,
+            'categories':      get_sidebar_categories(),
             'disable_global_popunder': True,
         })
         return context

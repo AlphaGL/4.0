@@ -181,7 +181,10 @@
       "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/4.0\" && grep -n \"class DownloadLink\" -A12 movies/models.py)",
       "Read(//c/c/Users/Ibeawuchi/Desktop/film/4.0/**)",
       "Bash(python -m py_compile movies/management/commands/cleanse_db.py movies/management/commands/backfill_downloads.py)",
-      "Bash(python -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/scrape_thenkiri.yml'\\)\\); print\\('YAML OK'\\)\")"
+      "Bash(python -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/scrape_thenkiri.yml'\\)\\); print\\('YAML OK'\\)\")",
+      "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"===== movie.dart fields \\(tmdb/stream\\) =====\" && grep -nE \"tmdb|stream_url|streamUrl|isSeries|is_series|seasonNumber|season\" lib/models/movie.dart | head -25; echo; echo \"===== WatchScreen launch in movie_detail_screen.dart =====\" && grep -nE \"WatchScreen|fallbacks|streamUrl|stream_url|tmdb|=> WatchScreen|builder:\" lib/screens/movie_detail_screen.dart | head -25)",
+      "Read(//c/c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/models/**)",
+      "Bash(curl -sS -o /dev/null -L --max-time 15 -w \"tv/1399 seasons: HTTP %{http_code} | %{time_total}s\\\\n\" \"https://api.themoviedb.org/3/tv/1399?api_key=9d2f32c611e91f05f237e59a0d768aa8\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
