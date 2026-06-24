@@ -15,6 +15,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = [
     'watch2d.vercel.app',
     'watch2d.org',
+    'watch2d.com',
     'localhost',
     '127.0.0.1',
     '.org',

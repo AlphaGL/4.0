@@ -373,6 +373,35 @@ def app_ads_txt(request):
     return HttpResponse(APP_ADS_TXT, content_type="text/plain")
 
 
+# ── Monetag in-app ad pages ──────────────────────────────────────────────────
+# Monetag's web tags only FILL from a real page on the Monetag-registered domain.
+# Served from watch2d.org (the live site). The OLD watch2d.com Monetag site is
+# EXPIRED, so these zone IDs (created under it) will NOT fill — replace them with
+# zones created under a watch2d.org Monetag site.
+_MONETAG_TAGS = {
+    'vignette': ("11193756", "https://n6wxm.com/vignette.min.js"),  # interstitial — REPLACE w/ watch2d.org zone
+    'inpage':   ("11193759", "https://nap5k.com/tag.min.js"),       # in-page push — REPLACE w/ watch2d.org zone
+}
+
+
+def ad_tag(request, fmt):
+    pair = _MONETAG_TAGS.get(fmt)
+    if not pair:
+        return HttpResponse(status=404)
+    zone, src = pair
+    html = (
+        "<!DOCTYPE html><html><head>"
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        "<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}</style>"
+        "</head><body>"
+        "<script>(function(s){s.dataset.zone='" + zone + "',s.src='" + src + "'})"
+        "([document.documentElement,document.body].filter(Boolean).pop()"
+        ".appendChild(document.createElement('script')))</script>"
+        "</body></html>"
+    )
+    return HttpResponse(html)
+
+
 def custom_404_view(request, exception):
     context = {
         'categories': get_sidebar_categories(),

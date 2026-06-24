@@ -8,7 +8,7 @@ from django.contrib.auth.views import LogoutView
 from django.conf import settings
 from django.conf.urls.static import static
 
-from movies.views import robots_txt, app_ads_txt
+from movies.views import robots_txt, app_ads_txt, ad_tag
 from master.sitemaps import sitemaps
 
 
@@ -85,6 +85,7 @@ urlpatterns = [
     ),
     path('robots.txt', robots_txt, name='robots_txt'),
     path('app-ads.txt', app_ads_txt, name='app_ads_txt'),
+    path('ads/<str:fmt>/', ad_tag, name='ad_tag'),
 ]
 
 # ── Custom error handlers ─────────────────────────────────────────────────────

@@ -2,10 +2,10 @@
 Give movies a stream by formatting an embed-provider URL from their tmdb_id.
 
 No scraping — purely deterministic. Any movie that has a tmdb_id but no
-stream_url gets one instantly (vidlink.pro by default). This opens the stream
+stream_url gets one instantly (streamimdb by default). This opens the stream
 gate for it in both the web app and the Flutter app (both read stream_url).
 
-  python manage.py backfill_stream_links                 # movies, vidlink, empty only
+  python manage.py backfill_stream_links                 # movies, streamimdb, empty only
   python manage.py backfill_stream_links --dry-run       # report only
   python manage.py backfill_stream_links --provider vidsrc
   python manage.py backfill_stream_links --media both    # also series (S{n}E1 entry)
@@ -27,8 +27,8 @@ class Command(BaseCommand):
     help = "Backfill Movie.stream_url from tmdb_id using an embed provider."
 
     def add_arguments(self, parser):
-        parser.add_argument('--provider', default='vidlink', choices=list(PROVIDERS),
-                            help='Embed provider to use (default: vidlink).')
+        parser.add_argument('--provider', default='streamimdb', choices=list(PROVIDERS),
+                            help='Embed provider to use (default: streamimdb).')
         parser.add_argument('--media', default='movie', choices=['movie', 'tv', 'both'],
                             help='Which titles to fill (default: movie).')
         parser.add_argument('--overwrite', action='store_true', default=False,
