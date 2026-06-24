@@ -184,7 +184,11 @@
       "Bash(python -c \"import yaml; yaml.safe_load\\(open\\('.github/workflows/scrape_thenkiri.yml'\\)\\); print\\('YAML OK'\\)\")",
       "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"===== movie.dart fields \\(tmdb/stream\\) =====\" && grep -nE \"tmdb|stream_url|streamUrl|isSeries|is_series|seasonNumber|season\" lib/models/movie.dart | head -25; echo; echo \"===== WatchScreen launch in movie_detail_screen.dart =====\" && grep -nE \"WatchScreen|fallbacks|streamUrl|stream_url|tmdb|=> WatchScreen|builder:\" lib/screens/movie_detail_screen.dart | head -25)",
       "Read(//c/c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/models/**)",
-      "Bash(curl -sS -o /dev/null -L --max-time 15 -w \"tv/1399 seasons: HTTP %{http_code} | %{time_total}s\\\\n\" \"https://api.themoviedb.org/3/tv/1399?api_key=9d2f32c611e91f05f237e59a0d768aa8\")"
+      "Bash(curl -sS -o /dev/null -L --max-time 15 -w \"tv/1399 seasons: HTTP %{http_code} | %{time_total}s\\\\n\" \"https://api.themoviedb.org/3/tv/1399?api_key=9d2f32c611e91f05f237e59a0d768aa8\")",
+      "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"=== _downloadButton + download handling in movie_detail ===\" && grep -nE \"_downloadButton|DownloadManager|download|_download|onTap|showModal|DownloadsScreen|progress\" lib/screens/movie_detail_screen.dart | head -30; echo; echo \"=== files: downloads + community ===\" && ls lib/screens/ | grep -iE \"download|community|room|live|chat\"; echo; echo \"=== DownloadManager API ===\" && grep -rnE \"class DownloadManager|Stream|progress|enqueue|startDownload|addDownload|static\" lib/services/download_manager.dart 2>/dev/null | head -30 || find lib -iname \"*download*\")",
+      "Read(//c/c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/screens/**)",
+      "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"=== roomId origin \\(per-movie?\\) ===\" && grep -rnE \"LiveRoomScreen\\\\\\(|roomId|room_id\" lib/screens/*.dart lib/widgets/*.dart 2>/dev/null | grep -iE \"roomId:|LiveRoomScreen\\\\\\(\" | head; echo \"=== room message + presence providers/service ===\" && grep -rnE \"roomMessages|roomPresence|loadMessages|messages|presence|track\\\\\\(|\\\\.from\\\\\\('|history|limit\\\\\\(\" lib/providers/providers.dart lib/services/*.dart 2>/dev/null | grep -iE \"room|presence|message\" | head -25)",
+      "Read(//c/c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/**)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
