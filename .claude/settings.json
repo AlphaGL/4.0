@@ -196,7 +196,9 @@
       "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"=== pubspec sdk + ad deps ===\" && sed -n '1,40p' pubspec.yaml | grep -nE \"sdk:|startapp|google_mobile|environment|dependencies:|flutter:\"; echo \"=== main.dart top \\(init\\) ===\" && sed -n '1,90p' lib/main.dart | grep -nE \"void main|ensureInitialized|AdService|Supabase.initialize|runApp|\\\\.init\\\\\\(\\\\\\)|async|import.*ad\"; echo \"=== AndroidManifest ===\" && grep -nE \"<application|</application>|<meta-data|APPLICATION_ID|android:name=\\\\\"com\" android/app/src/main/AndroidManifest.xml)",
       "Read(//c/c/Users/Ibeawuchi/Desktop/film/watch2d_app/**)",
       "Bash(timeout 60 flutter doctor)",
-      "Bash(flutter build *)"
+      "Bash(flutter build *)",
+      "Bash(gh auth *)",
+      "Bash(gh run *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
