@@ -192,7 +192,11 @@
       "Bash(curl -sS --max-time 20 -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_upcomingtitle?select=*&order=release_date&limit=3')",
       "Bash(curl -sS --max-time 15 -o /dev/null -w \"poster: HTTP %{http_code} | %{content_type} | %{size_download}b\\\\n\" \"https://dl.watch2d.org/posters/449f7e96ebcc7d400022.webp\")",
       "Bash(curl -sS --max-time 20 -H 'apikey: sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' -H 'Authorization: Bearer sb_publishable_uuVP0LFyqWf585NN5au6iw_3q6LVxi-' 'https://bajioejyqvaqopkeudoj.supabase.co/rest/v1/movies_upcomingtitle?select=title,release_date,poster_url&order=release_date.desc&limit=20')",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('rows:',len\\(d\\),'| with poster:',sum\\(1 for x in d if x.get\\('poster_url'\\)\\)\\)\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('rows:',len\\(d\\),'| with poster:',sum\\(1 for x in d if x.get\\('poster_url'\\)\\)\\)\")",
+      "Bash(cd \"/c/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"=== pubspec sdk + ad deps ===\" && sed -n '1,40p' pubspec.yaml | grep -nE \"sdk:|startapp|google_mobile|environment|dependencies:|flutter:\"; echo \"=== main.dart top \\(init\\) ===\" && sed -n '1,90p' lib/main.dart | grep -nE \"void main|ensureInitialized|AdService|Supabase.initialize|runApp|\\\\.init\\\\\\(\\\\\\)|async|import.*ad\"; echo \"=== AndroidManifest ===\" && grep -nE \"<application|</application>|<meta-data|APPLICATION_ID|android:name=\\\\\"com\" android/app/src/main/AndroidManifest.xml)",
+      "Read(//c/c/Users/Ibeawuchi/Desktop/film/watch2d_app/**)",
+      "Bash(timeout 60 flutter doctor)",
+      "Bash(flutter build *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
