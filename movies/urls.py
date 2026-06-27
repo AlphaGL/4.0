@@ -1,6 +1,7 @@
 # movies/urls.py (app-level)  ← FULL REPLACEMENT
 from django.urls import path
 from django.views.generic import TemplateView
+from .scene_id import identify_scene
 from .views import (
     HomeView,
     CategoryMoviesView, MovieDetailView,
@@ -77,4 +78,9 @@ urlpatterns = [
 
     # Range-aware streaming proxy
     path('stream/', stream_proxy, name='stream_proxy'),
+
+    # ── "Scan a Scene" — identify a movie/TV from screenshot(s) or a social
+    #    clip link (Gemini vision → TMDB). The app matches tmdb_id to its own
+    #    catalogue. ────────────────────────────────────────────────────────────
+    path('identify-scene/', identify_scene, name='identify_scene'),
 ]

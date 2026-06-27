@@ -204,7 +204,13 @@
       "Bash(dart analyze *)",
       "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film\" && ls -la 4.0/.env 2>/dev/null; echo \"--- 4.0 env files ---\"; ls 4.0/*.env* 2>/dev/null; echo \"--- search for app db ref ---\"; grep -rl \"bajioejyqvaqopkeudoj\" 4.0 watch2d_app 2>/dev/null | head; echo \"---done---\")",
       "Read(//c/Users/Ibeawuchi/Desktop/film/**)",
-      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film\" && grep -iE \"bajioejyqvaqopkeudoj|APP_DB|DATABASE_URL|SERVICE_ROLE|SUPABASE\" 4.0/.env | sed -E 's/\\(:[^@/]{4}\\)[^@/]*\\(@\\)/\\\\1****\\\\2/g; s/\\(key|KEY|ROLE|role\\)[=: ].*/\\\\1=****REDACTED****/g' | head -40)"
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film\" && grep -iE \"bajioejyqvaqopkeudoj|APP_DB|DATABASE_URL|SERVICE_ROLE|SUPABASE\" 4.0/.env | sed -E 's/\\(:[^@/]{4}\\)[^@/]*\\(@\\)/\\\\1****\\\\2/g; s/\\(key|KEY|ROLE|role\\)[=: ].*/\\\\1=****REDACTED****/g' | head -40)",
+      "Bash(python -m py_compile movies/scene_id.py movies/urls.py)",
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"=== site base url ===\" && grep -rnE \"watch2d\\\\.\\(org|com\\)|resolve-download|siteUrl|baseUrl|SITE_URL\" lib/config lib/services 2>/dev/null | grep -iv \"supabase\" | head; echo \"=== AdMob rewarded methods ===\" && grep -nE \"Future<bool>|void |class AdMob|rewarded|gate\\\\\\(|grant\" lib/services/admob_ads.dart | head -25)",
+      "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/services/**)",
+      "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/config/**)",
+      "Bash(git check-ignore *)",
+      "Bash(python -m py_compile movies/scene_id.py)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
