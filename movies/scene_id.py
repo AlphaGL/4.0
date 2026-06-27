@@ -119,6 +119,50 @@ _PROMPT = (
 )
 
 
+_QUOTE_PROMPT = (
+    "The following is a line of dialogue (a quote) from a movie or TV show:\n"
+    '"{quote}"\n'
+    "Identify which title(s) it comes from. Put the title MOST strongly "
+    "associated with this exact line first, then list other movies/shows that "
+    "used the same or a very similar line. For each, name the character who "
+    "said it.\n"
+    "Return STRICT JSON only, no prose:\n"
+    '{"matches":[{"title":"<title>","year":<year or null>,'
+    '"media_type":"movie or tv","character":"<who said it>",'
+    '"cast":["lead actors"],"confidence":"high or medium or low"}],'
+    '"note":"<short note if unsure, else empty>"}\n'
+    "Give up to 5 matches, best first. If the line is too generic to attribute, "
+    "return an empty matches list."
+)
+
+
+def identify_from_quote(quote):
+    """Identify which film/TV a famous line of dialogue is from (text-only)."""
+    key = _gemini_key()
+    if not key or not quote:
+        return None
+    body = {
+        'contents': [
+            {'parts': [{'text': _QUOTE_PROMPT.replace('{quote}', quote[:300])}]}
+        ],
+        'generationConfig': {
+            'temperature': 0.3,
+            'response_mime_type': 'application/json',
+        },
+    }
+    url = (f'https://generativelanguage.googleapis.com/v1beta/models/'
+           f'{GEMINI_MODEL}:generateContent?key={key}')
+    try:
+        r = requests.post(url, json=body, timeout=40)
+        if r.status_code != 200:
+            return {'error': f'vision_http_{r.status_code}'}
+        data = r.json()
+        text = data['candidates'][0]['content']['parts'][0]['text']
+        return json.loads(text)
+    except Exception:
+        return None
+
+
 def identify_from_images(images_b64, hint=''):
     """Send prepared frames to Gemini; return the parsed dict or None."""
     key = _gemini_key()
@@ -164,6 +208,8 @@ def _enrich_match(m):
         'media_type': m.get('media_type') or 'movie',
         'cast': m.get('cast') or [],
         'confidence': m.get('confidence') or 'low',
+        # For quote searches: who said the line (e.g. "Said by Thanos").
+        'context': (m.get('character') or m.get('context') or '').strip(),
         'poster_url': None,
         'overview': '',
         'tmdb_id': None,
@@ -200,40 +246,46 @@ def identify_scene(request):
         return JsonResponse({'ok': False, 'error': 'rate_limited'}, status=429)
     cache.set(ck, n + 1, 3600)
 
-    images_b64 = []
-    hint = (request.POST.get('hint') or '').strip()
+    # 0) Quote branch — identify a title from a famous line of dialogue (text).
+    quote = (request.POST.get('quote') or '').strip()
+    if quote:
+        parsed = identify_from_quote(quote)
+    else:
+        images_b64 = []
+        hint = (request.POST.get('hint') or '').strip()
 
-    # 1) Social URL branch (TikTok / IG / FB / YouTube link).
-    url = (request.POST.get('url') or '').strip()
-    if url:
-        img_bytes, caption = resolve_social_url(url)
-        if not img_bytes:
-            return JsonResponse({
-                'ok': False, 'error': 'link_unreachable',
-                'message': 'Could not read that link — it may be private or '
-                           'unsupported.'})
-        b64 = _prep_image(img_bytes)
-        if b64:
-            images_b64.append(b64)
-        if caption and not hint:
-            hint = caption
+        # 1) Social URL branch (TikTok / IG / FB / YouTube link).
+        url = (request.POST.get('url') or '').strip()
+        if url:
+            img_bytes, caption = resolve_social_url(url)
+            if not img_bytes:
+                return JsonResponse({
+                    'ok': False, 'error': 'link_unreachable',
+                    'message': 'Could not read that link — it may be private '
+                               'or unsupported.'})
+            b64 = _prep_image(img_bytes)
+            if b64:
+                images_b64.append(b64)
+            if caption and not hint:
+                hint = caption
 
-    # 2) Uploaded frames (screenshots, or clip frames the app extracted).
-    for f in request.FILES.getlist('images')[:MAX_IMAGES]:
-        b64 = _prep_image(f.read())
-        if b64:
-            images_b64.append(b64)
+        # 2) Uploaded frames (screenshots, or clip frames the app extracted).
+        for f in request.FILES.getlist('images')[:MAX_IMAGES]:
+            b64 = _prep_image(f.read())
+            if b64:
+                images_b64.append(b64)
 
-    if not images_b64:
-        return JsonResponse({'ok': False, 'error': 'no_image',
-                             'message': 'No usable image was provided.'})
+        if not images_b64:
+            return JsonResponse({'ok': False, 'error': 'no_image',
+                                 'message': 'No usable image was provided.'})
 
-    parsed = identify_from_images(images_b64[:MAX_IMAGES], hint=hint)
+        parsed = identify_from_images(images_b64[:MAX_IMAGES], hint=hint)
+
     if not parsed or parsed.get('error'):
         return JsonResponse({'ok': False, 'error': 'vision_failed'})
 
     results = []
-    for m in (parsed.get('matches') or [])[:3]:
+    for m in (parsed.get('matches') or [])[:5]:
         enriched = _enrich_match(m)
         if enriched:
             results.append(enriched)
