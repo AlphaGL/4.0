@@ -14,16 +14,13 @@ python manage.py send_push --title "Your next binge is ready 📺" --body "Just 
 python manage.py send_push --title "Everyone's watching this 👀" --body "The #1 trending movie right now is on Watch2D. Have you seen it?"
 python manage.py send_push --title "Trending now 🚀" --body "Hot new titles dropping daily. Catch up before the spoilers hit."
 
-
 🛋️ Weekend / movie night
 python manage.py send_push --title "Weekend plans? Sorted. 🎉" --body "Fresh movies for your weekend binge. Grab the popcorn."
 python manage.py send_push --title "Friday night = movie night 🌙" --body "New releases are live. What are you watching tonight?"
 
-
 💜 Re-engagement (win back quiet users)
 python manage.py send_push --title "We added something for you 💜" --body "Tons of new movies & shows since you were last here. Come see."
 python manage.py send_push --title "Miss us? 🥺" --body "Hundreds of new titles are waiting. Pick up where you left off."
-
 
 🌍 Genre-specific
 python manage.py send_push --title "New Nollywood just dropped 🇳🇬" --body "The latest Naija movies & series are now on Watch2D."

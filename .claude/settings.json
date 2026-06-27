@@ -198,12 +198,24 @@
       "Bash(timeout 60 flutter doctor)",
       "Bash(flutter build *)",
       "Bash(gh auth *)",
-      "Bash(gh run *)"
+      "Bash(gh run *)",
+      "Bash(rm -f \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app/supabase/app_updates.sql\")",
+      "Bash(rmdir \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app/supabase\")",
+      "Bash(dart analyze *)",
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film\" && ls -la 4.0/.env 2>/dev/null; echo \"--- 4.0 env files ---\"; ls 4.0/*.env* 2>/dev/null; echo \"--- search for app db ref ---\"; grep -rl \"bajioejyqvaqopkeudoj\" 4.0 watch2d_app 2>/dev/null | head; echo \"---done---\")",
+      "Read(//c/Users/Ibeawuchi/Desktop/film/**)",
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film\" && grep -iE \"bajioejyqvaqopkeudoj|APP_DB|DATABASE_URL|SERVICE_ROLE|SUPABASE\" 4.0/.env | sed -E 's/\\(:[^@/]{4}\\)[^@/]*\\(@\\)/\\\\1****\\\\2/g; s/\\(key|KEY|ROLE|role\\)[=: ].*/\\\\1=****REDACTED****/g' | head -40)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
       "C:\\Users\\Ibeawuchi\\Desktop\\film",
-      "c:\\c\\Users\\Ibeawuchi\\Desktop\\film"
+      "c:\\c\\Users\\Ibeawuchi\\Desktop\\film",
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
+      "c:\\Users\\Ibeawuchi\\.claude\\projects\\c--Users-Ibeawuchi-Desktop-film-4-0\\memory",
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\services",
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\widgets",
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\screens",
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\config"
     ]
   }
 }
