@@ -35,12 +35,51 @@ UA = ('Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/120 Mobile Safari/537.36')
 
 
-def _gemini_key():
-    return config('GEMINI_API_KEY', default='')
+def _gemini_keys():
+    """Pool of Gemini keys. Prefer GEMINI_API_KEYS (comma-separated) for
+    rotation/failover; fall back to a single GEMINI_API_KEY."""
+    multi = config('GEMINI_API_KEYS', default='')
+    if multi.strip():
+        return [k.strip() for k in multi.split(',') if k.strip()]
+    single = config('GEMINI_API_KEY', default='')
+    return [single] if single else []
 
 
 def is_configured():
-    return bool(_gemini_key())
+    return bool(_gemini_keys())
+
+
+def _call_gemini(body):
+    """POST a generateContent request, rotating through the key pool and moving
+    to the next key on a rate-limit / quota error (429/403). Returns the parsed
+    JSON dict the model produced, or {'error': ...}, or None."""
+    keys = _gemini_keys()
+    if not keys:
+        return None
+    url = (f'https://generativelanguage.googleapis.com/v1beta/models/'
+           f'{GEMINI_MODEL}:generateContent')
+    # Round-robin starting offset so load spreads evenly across the keys.
+    start = cache.get('gemini_key_rr', 0)
+    cache.set('gemini_key_rr', (start + 1) % len(keys), 3600)
+    last_status = None
+    for i in range(len(keys)):
+        key = keys[(start + i) % len(keys)]
+        try:
+            r = requests.post(url, params={'key': key}, json=body, timeout=40)
+        except Exception:
+            continue
+        if r.status_code == 200:
+            try:
+                data = r.json()
+                text = data['candidates'][0]['content']['parts'][0]['text']
+                return json.loads(text)
+            except Exception:
+                return None
+        last_status = r.status_code
+        if r.status_code in (429, 403):
+            continue  # this key is rate-limited/exhausted → try the next
+        return {'error': f'vision_http_{r.status_code}'}
+    return {'error': f'vision_http_{last_status or "exhausted"}'}
 
 
 # ── Image helpers ────────────────────────────────────────────────────────────
@@ -138,8 +177,7 @@ _QUOTE_PROMPT = (
 
 def identify_from_quote(quote):
     """Identify which film/TV a famous line of dialogue is from (text-only)."""
-    key = _gemini_key()
-    if not key or not quote:
+    if not quote:
         return None
     body = {
         'contents': [
@@ -150,23 +188,12 @@ def identify_from_quote(quote):
             'response_mime_type': 'application/json',
         },
     }
-    url = (f'https://generativelanguage.googleapis.com/v1beta/models/'
-           f'{GEMINI_MODEL}:generateContent?key={key}')
-    try:
-        r = requests.post(url, json=body, timeout=40)
-        if r.status_code != 200:
-            return {'error': f'vision_http_{r.status_code}'}
-        data = r.json()
-        text = data['candidates'][0]['content']['parts'][0]['text']
-        return json.loads(text)
-    except Exception:
-        return None
+    return _call_gemini(body)
 
 
 def identify_from_images(images_b64, hint=''):
     """Send prepared frames to Gemini; return the parsed dict or None."""
-    key = _gemini_key()
-    if not key or not images_b64:
+    if not images_b64:
         return None
     hint_line = (f'Context/caption from where the clip was shared: "{hint}".\n'
                  if hint else '')
@@ -180,17 +207,7 @@ def identify_from_images(images_b64, hint=''):
             'response_mime_type': 'application/json',
         },
     }
-    url = (f'https://generativelanguage.googleapis.com/v1beta/models/'
-           f'{GEMINI_MODEL}:generateContent?key={key}')
-    try:
-        r = requests.post(url, json=body, timeout=40)
-        if r.status_code != 200:
-            return {'error': f'vision_http_{r.status_code}'}
-        data = r.json()
-        text = data['candidates'][0]['content']['parts'][0]['text']
-        return json.loads(text)
-    except Exception:
-        return None
+    return _call_gemini(body)
 
 
 # ── TMDB canonicalise ────────────────────────────────────────────────────────
@@ -233,7 +250,7 @@ def _enrich_match(m):
 @csrf_exempt
 @require_POST
 def identify_scene(request):
-    if not _gemini_key():
+    if not is_configured():
         return JsonResponse({'ok': False, 'error': 'not_configured'},
                             status=503)
 
