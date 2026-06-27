@@ -58,19 +58,21 @@ jobs:
       matrix:
         include:
           # ── 9jarocks: MAIN SOURCE — most up-to-date on movies, so it leads
-          #    Hollywood + Series with a deeper crawl (--max-pages 5). ──
+          #    Hollywood + Series with a deeper crawl (--max-pages 5).
+          #    upload:false — scrape_9jarocks does NOT support --upload-files
+          #    (no Telegram file re-host); it still posts links to social. ──
           - name: "🎬 Hollywood (9jarocks · main)"
             cmd: "python manage.py scrape_9jarocks --category hollywood --max-pages 5"
-            upload: true
+            upload: false
           - name: "🇳🇬 Nollywood"
             cmd: "python manage.py scrape_9jarocks --category nollywood --max-pages 3"
-            upload: true
+            upload: false
           - name: "📺 TV Series (9jarocks · main)"
             cmd: "python manage.py scrape_9jarocks --category series --max-pages 5"
-            upload: true
+            upload: false
           - name: "⛩️ Anime"
             cmd: "python manage.py scrape_9jarocks --category anime --max-pages 3"
-            upload: true
+            upload: false
           # ── thenkiri.com: Asian content only — Korean drama+movies, Bollywood,
           #    Chinese (9jarocks doesn't cover these). Hollywood + Series were
           #    handed to 9jarocks, the main source. ──
