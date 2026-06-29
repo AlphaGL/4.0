@@ -1,0 +1,25 @@
+name: Keep site warm
+
+# Pings the live site so Render's free dyno doesn't spin down (which causes the
+# 30–60s cold-start delay on the next visit). GitHub's scheduler can be a few
+# minutes late, so we ping every ~10 min. NOTE: this only makes sense if this is
+# your only always-on free Render service (free plan = 750 instance-hours/month,
+# and a month is ~720h). The durable fix is the paid Render plan.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping homepage (best-effort, retries to wake it)
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 https://www.watch2d.org/ || echo 000)
+            echo "attempt $i -> HTTP $code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 15
+          done
+          echo "Site did not return 200 (was likely asleep / still waking) — not failing the job."

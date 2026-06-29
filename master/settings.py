@@ -97,6 +97,8 @@ LOGGING = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Compress HTML/JSON responses (smaller payloads = faster loads, esp. mobile).
+    'django.middleware.gzip.GZipMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',    # ← must be before AccountMiddleware
     'django.middleware.common.CommonMiddleware',
@@ -234,8 +236,20 @@ CSP_CONNECT_SRC = ("'self'", "https:")
 CSP_MANIFEST_SRC = ("'self'",)
 
 DATABASES = {
-    'default': dj_database_url.parse(config('DATABASE_URL'))
+    'default': dj_database_url.parse(
+        config('DATABASE_URL'),
+        # Reuse DB connections across requests instead of opening a brand-new
+        # one (TLS handshake to remote Supabase) every single request. This is
+        # the biggest per-request latency win for a remote database.
+        conn_max_age=600,
+        # Drop a connection that died while idle before reusing it (Django 4.1+).
+        conn_health_checks=True,
+    )
 }
+# Supabase's transaction pooler (port 6543 / pgbouncer) does not support
+# server-side cursors or prepared statements — required when we keep
+# connections alive through it, otherwise reused connections can error.
+DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -278,7 +292,10 @@ STORAGES = {
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_MANIFEST_STRICT = False
 WHITENOISE_ALLOW_ALL_ORIGINS = True
-WHITENOISE_AUTOREFRESH = True
+# AUTOREFRESH re-scans static files from disk on EVERY request — fine for dev,
+# but in production it adds a filesystem stat to every static asset on every hit.
+# Tie it to DEBUG so production serves static files fast (from the manifest).
+WHITENOISE_AUTOREFRESH = DEBUG
 
 _REDIS_URL = config('REDIS_URL', default='')
 

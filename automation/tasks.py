@@ -87,11 +87,13 @@ def _post_movie(movie, channel: str) -> bool:
         status = "✅ Completed" if movie.completed else "🔄 Ongoing Series"
         lines.append(f"📡 <b>Status:</b> {status}")
 
-    lines += ["", f"🔗 <a href='{url}'>Watch on Watch2D</a>", "", "#Watch2D #Movie #FreeStream"]
+    lines += ["", "⬇️ <b>Tap the Download Link button below</b> 👇",
+              "", "#Watch2D #Movie #FreeStream"]
 
     return _send_and_record_new(
         'movie', movie.id, movie.title,
-        movie.image_url or '', "\n".join(lines), channel
+        movie.image_url or '', "\n".join(lines), channel,
+        button_url=url,
     )
 
 
@@ -160,14 +162,15 @@ def _post_movie_episode_update(movie, episode_label: str, channel: str) -> bool:
 
     lines += [
         "",
-        f"🔗 <a href='{url}'>Watch Now on Watch2D</a>",
+        "⬇️ <b>Tap the Download Link button below</b> 👇",
         "",
         "#Watch2D #NewEpisode #Series",
     ]
 
     return _send_and_record_update(
         'movie', movie.id, movie.title, episode_label,
-        movie.image_url or '', "\n".join(lines), channel
+        movie.image_url or '', "\n".join(lines), channel,
+        button_url=url,
     )
 
 
@@ -461,13 +464,23 @@ def _post_manga_chapter_update(manga, chapter, ch_num: str, channel: str) -> boo
 # SHARED HELPERS
 # ============================================================
 
+def _download_button(url: str) -> dict:
+    """A big tappable 'Download Link' button under the post (Nkiri-style) that
+    sends users to our site to complete the download (where the gate + ads are)."""
+    return {'inline_keyboard': [[{'text': '⬇️ Download Link', 'url': url}]]}
+
+
 def _send_and_record_new(
     content_type: str, content_id: int, title: str,
     image_url: str, caption: str, channel: str,
+    button_url: str = None,
 ) -> bool:
     """Send new-content post and record in TelegramPost."""
+    markup = _download_button(button_url) if button_url else None
     try:
-        result = send_photo(channel, image_url, caption) if image_url else send_message(channel, caption)
+        result = (send_photo(channel, image_url, caption, reply_markup=markup)
+                  if image_url
+                  else send_message(channel, caption, reply_markup=markup))
         msg_id = str(result.get('result', {}).get('message_id', ''))
         TelegramPost.objects.create(
             content_type=content_type,
@@ -491,10 +504,14 @@ def _send_and_record_new(
 def _send_and_record_update(
     content_type: str, content_id: int, title: str,
     update_key: str, image_url: str, caption: str, channel: str,
+    button_url: str = None,
 ) -> bool:
     """Send update post and record in TelegramUpdate."""
+    markup = _download_button(button_url) if button_url else None
     try:
-        result = send_photo(channel, image_url, caption) if image_url else send_message(channel, caption)
+        result = (send_photo(channel, image_url, caption, reply_markup=markup)
+                  if image_url
+                  else send_message(channel, caption, reply_markup=markup))
         msg_id = str(result.get('result', {}).get('message_id', ''))
         TelegramUpdate.objects.create(
             content_type=content_type,

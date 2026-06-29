@@ -2,7 +2,7 @@ name: Scrape All Sources + Upload to Telegram
 
 on:
   schedule:
-    - cron: '0 */12 * * *'   # every 12 hours
+    - cron: '0 */6 * * *'   # every 6 hours
   workflow_dispatch:
     inputs:
       upload_files:
@@ -88,6 +88,18 @@ jobs:
           # ── StreamIMDB ──
           - name: "▶️ StreamIMDB (movies + TV)"
             cmd: "python manage.py scrape_streamimdb --media both --max-pages 3"
+            upload: false
+          # ── naijaprey.tv: SUPPLEMENTARY / FALLBACK source (WordPress REST API).
+          #    Broad catalogue (Hollywood, anime, Korean, Chinese, …). Its links
+          #    point to np-downloader.com, so it ADDS a second download host to
+          #    movies already carried by 9jarocks/thenkiri — a working fallback
+          #    when one host's link is dead. It only prunes its OWN stale links,
+          #    never other sources'. upload:false — no --upload-files support. ──
+          - name: "🎯 naijaprey · Movies (fallback links)"
+            cmd: "python manage.py scrape_naijaprey --category movies --max-pages 3"
+            upload: false
+          - name: "🎯 naijaprey · Series (fallback links)"
+            cmd: "python manage.py scrape_naijaprey --category series --max-pages 3"
             upload: false
           # ── Disabled ──
           # - name: "🎞️ Nkiri"            # disabled — not useful
@@ -195,6 +207,12 @@ jobs:
           ENVEOF
       - name: Run cleanse_db
         run: python manage.py cleanse_db
+
+      # Organise download links for multi-source fallback (priority + per-episode
+      # grouping) across EVERY source — 9jarocks, thenkiri, naijaprey, etc.
+      - name: Backfill download-link fallback metadata
+        continue-on-error: true
+        run: python manage.py backfill_download_meta
 
       # ── Auto-enrichment (each runs only on new/un-done rows, so it's quick) ──
       - name: Re-host new images to R2

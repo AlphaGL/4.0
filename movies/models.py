@@ -39,7 +39,7 @@ class Movie(models.Model):
                              help_text="Auto-generated from title. Used in SEO URLs.")
     title_b = models.CharField(max_length=200, blank=True, null=True,
                                help_text="Stores new episode info")
-    title_b_updated_at = models.DateTimeField(null=True, blank=True)
+    title_b_updated_at = models.DateTimeField(null=True, blank=True, db_index=True)
     is_series  = models.BooleanField(default=False)
     completed  = models.BooleanField(default=False, help_text="Mark if series is complete")
     # ── Show grouping: every season of a show shares one show_key ──────
@@ -88,7 +88,7 @@ class Movie(models.Model):
         on_delete=models.SET_NULL,
         help_text="If user-submitted, the submitting user"
     )
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
     scraped    = models.BooleanField(default=False,
                                      help_text="True if movie was scraped from external API")
 
@@ -99,7 +99,7 @@ class Movie(models.Model):
         help_text="Legacy flag — blockbusters are now auto-computed by views (>=1000)"
     )
     watchlisted_by = models.ManyToManyField(User, related_name='watchlist_movies', blank=True)
-    views = models.PositiveIntegerField(default=0)
+    views = models.PositiveIntegerField(default=0, db_index=True)
 
     # ── Video info (scraped from nkiri / 9jarocks metadata) ──────────
     vi_country  = models.CharField(max_length=120, blank=True, default='', help_text="e.g. South Korea")
@@ -202,6 +202,25 @@ class DownloadLink(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='download_links')
     label = models.CharField(max_length=255, blank=True)
     url   = models.URLField()
+
+    # ── Multi-source fallback metadata ───────────────────────────────────────
+    # Which site this link came from (e.g. '9jarocks', 'thenkiri', 'naijaprey').
+    source = models.CharField(max_length=40, blank=True, default='', db_index=True)
+    # Lower = tried first. The primary source = 1, fallbacks = 2, 3 … so the app
+    # tries the main link, then fails over to the next working server.
+    priority = models.PositiveSmallIntegerField(default=100)
+    # For series: the episode this link is for, as integers (NOT a parsed label),
+    # so the same episode from different sources groups together for fallback.
+    season_number  = models.PositiveSmallIntegerField(null=True, blank=True)
+    episode_number = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    class Meta:
+        # Within a movie, order by episode then by priority — so each episode's
+        # links come out main-first, fallbacks after.
+        ordering = ['season_number', 'episode_number', 'priority']
+        indexes = [
+            models.Index(fields=['movie', 'season_number', 'episode_number']),
+        ]
 
     def __str__(self):
         return f"{self.label or 'Link'} – {self.url}"

@@ -492,11 +492,10 @@ def _post_movie_to_telegram(movie, is_new: bool):
             # ── CTA — the most prominent part ─────────────────────
             lines += [
                 f"{'▬' * 22}",
-                f"",
-                f"⬇️  <b>DOWNLOAD / WATCH FREE</b>",
-                f"",
-                f"👉  <a href='{url}'><b>{url}</b></a>",
-                f"",
+                "",
+                "⬇️  <b>Tap the Download Link button below</b> 👇",
+                "⚠️  <i>Open it in Chrome — not Telegram's built-in browser.</i>",
+                "",
                 f"{'▬' * 22}",
                 "",
             ]
@@ -524,11 +523,10 @@ def _post_movie_to_telegram(movie, is_new: bool):
                 f"🎬  <b>Episode:</b>  {episode_label}",
                 "",
                 f"{'▬' * 22}",
-                f"",
-                f"⬇️  <b>DOWNLOAD / WATCH FREE</b>",
-                f"",
-                f"👉  <a href='{url}'><b>{url}</b></a>",
-                f"",
+                "",
+                "⬇️  <b>Tap the Download Link button below</b> 👇",
+                "⚠️  <i>Open it in Chrome — not Telegram's built-in browser.</i>",
+                "",
                 # f"{'▬' * 22}",
                 # "",
                 # tg_tags,
@@ -544,10 +542,11 @@ def _post_movie_to_telegram(movie, is_new: bool):
             )
 
         caption = "\n".join(lines)
+        markup = {'inline_keyboard': [[{'text': '⬇️ Download Link', 'url': url}]]}
         if movie.image_url:
-            send_photo(channel, movie.image_url, caption)
+            send_photo(channel, movie.image_url, caption, reply_markup=markup)
         else:
-            send_message(channel, caption)
+            send_message(channel, caption, reply_markup=markup)
 
         _limiter.record('telegram')
         print(f"📢 Telegram: {'NEW' if is_new else 'UPDATE'} posted — {movie.title}")

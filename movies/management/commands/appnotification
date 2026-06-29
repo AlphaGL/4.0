@@ -9,6 +9,11 @@ python manage.py send_push --title "Fresh drops just landed 🍿" --body "New mo
 python manage.py send_push --title "New on Watch2D 🎬" --body "This week's biggest releases are now streaming. Don't sleep on these."
 python manage.py send_push --title "Your next binge is ready 📺" --body "Just added: trending shows everyone's talking about."
 
+python manage.py send_push --title "Downloads back shortly" --body "A temporary issue is affecting some downloads. We're on it — thanks for bearing with us. 🙏"
+
+
+python manage.py send_push --title "Downloads are live again 🎬" --body "The issue is resolved. Open Watch2D and continue downloading where you left off."
+
 
 ⏳ FOMO / trending
 python manage.py send_push --title "Everyone's watching this 👀" --body "The #1 trending movie right now is on Watch2D. Have you seen it?"

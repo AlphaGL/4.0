@@ -210,7 +210,31 @@
       "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/services/**)",
       "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/config/**)",
       "Bash(git check-ignore *)",
-      "Bash(python -m py_compile movies/scene_id.py)"
+      "Bash(python -m py_compile movies/scene_id.py)",
+      "Bash(python -m py_compile automation/telegram.py automation/tasks.py)",
+      "Bash(python -m py_compile movies/management/commands/scrape_9jarocks.py movies/management/commands/scrape_thenkiri.py automation/tasks.py automation/telegram.py)",
+      "Bash(grep -nA14 \"class DownloadLink\" movies/models.py)",
+      "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/screens/**)",
+      "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/models/**)",
+      "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/widgets/**)",
+      "Bash(sed 's/^/django errors: /')",
+      "WebFetch(domain:www.naijaprey.tv)",
+      "Bash(curl -s \"https://www.naijaprey.tv/wp-json/wp/v2/categories?per_page=100&_fields=id,name,slug,count,parent\")",
+      "Bash(python -c \"import sys,json; [print\\(c['id'],'|',c['name'],'|',c['slug'],'|',c.get\\('count'\\),'|',c.get\\('parent'\\)\\) for c in json.load\\(sys.stdin\\)]\")",
+      "Bash(python -m py_compile movies/management/commands/scrape_naijaprey.py)",
+      "Bash(python -m py_compile movies/management/commands/scrape_naijaprey_links.py)",
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"=== app/build.gradle: sdk + ndk ===\" && grep -rniE \"minSdk|compileSdk|targetSdk|ndkVersion|multiDex\" android/app/build.gradle* 2>/dev/null | head; echo \"\"; echo \"=== gradle.properties \\(memory\\) ===\" && grep -iE \"jvmargs|Xmx|memory|androidx|jetifier\" android/gradle.properties 2>/dev/null; echo \"\"; echo \"=== build workflow ===\" && ls .github/workflows/ 2>/dev/null && echo \"---\" && grep -rniE \"flutter build|build apk|--split|--release|--obfuscate|--target-platform|ndk|gradle\" .github/workflows/*.yml 2>/dev/null | head)",
+      "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/.github/workflows/**)",
+      "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/android/**)",
+      "Bash(python -m py_compile movies/management/commands/scrape_naijaprey.py movies/management/commands/scrape_naijaprey_links.py)",
+      "Bash(python -c \"import yaml,sys; yaml.safe_load\\(open\\('.github/workflows/scrape_thenkiri.yml'\\)\\); print\\('YAML OK'\\)\")",
+      "Bash(python -c \"import sys; print\\('yaml module not present, skipping'\\)\")",
+      "Bash(pip install *)",
+      "Bash(python -c \"import yaml; d=yaml.safe_load\\(open\\('.github/workflows/scrape_thenkiri.yml'\\)\\); items=d['jobs']['scrape']['strategy']['matrix']['include']; print\\('matrix entries:', len\\(items\\)\\); [print\\(' -', i['name']\\) for i in items if 'naijaprey' in i['name'].lower\\(\\)]; print\\('fail-fast:', d['jobs']['scrape']['strategy'].get\\('fail-fast'\\)\\)\")",
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film\" && ls watch2d_app 2>/dev/null && echo \"---\" && grep -rl \"download\" watch2d_app/lib 2>/dev/null | head -10)",
+      "Bash(python -m py_compile movies/management/commands/backfill_download_meta.py)",
+      "Bash(python manage.py migrate --noinput)",
+      "Bash(python manage.py backfill_download_meta)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
@@ -221,7 +245,9 @@
       "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\services",
       "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\widgets",
       "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\screens",
-      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\config"
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\config",
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\models",
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\android"
     ]
   }
 }

@@ -1,36 +1,43 @@
 """
-Management command: scrape_9jarocks
-Scrapes 9jarocks.net by crawling category listing pages, then visiting
-each post page to extract title, image, description, and download links.
+Management command: scrape_naijaprey
+Scrapes naijaprey.tv via its WordPress REST API, then parses each post's
+rendered HTML to extract title, image, description, metadata and download links.
 
-WHY HTML scraping (not REST API):
-  • /wp/v2/posts returns 404 — blocked by the site
-  • /wp/v2/pages only has ~10 static pages (Privacy, About, etc.)
-  • All actual content lives in /category/videodownload/page/N/
+WHY REST API (not HTML crawling like 9jarocks / thenkiri):
+  • naijaprey.tv exposes a fully working /wp-json/wp/v2/posts endpoint that
+    returns the entire post (title, content HTML, excerpt, categories, tags,
+    featured image URL) as clean JSON — no Cloudflare/HTML-grid scraping needed.
+  • Two content categories exist on the site:
+        1228  Movie   (download-movies-vxi)  — ~9.8k posts
+        1518  Series  (series-download-v2)   — ~1.2k posts
+    Genre / country / language are NOT separate site categories — they live
+    inside each post's content HTML, so we assign DB categories *smartly* from
+    the detected country/genre instead of from a fixed source-slug.
 
-HTML structure (confirmed from live page source):
-  • Download links : <a class="fa-fa-download" href="...">
-  • Featured image : <p><img class="aligncenter ...">  inside .entry-content
-  • Video embed    : <iframe ...> inside .entry-content
-  • Post metadata  : <blockquote> containing Filename, Director, Stars, etc.
-  • Categories     : <a class="post-cat ..."> in .entry-header
+Post content HTML structure (confirmed from live /wp-json output):
+  • Featured image : post['jetpack_featured_media_url']  (most reliable)
+  • Description    : first <p class="wp-block-paragraph"> plot lines
+  • Metadata       : <p><strong>Genre:</strong> ...</p>, Stars, Release Date,
+                     Country, Ratings, Language, Subtitles, Source, Runtime,
+                     Episodes — one key:value per <p>
+  • Trailer        : <iframe src="youtube.com/embed/..."> in .video-container
+  • Movie download : <a class="button" href="...np-downloader...">Download</a>
+                     (+ optional <a class="button">Subtitle</a>)
+  • Series episodes: <a class="se-button" href="...">Episode N</a> / E1156 ...
+  • Latest episode : post['meta']['_subtitle']  e.g. "E12", "E1168"
 
 Usage examples
 ──────────────
-python manage.py scrape_9jarocks
-python manage.py scrape_9jarocks --startpage 5
-python manage.py scrape_9jarocks --startpage 1 --endpage 10
-python manage.py scrape_9jarocks --no-social
-python manage.py scrape_9jarocks --category nollywood
-python manage.py scrape_9jarocks --category hollywood
-python manage.py scrape_9jarocks --category kdrama
-python manage.py scrape_9jarocks --category anime
-python manage.py scrape_9jarocks --category series      # all series categories
-python manage.py scrape_9jarocks --category all         # everything (default)
+python manage.py scrape_naijaprey
+python manage.py scrape_naijaprey --startpage 5
+python manage.py scrape_naijaprey --startpage 1 --endpage 10
+python manage.py scrape_naijaprey --no-social
+python manage.py scrape_naijaprey --category movies
+python manage.py scrape_naijaprey --category series
+python manage.py scrape_naijaprey --category all
 
 Available friendly --category values:
-  nollywood, hollywood, kdrama, chinese, thai, japanese,
-  filipino, anime, bollywood, foreign, series, wrestling, ongoing, 18plus, all
+  movies, series, all
 """
 
 from django.core.management.base import BaseCommand
@@ -52,153 +59,44 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # SITE CONSTANTS
 # ══════════════════════════════════════════════════════════════
 
-SITE_URL = 'https://9jarocks.net'
+SITE_URL = 'https://www.naijaprey.tv'
+API_POSTS = f'{SITE_URL}/wp-json/wp/v2/posts'
+
+# Tag every download link this scraper creates with its origin, so the app /
+# site can group same-movie links from different sources and fail over between
+# them (DownloadLink.source — see models.py "Multi-source fallback metadata").
+SOURCE_NAME = 'naijaprey'
 
 # ── Category definitions ──────────────────────────────────────
-# Each entry:
-#   'slug'     : 9jarocks URL path under /category/
-#   'db_cats'  : exact DB Category names to assign on your site
-#                (must match what Category.objects.get_or_create uses)
-#
-# DB category names are taken from your views.py sidebar:
-#   'Nollywood movies', 'Korean drama', 'Hollywood movies', 'Bollywood movies'
-# Plus extended names for series, anime, etc.
-#
-# Rule: if your DB already has a category with a given name it will be
-# reused; if not, get_or_create will create it.  Keep the names consistent
-# with whatever you've already seeded in the DB.
-
+# naijaprey only splits content into Movie (1228) and Series (1518).
+# 'cat_id'  : WordPress category ID used as ?categories=<id>
+# 'is_series': default is_series flag for everything under this category
+# DB categories are NOT taken from here — they are detected per-post from
+# the content's Country / Language / Genre (see detect_db_categories()).
 CATEGORY_DEFINITIONS = [
-    # ── DB category names MUST match exactly what is in views.py get_sidebar_categories()
-    # Sidebar cats: 'Nollywood movies', 'Korean drama', 'Hollywood movies',
-    #               'Bollywood movies', 'Anime', 'Chinese drama', 'Thai drama',
-    #               'Series', 'Animation'
     {
-        'key':     'nollywood',
-        'slug':    'videodownload/nollywood-movie',
-        'label':   'Nollywood Movies',
-        'db_cats': ['Nollywood movies'],
+        'key':       'movies',
+        'cat_id':    1228,
+        'label':     'Movies',
+        'is_series': False,
     },
     {
-        'key':     'nollywood_series',
-        'slug':    'videodownload/nollywood-tv-series',
-        'label':   'Nollywood TV Series',
-        'db_cats': ['Nollywood movies', 'Series'],
-    },
-    {
-        'key':     'hollywood',
-        'slug':    'videodownload/hollywood-movie',
-        'label':   'Hollywood Movies',
-        'db_cats': ['Hollywood movies'],
-    },
-    {
-        'key':     'hollywood_series',
-        'slug':    'videodownload/hollywood-tv-series',
-        'label':   'Hollywood TV Series',
-        'db_cats': ['Hollywood movies', 'Series'],
-    },
-    {
-        'key':     'foreign',
-        'slug':    'videodownload/foreign-movies',
-        'label':   'Foreign Movies',
-        'db_cats': ['Hollywood movies'],   # foreign movies grouped under Hollywood in sidebar
-    },
-    {
-        'key':     'foreign_series',
-        'slug':    'videodownload/other-foreign-series',
-        'label':   'Foreign Series',
-        'db_cats': ['Hollywood movies', 'Series'],
-    },
-    {
-        'key':     'kdrama',
-        'slug':    'videodownload/korean-drama',
-        'label':   'Korean Drama',
-        'db_cats': ['Korean drama'],
-    },
-    {
-        'key':     'chinese',
-        'slug':    'videodownload/chinese-drama',
-        'label':   'Chinese Drama',
-        'db_cats': ['Chinese drama'],
-    },
-    {
-        'key':     'thai',
-        'slug':    'videodownload/thai-drama',
-        'label':   'Thai Drama',
-        'db_cats': ['Thai drama'],
-    },
-    {
-        'key':     'japanese',
-        'slug':    'videodownload/japanese-drama',
-        'label':   'Japanese Drama',
-        'db_cats': ['Series'],   # no dedicated sidebar cat — goes under Series
-    },
-    {
-        'key':     'filipino',
-        'slug':    'videodownload/filipino-drama',
-        'label':   'Filipino Drama',
-        'db_cats': ['Series'],   # no dedicated sidebar cat — goes under Series
-    },
-    {
-        'key':     'bollywood',
-        'slug':    'videodownload/bollywood',
-        'label':   'Bollywood Movies',
-        'db_cats': ['Bollywood movies'],
-    },
-    {
-        'key':     'anime',
-        'slug':    'videodownload/anime',
-        'label':   'Anime',
-        'db_cats': ['Anime'],
-    },
-    {
-        'key':     'wrestling',
-        'slug':    'videodownload/pro-wrestling-fighting-sports',
-        'label':   'Pro Wrestling / Sports',
-        'db_cats': ['wrestling'],   # no dedicated sidebar cat — goes under Series
-    },
-    {
-        'key':     'ongoing',
-        'slug':    'videodownload/ongoing',
-        'label':   'Ongoing Series',
-        'db_cats': ['Series'],
-    },
-    {
-        'key':     '18plus',
-        'slug':    '18-section',
-        'label':   '18+ Section',
-        'db_cats': ['18plus'],   # no dedicated sidebar cat — goes under Series
+        'key':       'series',
+        'cat_id':    1518,
+        'label':     'Series',
+        'is_series': True,
     },
 ]
 
-# ── Friendly alias groups (for --category flag) ────────────────
-# Maps the value the user passes on the CLI to a list of definition keys.
-# "all" (or no --category) runs every definition.
 CATEGORY_ALIASES = {
-    'nollywood':  ['nollywood', 'nollywood_series'],
-    'hollywood':  ['hollywood', 'hollywood_series'],
-    'kdrama':     ['kdrama'],
-    'korean':     ['kdrama'],
-    'chinese':    ['chinese'],
-    'cdrama':     ['chinese'],
-    'thai':       ['thai'],
-    'japanese':   ['japanese'],
-    'filipino':   ['filipino'],
-    'anime':      ['anime'],
-    'bollywood':  ['bollywood'],
-    'foreign':    ['foreign', 'foreign_series'],
-    'series':     ['nollywood_series', 'hollywood_series', 'foreign_series', 'ongoing'],
-    'wrestling':  ['wrestling'],
-    'sports':     ['wrestling'],
-    'ongoing':    ['ongoing'],
-    '18plus':     ['18plus'],
-    '18':         ['18plus'],
-    'all':        [d['key'] for d in CATEGORY_DEFINITIONS],  # auto-includes all keys
+    'movies':  ['movies'],
+    'movie':   ['movies'],
+    'series':  ['series'],
+    'tv':      ['series'],
+    'all':     [d['key'] for d in CATEGORY_DEFINITIONS],
 }
 
-# Build a lookup from slug → definition for easy access later
-_SLUG_TO_DEF = {d['slug']: d for d in CATEGORY_DEFINITIONS}
-_KEY_TO_DEF  = {d['key']:  d for d in CATEGORY_DEFINITIONS}
+_KEY_TO_DEF = {d['key']: d for d in CATEGORY_DEFINITIONS}
 
 
 # ── Ad / monetization redirect domains to SKIP ────────────────
@@ -210,11 +108,13 @@ AD_DOMAINS = [
     'getdirectbonus.com',
     'push-sdk.com',
     'go.getdirectbonus.com',
+    'airingsjerky.com',
 ]
 
-# Download domains and keywords for fallback link detection
+# Download domains and keywords for link detection
 KNOWN_DOWNLOAD_DOMAINS = [
-    'loadedfiles.org',
+    'np-downloader.com',
+    'vdl.np-downloader.com',
     'mega.nz',
     'drive.google.com',
     'mediafire.com',
@@ -225,18 +125,9 @@ KNOWN_DOWNLOAD_DOMAINS = [
     'streamtape.com',
     'doodstream.com',
     'filemoon.sx',
-    'netnaijafiles.xyz',
+    'loadedfiles.org',
     'sabishares.com',
-    'meetdownload.com',
-    'webloaded.com.ng',
-    'wideshares.org',
     'downloadwella.com',
-    'netnaija.com',
-    'fzmovies.net',
-    'files.9jarocks.net',
-    'cdn.9jarocks.net',
-    'download.9jarocks.net',
-    '9jarocks.net/download',
     'wildshare.net',
 ]
 
@@ -245,7 +136,7 @@ FILE_EXTENSIONS = ['.mp4', '.mkv', '.avi', '.mov', '.zip', '.rar', '.srt']
 DOWNLOAD_KEYWORDS = [
     'download', '480p', '720p', '1080p', '4k', 'hd',
     'episode', 'fast server', 'slow server', 'mirror',
-    'part ', 'batch',
+    'part ', 'batch', 'sdm_downloads',
 ]
 
 
@@ -266,15 +157,6 @@ TWITTER_FOOTER = (
     f"\n🌍 More: {PLATFORM_LINKS['website']}"
 )
 
-FACEBOOK_FOOTER = (
-    "\n\n━━━━━━━━━━━━━━━━━━━\n"
-    "🔔 Follow us everywhere:\n"
-    f"📱 Telegram → {PLATFORM_LINKS['telegram']}\n"
-    f"🐦 X/Twitter → {PLATFORM_LINKS['twitter']}\n"
-    f"🌍 Website → {PLATFORM_LINKS['website']}\n"
-    "━━━━━━━━━━━━━━━━━━━"
-)
-
 TELEGRAM_FOOTER = (
     "\n\n┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n"
     "📣 <b>Stay Connected:</b>\n"
@@ -285,6 +167,15 @@ TELEGRAM_FOOTER = (
     "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄"
 )
 
+FACEBOOK_FOOTER = (
+    "\n\n━━━━━━━━━━━━━━━━━━━\n"
+    "🔔 Follow us everywhere:\n"
+    f"📱 Telegram → {PLATFORM_LINKS['telegram']}\n"
+    f"🐦 X/Twitter → {PLATFORM_LINKS['twitter']}\n"
+    f"🌍 Website → {PLATFORM_LINKS['website']}\n"
+    "━━━━━━━━━━━━━━━━━━━"
+)
+
 
 # ══════════════════════════════════════════════════════════════
 # RATE LIMITER
@@ -292,10 +183,10 @@ TELEGRAM_FOOTER = (
 
 class _RateLimiter:
     def __init__(self):
-        self._counts    = {'facebook': 0, 'twitter': 0}
-        self._last_post = {'facebook': 0.0, 'twitter': 0.0}
-        self._min_gap   = {'facebook': 45, 'twitter': 60}
-        self._run_cap   = {'facebook': 80, 'twitter': 40}
+        self._counts    = {'facebook': 0, 'twitter': 0, 'telegram': 0}
+        self._last_post = {'facebook': 0.0, 'twitter': 0.0, 'telegram': 0.0}
+        self._min_gap   = {'facebook': 45, 'twitter': 60, 'telegram': 5}
+        self._run_cap   = {'facebook': 80, 'twitter': 40, 'telegram': 200}
 
     def can_post(self, platform: str) -> bool:
         if platform not in self._counts:
@@ -319,6 +210,7 @@ class _RateLimiter:
     def stats(self) -> str:
         return (
             f"📊 Posts this run — "
+            f"Telegram: {self._counts['telegram']} | "
             f"Facebook: {self._counts['facebook']} | "
             f"Twitter: {self._counts['twitter']}"
         )
@@ -423,39 +315,30 @@ def _detect_hashtags(movie):
     combined = title_lower + ' ' + cat_names
 
     if any(kw in combined for kw in ['korean', 'kdrama', 'k-drama', 'korea']):
-        tg =""
-        # tg = "#Watch2D #KDrama #KoreanDrama #KoreanSeries #AsianDrama #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #KDramaEnglishSub #WatchFree #Trending"
+        tg = "#Watch2D #KDrama #KoreanDrama #KoreanSeries #AsianDrama #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #KDramaEnglishSub #WatchFree #Trending"
         tw = "#Watch2D #KDrama #KoreanDrama #AsianDrama #FreeDownload"
     elif any(kw in combined for kw in ['nigerian', 'nollywood', 'naija', 'nigeria']):
-        tg = ""
-        # tg = "#Watch2D #Nollywood #NigerianMovies #NaijaMovies #AfricanMovies #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #AfricanCinema #WatchFree #Trending"
+        tg = "#Watch2D #Nollywood #NigerianMovies #NaijaMovies #AfricanMovies #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #AfricanCinema #WatchFree #Trending"
         tw = "#Watch2D #Nollywood #NaijaMovies #AfricanMovies #FreeDownload"
     elif any(kw in combined for kw in ['turkish', 'turkey', 'dizi']):
-        tg = ""
-        # tg = "#Watch2D #TurkishSeries #TurkishDrama #Dizi #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #EnglishSubtitles #WatchFree #Trending"
+        tg = "#Watch2D #TurkishSeries #TurkishDrama #Dizi #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #EnglishSubtitles #WatchFree #Trending"
         tw = "#Watch2D #TurkishDrama #Dizi #TurkishSeries #FreeDownload"
     elif any(kw in combined for kw in ['indian', 'bollywood', 'hindi', 'telugu', 'tamil']):
-        tg = ""
-        # tg = "#Watch2D #Bollywood #IndianSeries #HindiSeries #FreeDownload #HDDownload #NowStreaming #MustWatch #IndianCinema #WatchFree #Trending"
+        tg = "#Watch2D #Bollywood #IndianSeries #HindiSeries #FreeDownload #HDDownload #NowStreaming #MustWatch #IndianCinema #WatchFree #Trending"
         tw = "#Watch2D #Bollywood #IndianSeries #HindiSeries #FreeDownload"
     elif any(kw in combined for kw in ['chinese', 'china', 'cdrama']):
-        tg = ""
-        # tg = "#Watch2D #CDrama #ChineseDrama #ChineseSeries #AsianDrama #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #WatchFree #Trending"
+        tg = "#Watch2D #CDrama #ChineseDrama #ChineseSeries #AsianDrama #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #WatchFree #Trending"
         tw = "#Watch2D #CDrama #ChineseDrama #AsianDrama #FreeDownload"
     elif any(kw in combined for kw in ['anime']):
-        tg = ""
-        # tg = "#Watch2D #Anime #AnimeDownload #AnimeSeries #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #WatchFree #Trending"
+        tg = "#Watch2D #Anime #AnimeDownload #AnimeSeries #FreeDownload #HDDownload #NowStreaming #MustWatch #BingeWatch #WatchFree #Trending"
         tw = "#Watch2D #Anime #AnimeDownload #FreeDownload"
     elif movie.is_series:
-        tg = ""
-        # tg = "#Watch2D #NewSeries #TVSeries #Series #NowStreaming #FreeDownload #HDDownload #MustWatch #BingeWatch #WatchFree #Trending"
+        tg = "#Watch2D #NewSeries #TVSeries #Series #NowStreaming #FreeDownload #HDDownload #MustWatch #BingeWatch #WatchFree #Trending"
         tw = "#Watch2D #TVSeries #NowStreaming #FreeDownload #BingeWatch"
     else:
-        tg = ""
-        # tg = "#Watch2D #NewMovie #Hollywood #FullMovie #FreeDownload #HDMovie #NowStreaming #MustWatch #MovieLovers #WatchFree #Trending"
+        tg = "#Watch2D #NewMovie #Hollywood #FullMovie #FreeDownload #HDMovie #NowStreaming #MustWatch #MovieLovers #WatchFree #Trending"
         tw = "#Watch2D #NewMovie #Hollywood #FreeDownload #MustWatch"
     return tg, tw, tg
-
 
 
 # ══════════════════════════════════════════════════════════════
@@ -463,6 +346,8 @@ def _detect_hashtags(movie):
 # ══════════════════════════════════════════════════════════════
 
 def _post_movie_to_telegram(movie, is_new: bool):
+    if not _limiter.can_post('telegram'):
+        return
     try:
         from django.conf import settings
         from automation.telegram import send_photo, send_message
@@ -472,30 +357,53 @@ def _post_movie_to_telegram(movie, is_new: bool):
         if not channel:
             return
 
-        url = f"{site_url}/movies/movie/{movie.pk}/"
+        url      = f"{site_url}/movies/movie/{movie.pk}/"
         tg_tags, _, _ = _detect_hashtags(movie)
 
         if is_new:
-            emoji = "🎬" if not movie.is_series else "📺"
-            lines = [f"{emoji} <b>{movie.title}</b>", ""]
+            emoji  = "🎬" if not movie.is_series else "📺"
 
-            if movie.description:
-                lines += [f"{movie.description[:250]}...", ""]
+            lines = [
+                f"🎞  <b>{movie.title}</b>",
+                "",
+            ]
 
+            meta_lines = []
             cats = movie.categories.all()
             if cats:
-                lines.append(f"🏷 <b>Genre:</b> {', '.join(c.name for c in cats[:4])}")
-
+                meta_lines.append(f"🏷  <b>Genre:</b>  {', '.join(c.name for c in cats[:4])}")
+            if getattr(movie, 'vi_year', ''):
+                meta_lines.append(f"📅  <b>Year:</b>   {movie.vi_year}")
+            if getattr(movie, 'vi_country', ''):
+                meta_lines.append(f"🌍  <b>Country:</b> {movie.vi_country}")
+            if getattr(movie, 'vi_language', ''):
+                meta_lines.append(f"🗣  <b>Language:</b> {movie.vi_language}")
+            if getattr(movie, 'vi_subtitle', ''):
+                meta_lines.append(f"📝  <b>Subtitle:</b> {movie.vi_subtitle}")
+            if getattr(movie, 'vi_runtime', ''):
+                meta_lines.append(f"⏱  <b>Runtime:</b> {movie.vi_runtime}")
+            if getattr(movie, 'vi_episodes', ''):
+                meta_lines.append(f"🎞  <b>Episodes:</b> {movie.vi_episodes}")
             if movie.is_series:
-                status = "✅ Completed" if movie.completed else "🔄 Ongoing Series"
-                lines.append(f"📡 <b>Status:</b> {status}")
+                status = "✅ Completed" if movie.completed else "🔄 Ongoing"
+                meta_lines.append(f"📡  <b>Status:</b>  {status}")
+            if meta_lines:
+                lines += meta_lines + [""]
+
+            if movie.description:
+                desc = movie.description[:280].rstrip()
+                if len(movie.description) > 280:
+                    desc += "…"
+                lines += [f"📖  <i>{desc}</i>", ""]
 
             lines += [
+                f"{'▬' * 22}",
                 "",
-                "⬇️ <b>Tap the Download Link button below</b> 👇",
-                "⚠️ <i>Open it in Chrome — not Telegram's built-in browser.</i>",
+                "⬇️  <b>Tap the Download Link button below</b> 👇",
+                "⚠️  <i>Open it in Chrome — not Telegram's built-in browser.</i>",
                 "",
-                tg_tags,
+                f"{'▬' * 22}",
+                "",
                 TELEGRAM_FOOTER,
             ]
 
@@ -509,14 +417,14 @@ def _post_movie_to_telegram(movie, is_new: bool):
         else:
             episode_label = movie.title_b or "New Episode"
             lines = [
-                "🆕 <b>New Episode Available!</b>", "",
-                f"📺 <b>{movie.title}</b>",
-                f"🎬 <b>Episode:</b> {episode_label}",
+                f"📺  <b>{movie.title}</b>",
+                f"🎬  <b>Episode:</b>  {episode_label}",
                 "",
-                "⬇️ <b>Tap the Download Link button below</b> 👇",
-                "⚠️ <i>Open it in Chrome — not Telegram's built-in browser.</i>",
+                f"{'▬' * 22}",
                 "",
-                tg_tags,
+                "⬇️  <b>Tap the Download Link button below</b> 👇",
+                "⚠️  <i>Open it in Chrome — not Telegram's built-in browser.</i>",
+                "",
                 TELEGRAM_FOOTER,
             ]
 
@@ -535,6 +443,7 @@ def _post_movie_to_telegram(movie, is_new: bool):
         else:
             send_message(channel, caption, reply_markup=markup)
 
+        _limiter.record('telegram')
         print(f"📢 Telegram: {'NEW' if is_new else 'UPDATE'} posted — {movie.title}")
 
     except Exception as e:
@@ -601,19 +510,66 @@ def _post_movie_to_facebook(movie, is_new: bool):
 
         if is_new:
             emoji = "🎬" if not movie.is_series else "📺"
-            lines = [f"{emoji} {movie.title}", ""]
-            if movie.description:
-                lines += [f"{movie.description[:300]}...", ""]
+            kind  = "SERIES" if movie.is_series else "MOVIE"
+
+            lines = [
+                f"{'━' * 22}",
+                f"{emoji}  NEW {kind} — {movie.title}",
+                f"{'━' * 22}",
+                "",
+            ]
             cats = movie.categories.all()
             if cats:
-                lines.append(f"🏷 Genre: {', '.join(c.name for c in cats[:4])}")
-            lines += ["", f"▶️ Watch FREE on Watch2D: {url}", "", fb_tags, FACEBOOK_FOOTER]
+                lines.append(f"🏷  Genre:    {', '.join(c.name for c in cats[:4])}")
+            if getattr(movie, 'vi_year', ''):
+                lines.append(f"📅  Year:     {movie.vi_year}")
+            if getattr(movie, 'vi_country', ''):
+                lines.append(f"🌍  Country:  {movie.vi_country}")
+            if getattr(movie, 'vi_language', ''):
+                lines.append(f"🗣  Language: {movie.vi_language}")
+            if getattr(movie, 'vi_subtitle', ''):
+                lines.append(f"📝  Subtitle: {movie.vi_subtitle}")
+            if getattr(movie, 'vi_runtime', ''):
+                lines.append(f"⏱  Runtime:  {movie.vi_runtime}")
+            if getattr(movie, 'vi_episodes', ''):
+                lines.append(f"🎞  Episodes: {movie.vi_episodes}")
+            if movie.is_series:
+                status = "✅ Completed" if movie.completed else "🔄 Ongoing"
+                lines.append(f"📡  Status:   {status}")
+            lines.append("")
+
+            if movie.description:
+                desc = movie.description[:350].rstrip()
+                if len(movie.description) > 350:
+                    desc += "…"
+                lines += [f"📖  {desc}", ""]
+
+            lines += [
+                f"{'▬' * 22}",
+                f"⬇️  DOWNLOAD / WATCH FOR FREE",
+                f"👉  {url}",
+                f"{'▬' * 22}",
+                "",
+                fb_tags,
+                FACEBOOK_FOOTER,
+            ]
         else:
             episode_label = movie.title_b or "New Episode"
             lines = [
-                "🆕 New Episode Available!", "",
-                f"📺 {movie.title}", f"🎬 Episode: {episode_label}", "",
-                f"▶️ Watch FREE Now: {url}", "", fb_tags, FACEBOOK_FOOTER,
+                f"{'━' * 22}",
+                f"🆕  NEW EPISODE — {movie.title}",
+                f"{'━' * 22}",
+                "",
+                f"📺  Show:    {movie.title}",
+                f"🎬  Episode: {episode_label}",
+                "",
+                f"{'▬' * 22}",
+                f"⬇️  DOWNLOAD / WATCH FOR FREE",
+                f"👉  {url}",
+                f"{'▬' * 22}",
+                "",
+                fb_tags,
+                FACEBOOK_FOOTER,
             ]
 
         caption = "\n".join(lines)
@@ -636,18 +592,17 @@ def _post_movie_to_facebook(movie, is_new: bool):
 
 
 # ══════════════════════════════════════════════════════════════
-# MASTER POSTER  (Telegram is DISABLED)
+# MASTER POSTER
 # ══════════════════════════════════════════════════════════════
 
 def _post_to_all_platforms(movie, is_new: bool):
-    # ⚠️  Telegram is DISABLED — uncomment below line when ready
-    # _post_movie_to_twitter(movie,  is_new=is_new)
     _post_movie_to_telegram(movie, is_new=is_new)
     _post_movie_to_facebook(movie, is_new=is_new)
+    # _post_movie_to_twitter(movie,  is_new=is_new)
 
 
 # ══════════════════════════════════════════════════════════════
-# HTML PARSERS  (based on confirmed live page structure)
+# REST API + HTML PARSERS
 # ══════════════════════════════════════════════════════════════
 
 def _make_scraper():
@@ -659,261 +614,197 @@ def _make_scraper():
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/124.0.0.0 Safari/537.36"
         ),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept": "application/json, text/plain, */*",
         "Accept-Language": "en-US,en;q=0.9",
         "Referer": SITE_URL,
     })
     return scraper
 
 
-def get_post_urls_from_listing_page(html: str, base_url: str) -> list[str]:
+def fetch_posts_page(scraper, cat_id: int, page: int, per_page: int = 20):
     """
-    Extract all post URLs from a category listing page.
-    9jarocks uses standard Jannah theme article links.
+    Fetch one page of posts from the WordPress REST API for a category.
+
+    Returns (posts_list, total_pages).  posts_list is [] on a 400/404
+    (WordPress returns 400 'rest_post_invalid_page_number' past the last page).
     """
-    soup  = BeautifulSoup(html, 'html.parser')
-    links = set()
+    params = {
+        'categories': cat_id,
+        'page':       page,
+        'per_page':   per_page,
+        '_fields':    'id,link,title,content,excerpt,meta,categories,'
+                      'jetpack_featured_media_url',
+    }
+    resp = scraper.get(API_POSTS, params=params, timeout=25)
 
-    for article in soup.select('article.tie-standard, .post-item, .mag-box .post-item'):
-        for a in article.find_all('a', href=True):
-            href = a['href']
-            if SITE_URL in href and '/videodownload/' in href:
-                links.add(href.rstrip('/'))
+    if resp.status_code in (400, 404):
+        # Past the last page — WP returns 400 rest_post_invalid_page_number
+        return [], 0
 
-    if not links:
-        for a in soup.find_all('a', href=True):
-            href = a['href']
-            if '/videodownload/' in href and href.startswith(SITE_URL):
-                if '-id' in href or href.endswith('.html'):
-                    links.add(href.rstrip('/'))
-
-    return list(links)
-
-
-def has_next_page(html: str) -> bool:
-    """Check whether a 'Next' pagination link exists."""
-    soup = BeautifulSoup(html, 'html.parser')
-    for a in soup.find_all('a', href=True):
-        text = a.get_text(strip=True).lower()
-        cls  = ' '.join(a.get('class', []))
-        if text in ('next', '»', 'next page') or 'next' in cls or 'nextpostslink' in cls:
-            return True
-    return False
+    resp.raise_for_status()
+    total_pages = int(resp.headers.get('X-WP-TotalPages', 0) or 0)
+    try:
+        posts = resp.json()
+    except Exception:
+        posts = []
+    if not isinstance(posts, list):
+        posts = []
+    return posts, total_pages
 
 
-def parse_post_page(html: str, url: str) -> dict | None:
+def _meta_from_content(content_soup) -> dict:
     """
-    Parse a single 9jarocks post page.
-    Returns a dict with: title, description, image_url, video_url,
-                         download_links ([{url, label}]), categories,
-                         is_series, is_complete
-    or None if it looks like a non-movie page.
+    Extract the <p><strong>Key:</strong> Value</p> metadata lines.
+    naijaprey renders one key:value per <p class="wp-block-paragraph">.
     """
-    soup = BeautifulSoup(html, 'html.parser')
-
-    h1 = soup.find('h1', class_='post-title')
-    if not h1:
-        h1 = soup.find('h1', class_='entry-title')
-    if not h1:
-        return None
-    title_raw = h1.get_text(strip=True)
-    if not title_raw:
-        return None
-
-    categories = []
-    # Scope to .entry-header or .entry-header-outer ONLY — the sidebar also uses
-    # class="post-cat" on genre/alphabet links which would pollute the list.
-    _cat_scope = (
-        soup.find(class_='entry-header') or
-        soup.find(class_='entry-header-outer') or
-        soup.find(class_='post-header') or
-        soup  # last resort: full page (old behaviour, but sidebar will be filtered below)
-    )
-    for a in _cat_scope.select('a.post-cat'):
-        name = a.get_text(strip=True)
-        # Skip generic/sidebar labels
-        if name and name.lower() not in ('video', 'uncategorized') and len(name) > 1:
-            categories.append(name)
-    if not categories:
-        breadcrumb = soup.find(id='breadcrumb')
-        if breadcrumb:
-            crumb_links = breadcrumb.find_all('a')
-            for a in crumb_links[1:]:
-                name = a.get_text(strip=True)
-                if name.lower() not in ('video', 'home'):
-                    categories.append(name)
-
-    content_div = soup.find('div', class_='entry-content')
-    if not content_div:
-        return None
-
-    image_url = ''
-    for img in content_div.find_all('img'):
-        classes = ' '.join(img.get('class', []))
-        src     = img.get('src') or img.get('data-src') or ''
-        if src and 'thumb' not in src.lower() and 'screenshot' not in src.lower():
-            if 'aligncenter' in classes or 'size-full' in classes:
-                image_url = src
-                break
-    if not image_url:
-        og = soup.find('meta', property='og:image')
-        if og:
-            image_url = og.get('content', '')
-
-    video_url = ''
-    iframe     = content_div.find('iframe')
-    if iframe and iframe.get('src'):
-        video_url = iframe['src']
-
-    description = ''
-    blockquote  = content_div.find('blockquote')
-    if blockquote:
-        for sib in blockquote.find_all_previous():
-            if sib.name == 'p':
-                text = sib.get_text(strip=True)
-                if text and len(text) > 30 and 'mp4 download' not in text.lower():
-                    description = text
-                    break
-    if not description:
-        og_desc = soup.find('meta', property='og:description')
-        if og_desc:
-            description = og_desc.get('content', '').split('VIDEO INFORMATION')[0].strip()
-
     meta = {}
-    if blockquote:
-        bq_text = blockquote.get_text('\n')
-        for line in bq_text.splitlines():
-            if ':' in line:
-                key, _, val = line.partition(':')
-                meta[key.strip().lower()] = val.strip()
+    for p in content_soup.find_all('p'):
+        text = p.get_text(' ', strip=True)
+        if ':' not in text:
+            continue
+        key, _, val = text.partition(':')
+        k = key.strip().lower()
+        v = val.strip()
+        if k and v and len(k) < 30:
+            meta.setdefault(k, v)
+    return meta
 
+
+# Metadata keys that mark the END of the plot/description block
+_META_KEY_RE = re.compile(
+    r'^\s*(Genre|Stars|Star|Cast|Release\s*Date|Country|Ratings?|Language|'
+    r'Subtitles?|Source|Runtime|Running\s*Time|Episodes?|Quality|Director)\b\s*:',
+    re.IGNORECASE,
+)
+
+
+def _description_from_content(content_soup, title_raw: str) -> str:
+    """
+    Collect the leading plot paragraphs (everything before the first metadata
+    line and before the bold standalone title line).
+    """
+    parts = []
+    title_low = title_raw.strip().lower()
+    for p in content_soup.find_all('p'):
+        text = p.get_text(' ', strip=True)
+        if not text:
+            continue
+        # Stop at the first metadata key line (Genre:, Stars:, etc.)
+        if _META_KEY_RE.match(text):
+            break
+        # Skip the bold standalone title paragraph
+        if text.lower().rstrip(':').strip() == title_low:
+            continue
+        if text.lower() == 'advertisements':
+            continue
+        parts.append(text)
+
+    desc = ' '.join(parts).strip()
+    desc = re.sub(r'\s+', ' ', desc)
+    if len(desc) > 600:
+        desc = desc[:600].rsplit(' ', 1)[0] + '...'
+    return desc
+
+
+def parse_post(post: dict, default_is_series: bool) -> dict | None:
+    """
+    Parse a single WordPress post JSON object into our normalized dict.
+
+    Returns None if the post has no usable title or download links.
+    """
+    title_raw = (post.get('title') or {}).get('rendered', '') or ''
+    title_raw = BeautifulSoup(title_raw, 'html.parser').get_text(strip=True)
+    if not title_raw or len(title_raw) < 2:
+        return None
+
+    content_html = (post.get('content') or {}).get('rendered', '') or ''
+    soup = BeautifulSoup(content_html, 'html.parser')
+
+    # ── Image (featured media from API is most reliable) ─────────
+    image_url = (post.get('jetpack_featured_media_url') or '').strip()
+    if not image_url:
+        figimg = soup.find('img')
+        if figimg:
+            image_url = (figimg.get('src') or figimg.get('data-src') or '').strip()
+
+    # ── Trailer / video iframe (YouTube) ─────────────────────────
+    video_url = ''
+    for iframe in soup.find_all('iframe', src=True):
+        src = iframe['src'].strip()
+        if any(d in src for d in ('youtube.com/embed', 'youtu.be', 'youtube-nocookie.com')):
+            # Skip empty embeds like ".../embed/"
+            if re.search(r'/embed/[\w-]{5,}', src):
+                video_url = src
+                break
+
+    # ── Metadata key:value lines ─────────────────────────────────
+    meta = _meta_from_content(soup)
+
+    # ── Description (plot paragraphs before the metadata block) ──
+    description = _description_from_content(soup, title_raw)
+    if not description:
+        excerpt_html = (post.get('excerpt') or {}).get('rendered', '') or ''
+        description = BeautifulSoup(excerpt_html, 'html.parser').get_text(' ', strip=True)
+        description = re.sub(r'\[\s*…?\s*\].*$', '', description).strip()
+
+    # ── Download links ───────────────────────────────────────────
+    # Movies: <a class="button">Download / Subtitle</a>
+    # Series: <a class="se-button">Episode N</a>
     download_links = []
     seen_urls = set()
-
-    def _episode_prefix(anchor):
-        """
-        Try to find an episode/part label that sits just before this <a> tag.
-
-        9jarocks uses two patterns:
-          Pattern A – label in a <p> that contains only the <em> + <br> + <a>:
-            <p><em>EPISODE 5 </em><br/><a class="fa-fa-download" href="...">DOWNLOAD</a></p>
-
-          Pattern B – label in a plain <em> or text node inside the same <p>:
-            <p><em>EPISODE 5</em><br><a ...>DOWNLOAD</a></p>
-
-        We walk up to the closest <p> ancestor and collect any <em> or leading
-        text found before the <a>.  If nothing useful is there we return ''.
-        """
-        # Walk up to the enclosing <p> (or <div> as a last resort)
-        parent = anchor.parent
-        for _ in range(4):  # max 4 levels up
-            if parent is None:
-                break
-            if parent.name in ('p', 'div', 'li'):
-                break
-            parent = parent.parent
-
-        if parent is None:
-            return ''
-
-        # Collect text from <em> or bare text nodes that come BEFORE the <a>
-        parts = []
-        for sibling in parent.children:
-            if sibling is anchor:
-                break  # stop once we hit the link itself
-            if hasattr(sibling, 'get_text'):
-                txt = sibling.get_text(' ', strip=True)
-            else:
-                txt = str(sibling).strip()
-            if txt:
-                parts.append(txt)
-
-        prefix = ' '.join(parts).strip()
-        # Only keep it when it looks like an episode/part marker
-        # (avoids accidentally picking up ZIP labels, ads, etc.)
-        if prefix and re.search(
-            r'episode|ep\.?\s*\d|part\s*\d|zip|s\d{1,2}e\d|batch',
-            prefix, re.IGNORECASE
-        ):
-            return prefix
-        return ''
-
-    for a in content_div.find_all('a', class_='fa-fa-download'):
+    for a in soup.find_all('a', href=True):
         href     = a.get('href', '').strip()
-        btn_text = a.get_text(strip=True) or href   # e.g. "DOWNLOAD" or "[SERVER 1]"
-        if not href or href in seen_urls:
+        btn_text = a.get_text(strip=True) or 'Download'
+        href_low = href.lower()
+
+        if not href or href.startswith('#') or 'javascript' in href_low:
             continue
-        if any(ad in href.lower() for ad in AD_DOMAINS):
+        if href in seen_urls:
+            continue
+        if any(ad in href_low for ad in AD_DOMAINS):
             print(f"   🚫 [ad skipped] {btn_text} → {href[:80]}")
             continue
+
+        cls = ' '.join(a.get('class', []))
+        is_dl = (
+            'button' in cls
+            or 'se-button' in cls
+            or any(d in href_low for d in KNOWN_DOWNLOAD_DOMAINS)
+            or any(href_low.endswith(ext) for ext in FILE_EXTENSIONS)
+            or any(kw in href_low for kw in ['sdm_downloads', '/dl/', '/get/', '/file/', 'download'])
+            or any(kw in btn_text.lower() for kw in DOWNLOAD_KEYWORDS)
+        )
+        if not is_dl:
+            continue
+
         seen_urls.add(href)
+        download_links.append({'url': href, 'label': btn_text})
+        print(f"   🔗 {btn_text} → {href}")
 
-        # Build a rich label: "EPISODE 5 – DOWNLOAD" when a prefix exists,
-        # otherwise just use the button text (works fine for plain movies).
-        prefix = _episode_prefix(a)
-        label  = f"{prefix} – {btn_text}" if prefix else btn_text
-
-        download_links.append({'url': href, 'label': label})
-        print(f"   🔗 [fa-fa-download] {label} → {href}")
-
-    if not download_links:
-        for a in content_div.find_all('a', href=True):
-            href       = a.get('href', '').strip()
-            btn_text   = a.get_text(strip=True) or href
-            href_lower = href.lower()
-
-            if not href or href.startswith('#') or 'javascript' in href_lower:
-                continue
-            if any(ad in href_lower for ad in AD_DOMAINS):
-                continue
-            if any(skip in href_lower for skip in [
-                'facebook.com', 'twitter.com', 't.me', 'youtube.com/watch?',
-                'imdb.com', 'wp-admin', '#respond', 'mailto:', '9jarocks.net/category',
-                '9jarocks.net/tag',
-            ]):
-                continue
-
-            is_dl = (
-                any(d in href_lower for d in KNOWN_DOWNLOAD_DOMAINS)
-                or any(href_lower.endswith(ext) for ext in FILE_EXTENSIONS)
-                or any(kw in btn_text.lower() for kw in DOWNLOAD_KEYWORDS)
-                or any(kw in href_lower  for kw in ['/dl/', '/get/', '/file/', 'download'])
-            )
-
-            if is_dl and href not in seen_urls:
-                seen_urls.add(href)
-                prefix = _episode_prefix(a)
-                label  = f"{prefix} – {btn_text}" if prefix else btn_text
-                download_links.append({'url': href, 'label': label})
-                print(f"   🔗 [fallback] {label} → {href}")
+    # Put any subtitle (.srt) links last so the primary download_url
+    # is the actual video, not the subtitle file.
+    download_links.sort(key=lambda d: d['url'].lower().endswith('.srt'))
 
     is_series = bool(
-        re.search(
+        default_is_series
+        or re.search(
             r'\bS\d{1,2}\b|\bSeason\s?\d{1,2}\b|\bEpisode\b|\bEp\.?\s?\d+\b|Series\b',
-            title_raw, re.IGNORECASE
+            title_raw, re.IGNORECASE,
         )
     )
-    is_complete = bool(re.search(r'\bcomplete(d)?\b', title_raw, re.IGNORECASE))
+    # ── Latest-episode label from post meta._subtitle (e.g. "E1168") ──
+    episode_meta = ''
+    post_meta = post.get('meta') or {}
+    if isinstance(post_meta, dict):
+        episode_meta = (post_meta.get('_subtitle') or '').strip()
 
-    # ── Extract vi_ fields from the blockquote meta dict ────────────────────
-    # 9jarocks blockquote lines look like:
-    #   Movie Name    : Ijo (2022)
-    #   Director      : Tope Adebayo
-    #   Stars         : Toyin Abraham, ...
-    #   Genre         : Crime, Action
-    #   Country       : Nigeria
-    #   Language      : Yoruba
-    #   Subtitle      : English
-    #   Running Time  : 01:42:00
-    #   File size     : 540 MB
-    #   Year          : 2022
-    #   Episodes      : 12
-    #   Status        : Completed / On Going
-    #
-    # Keys vary slightly per post so we normalise them below.
+    is_complete = bool(re.search(r'\bcomplete(d)?\b', title_raw, re.IGNORECASE))
+    if 'complete' in meta.get('episodes', '').lower():
+        is_complete = True
+    if 'complete' in episode_meta.lower():
+        is_complete = True
 
     def _mv(keys):
-        """Return first non-empty value from meta matching any of the keys."""
         for k in keys:
             v = meta.get(k, '').strip()
             if v:
@@ -924,16 +815,15 @@ def parse_post_page(html: str, url: str) -> dict | None:
         'vi_year':     _mv(['year', 'release year', 'release date']),
         'vi_country':  _mv(['country', 'country of origin']),
         'vi_language': _mv(['language', 'audio']),
-        'vi_subtitle': _mv(['subtitle', 'subtitles', 'sub']),
+        'vi_subtitle': _mv(['subtitles', 'subtitle', 'sub']),
         'vi_genre':    _mv(['genre', 'genres', 'category']),
-        'vi_cast':     _mv(['stars', 'cast', 'actors', 'starring']),
+        'vi_cast':     _mv(['stars', 'star', 'cast', 'actors', 'starring']),
         'vi_episodes': _mv(['episodes', 'episode', 'total episodes', 'no of episodes']),
         'vi_status':   _mv(['status', 'series status']),
-        'vi_runtime':  _mv(['running time', 'runtime', 'duration', 'run time']),
-        'vi_filesize': _mv(['file size', 'filesize', 'size', 'file']),
+        'vi_runtime':  _mv(['runtime', 'running time', 'duration', 'run time']),
+        'vi_filesize': _mv(['file size', 'filesize', 'size']),
     }
 
-    # If year not in blockquote, try to pull from title e.g. "Ijo (2022)"
     if not vi['vi_year']:
         m_yr = re.search(r'\((\d{4})\)', title_raw)
         if m_yr:
@@ -945,43 +835,93 @@ def parse_post_page(html: str, url: str) -> dict | None:
         'image_url':      image_url,
         'video_url':      video_url,
         'download_links': download_links,
-        'categories':     categories,
         'is_series':      is_series,
         'is_complete':    is_complete,
+        'episode_meta':   episode_meta,
         'meta':           meta,
         **vi,
     }
 
 
 # ══════════════════════════════════════════════════════════════
+# SMART DB CATEGORY DETECTION
+# ══════════════════════════════════════════════════════════════
+
+def detect_db_categories(parsed: dict, is_series: bool) -> list[str]:
+    """
+    naijaprey doesn't separate content by country/genre at the site level,
+    so we infer the DB category from the parsed Country / Language / Genre.
+
+    Returns a list of DB category names (matching scraper_utils canonical names).
+    Always appends 'Series' for series content.
+    """
+    country  = (parsed.get('vi_country') or '').lower()
+    language = (parsed.get('vi_language') or '').lower()
+    genre    = (parsed.get('vi_genre') or '').lower()
+    title    = (parsed.get('title_raw') or '').lower()
+    blob     = ' '.join([country, language, genre, title])
+
+    is_animation = any(k in genre for k in ['animation', 'anime'])
+
+    cats: list[str] = []
+    if any(k in blob for k in ['korea', 'korean']):
+        cats = ['Korean drama']
+    elif any(k in blob for k in ['japan', 'japanese']):
+        # Japanese content on naijaprey is almost always anime
+        cats = ['Anime'] if is_animation else ['Anime']
+    elif any(k in blob for k in ['china', 'chinese', 'hong kong', 'taiwan']):
+        cats = ['Chinese drama']
+    elif 'thai' in blob or 'thailand' in blob:
+        cats = ['Thai drama']
+    elif any(k in blob for k in ['philippine', 'filipino', 'tagalog']):
+        cats = ['Filipino drama']
+    elif any(k in blob for k in ['turkey', 'turkish']):
+        cats = ['Turkish drama']
+    elif any(k in blob for k in ['india', 'indian', 'hindi', 'bollywood', 'telugu', 'tamil']):
+        cats = ['Bollywood movies']
+    elif any(k in blob for k in ['nigeria', 'nigerian', 'nollywood']):
+        cats = ['Nollywood movies']
+    elif is_animation:
+        cats = ['Animation']
+    else:
+        cats = ['Hollywood movies']
+
+    if is_series and 'Series' not in cats:
+        cats.append('Series')
+    return cats
+
+
+def assign_db_categories(movie, db_cats: list[str]):
+    """Replace the movie's categories with exactly the detected set."""
+    if not db_cats:
+        return
+    target_cats = []
+    for name in db_cats:
+        cat_obj = get_or_create_category(name.strip())
+        if cat_obj:
+            target_cats.append(cat_obj)
+    movie.categories.set(target_cats)
+    for cat in target_cats:
+        print(f"      🏷  Assigned category: '{cat.name}'")
+
+
+# ══════════════════════════════════════════════════════════════
 # TITLE CLEANING
 # ══════════════════════════════════════════════════════════════
 
-# Canonical season format: "Season N" (title-case, no zero-padding)
-# Covers all these raw inputs:
-#   S04  S4  Season 4  Season 04  SEASON 4  season4  Season4
 _SEASON_RE = re.compile(
     r'\b(?:S(?:eason\s*)?|Season\s*)0*(\d{1,2})\b',
     re.IGNORECASE,
 )
 
+
 def _canonicalize_season(text: str) -> str:
-    """
-    Replace every season token in *text* with the canonical form "Season N".
-    Examples:
-        "S04"       → "Season 4"
-        "Season 04" → "Season 4"
-        "SEASON 4"  → "Season 4"
-        "Season4"   → "Season 4"
-        "S4"        → "Season 4"
-    Non-season text is left untouched.
-    """
     return _SEASON_RE.sub(lambda m: f"Season {int(m.group(1))}", text)
 
 
 def clean_title_parts(raw: str) -> tuple[str, str]:
     """Returns (main_title, episode_label)."""
-    title      = re.sub(r'\s+', ' ', raw).strip()
+    title       = re.sub(r'\s+', ' ', raw).strip()
     title_lower = title.lower()
     is_complete = bool(re.search(r'\bcomplete(d)?\b', title_lower))
 
@@ -1018,28 +958,29 @@ def normalize_url(url: str) -> str:
     return unquote(f"{parsed.scheme}://{parsed.netloc}{parsed.path}").lower()
 
 
-def _season_variants(title: str) -> list[str]:
-    """
-    Given a title that may contain a season token in ANY format, return every
-    plausible spelling of that token so we can match old DB records regardless
-    of which format was used when they were first scraped.
+# Hosts whose download links THIS scraper owns. Used so we only prune our own
+# stale links and never delete links contributed by another source (9jarocks,
+# thenkiri, …). Keeping links from multiple sources is what gives the site/app a
+# working fallback when one host's link is dead.
+_OWN_LINK_HOSTS = ('np-downloader.com', 'naijaprey.tv')
 
-    Example — "My Show Season 4":
-        "My Show Season 4"   (canonical, already in list)
-        "My Show Season 04"
-        "My Show S4"
-        "My Show S04"
-        "My Show SEASON 4"
-        "My Show season 4"
-    """
+
+def _is_own_link(url: str) -> bool:
+    """True if this URL came from naijaprey (so it's safe for us to prune)."""
+    try:
+        host = (urlparse(url).netloc or '').lower()
+    except Exception:
+        return False
+    return any(host == h or host.endswith('.' + h) for h in _OWN_LINK_HOSTS)
+
+
+def _season_variants(title: str) -> list[str]:
     m = _SEASON_RE.search(title)
     if not m:
         return [title]
-
-    n      = int(m.group(1))          # the season number, e.g. 4
-    prefix = title[:m.start()]        # everything before the season token
-    suffix = title[m.end():]          # everything after  the season token
-
+    n      = int(m.group(1))
+    prefix = title[:m.start()]
+    suffix = title[m.end():]
     forms = [
         f"Season {n}", f"Season {n:02d}",
         f"S{n}",       f"S{n:02d}",
@@ -1052,8 +993,6 @@ def find_existing_movie(title: str, max_retries: int = 3):
     from django.db import connection
 
     base_title = re.sub(r'\s*\((complete|completed)\)\s*$', '', title, flags=re.IGNORECASE).strip()
-
-    # Build every combination of (complete suffix) × (season spelling)
     title_bases = list(dict.fromkeys([
         title, base_title,
         f"{base_title} (Complete)", f"{base_title} (Completed)",
@@ -1080,76 +1019,36 @@ def find_existing_movie(title: str, max_retries: int = 3):
     return None
 
 
-def assign_db_categories(movie, scraped_cats: list[str], forced_db_cats: list[str]):
-    """
-    Assign categories to a movie.
-
-    Rule: use ONLY forced_db_cats — the exact DB names derived from the
-    9jarocks category slug we are currently crawling.
-
-    scraped_cats (tags scraped from the post page itself) are intentionally
-    IGNORED. A Nollywood post page often carries tags like 'Series',
-    'Animation', 'Hollywood movies', 'Chinese drama', etc. that would
-    pollute the movie's category assignment. The slug we crawled already
-    tells us exactly what category it belongs to — that is the single
-    source of truth.
-
-    DB category names match exactly what is in views.py get_sidebar_categories():
-      'Nollywood movies', 'Korean drama', 'Hollywood movies', 'Bollywood movies',
-      'Anime', 'Chinese drama', 'Thai drama', 'Series', 'Animation'
-
-    IMPORTANT: We use .set() to REPLACE all existing categories, not .add().
-    This prevents stale categories from previous scrapes (e.g. Anime, Nollywood)
-    from accumulating on unrelated movies.
-    """
-    if not forced_db_cats:
-        return
-
-    # Resolve the target Category objects
-    target_cats = []
-    for name in forced_db_cats:
-        cat_obj = get_or_create_category(name.strip())
-        if cat_obj:
-            target_cats.append(cat_obj)
-
-    # Replace all existing categories with exactly the target set
-    movie.categories.set(target_cats)
-    for cat in target_cats:
-        print(f"      🏷  Assigned category: '{cat.name}'")
-
-
 # ══════════════════════════════════════════════════════════════
 # MANAGEMENT COMMAND
 # ══════════════════════════════════════════════════════════════
 
 class Command(BaseCommand):
     help = (
-        'Scrape 9jarocks.net category pages → save to DB → '
-        'optionally post to Twitter + Facebook'
+        'Scrape naijaprey.tv via its WordPress REST API → save to DB → '
+        'optionally post to Telegram + Facebook'
     )
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--startpage', type=int, default=1,
-            help='Category listing page to start from (default: 1)',
+            help='API page to start from (default: 1)',
         )
         parser.add_argument(
             '--endpage', type=int, default=None,
-            help='Stop after this listing page (inclusive)',
+            help='Stop after this API page (inclusive)',
         )
         parser.add_argument(
             '--max-pages', type=int, default=None,
-            help='Maximum listing pages to crawl per category',
+            help='Maximum API pages to fetch per category',
+        )
+        parser.add_argument(
+            '--per-page', type=int, default=20,
+            help='Posts per API request (max 100, default: 20)',
         )
         parser.add_argument(
             '--category', type=str, default='all',
-            help=(
-                'Which category to scrape. Use a friendly alias:\n'
-                '  nollywood, hollywood, kdrama, chinese, thai,\n'
-                '  japanese, filipino, anime, foreign, series,\n'
-                '  wrestling, ongoing, 18plus, all  (default: all)\n'
-                'Or a full 9jarocks slug like "videodownload/korean-drama".'
-            ),
+            help='Which category to scrape: movies, series, all  (default: all)',
         )
         parser.add_argument(
             '--no-social', action='store_true', default=False,
@@ -1157,7 +1056,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             '--delay', type=float, default=0.3,
-            help='Seconds to wait between individual post requests (default: 0.3)',
+            help='Seconds to wait between API page requests (default: 0.3)',
         )
         parser.add_argument(
             '--list-categories', action='store_true', default=False,
@@ -1167,7 +1066,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from django.db import connection
 
-        # ── --list-categories ──────────────────────────────────
         if options['list_categories']:
             self._print_category_list()
             return
@@ -1175,11 +1073,11 @@ class Command(BaseCommand):
         start_page = options['startpage']
         end_page   = options['endpage']
         max_pages  = options['max_pages']
+        per_page   = max(1, min(options['per_page'], 100))
         no_social  = options['no_social']
         delay      = options['delay']
         cat_arg    = (options.get('category') or 'all').strip().lower()
 
-        # ── Resolve --category to a list of CATEGORY_DEFINITIONS ─
         cats_to_crawl = self._resolve_category_arg(cat_arg)
         if not cats_to_crawl:
             self.stderr.write(
@@ -1189,15 +1087,15 @@ class Command(BaseCommand):
             return
 
         print("=" * 60)
-        print("🚀  9jarocks.net scraper starting")
-        print(f"    Method  : Category page HTML scraping")
+        print("🚀  naijaprey.tv scraper starting")
+        print(f"    Method  : WordPress REST API (/wp-json/wp/v2/posts)")
         print(f"    Cats    : {', '.join(d['label'] for d in cats_to_crawl)}")
         print(f"    Pages   : {start_page} → {end_page or '∞'}"
               + (f"  (max {max_pages})" if max_pages else ""))
         if no_social:
             print("    Social  : DISABLED (--no-social)")
         else:
-            print("    Social  : Twitter + Facebook  (Telegram is OFF)")
+            print("    Social  : Telegram + Facebook")
         print("=" * 60)
 
         scraper = _make_scraper()
@@ -1207,15 +1105,13 @@ class Command(BaseCommand):
         total_updated       = 0
 
         for cat_def in cats_to_crawl:
-            cat_slug_full  = cat_def['slug']
-            forced_db_cats = cat_def['db_cats']   # ← exact DB category names for this slug
-            cat_base_url   = f"{SITE_URL}/category/{cat_slug_full}"
+            cat_id        = cat_def['cat_id']
+            default_serie = cat_def['is_series']
 
             print(f"\n\n{'═'*60}")
             print(f"📂  Category : {cat_def['label']}")
-            print(f"    Slug     : {cat_slug_full}")
-            print(f"    DB cats  : {', '.join(forced_db_cats)}")
-            print(f"    URL      : {cat_base_url}")
+            print(f"    Cat ID   : {cat_id}")
+            print(f"    Endpoint : {API_POSTS}?categories={cat_id}")
             print(f"{'═'*60}")
 
             page            = start_page
@@ -1227,27 +1123,19 @@ class Command(BaseCommand):
                     print(f"\n✅ Reached end page {end_page}.")
                     break
                 if max_pages and pages_crawled >= max_pages:
-                    print(f"\n✅ Crawled {max_pages} pages for this category.")
+                    print(f"\n✅ Fetched {max_pages} pages for this category.")
                     break
 
-                listing_url = (
-                    cat_base_url + '/'
-                    if page == 1
-                    else f"{cat_base_url}/page/{page}/"
-                )
-
                 print(f"\n{'─'*60}")
-                print(f"🌐 Listing page {page}: {listing_url}")
+                print(f"🌐 API page {page} (categories={cat_id}, per_page={per_page})")
+
+                if delay > 0:
+                    time.sleep(delay)
 
                 try:
-                    resp = scraper.get(listing_url, timeout=20)
-                    if resp.status_code == 404:
-                        print(f"   ✅ No more pages (404). Moving to next category.")
-                        break
-                    resp.raise_for_status()
-                    html = resp.text
+                    posts, total_pages = fetch_posts_page(scraper, cat_id, page, per_page)
                 except Exception as e:
-                    print(f"   ❌ Failed to fetch listing page: {e}")
+                    print(f"   ❌ Failed to fetch API page: {e}")
                     consecutive_err += 1
                     if consecutive_err >= 5:
                         print("   ❌ Too many errors — moving to next category.")
@@ -1258,29 +1146,18 @@ class Command(BaseCommand):
                 consecutive_err = 0
                 pages_crawled  += 1
 
-                post_urls = get_post_urls_from_listing_page(html, listing_url)
-                print(f"   📋 Found {len(post_urls)} posts on this page")
-
-                if not post_urls:
-                    print("   ⚠️ No posts found — may be at the end. Stopping category.")
+                if not posts:
+                    print("   ✅ No more posts — end of category.")
                     break
 
-                for post_url in post_urls:
-                    print(f"\n   🎬 {post_url}")
-                    if delay > 0:
-                        time.sleep(delay)
+                print(f"   📋 Got {len(posts)} posts"
+                      + (f"  (total pages: {total_pages})" if total_pages else ""))
 
-                    try:
-                        post_resp = scraper.get(post_url, timeout=20)
-                        if post_resp.status_code != 200:
-                            print(f"      ⚠️ HTTP {post_resp.status_code} — skipping")
-                            continue
-                        post_html = post_resp.text
-                    except Exception as e:
-                        print(f"      ❌ Fetch error: {e}")
-                        continue
+                for post in posts:
+                    post_link = post.get('link', '')
+                    print(f"\n   🎬 {post_link}")
 
-                    parsed = parse_post_page(post_html, post_url)
+                    parsed = parse_post(post, default_is_series=default_serie)
                     if not parsed:
                         print(f"      ⚠️ Could not parse post — skipping")
                         continue
@@ -1290,9 +1167,14 @@ class Command(BaseCommand):
                         continue
 
                     title, title_b = clean_title_parts(parsed['title_raw'])
+                    # Prefer the site's explicit latest-episode marker for series
+                    if parsed['is_series'] and parsed['episode_meta']:
+                        title_b = parsed['episode_meta']
                     print(f"      📝 Title: {title}")
                     if title_b:
                         print(f"      📝 Episode: {title_b}")
+
+                    db_cats = detect_db_categories(parsed, parsed['is_series'])
 
                     # ── DB write ──────────────────────────────
                     try:
@@ -1312,7 +1194,6 @@ class Command(BaseCommand):
                                 completed   = parsed['is_complete'],
                                 is_series   = parsed['is_series'],
                                 scraped     = True,
-                                # ── Video info fields ──
                                 vi_year     = parsed.get('vi_year', '')[:10],
                                 vi_country  = parsed.get('vi_country', '')[:120],
                                 vi_language = parsed.get('vi_language', '')[:120],
@@ -1366,7 +1247,6 @@ class Command(BaseCommand):
                                 movie.is_series = parsed['is_series']
                                 updated = True
 
-                            # ── Backfill vi_ fields if not yet set ────────
                             vi_map = {
                                 'vi_year':     parsed.get('vi_year', '')[:10],
                                 'vi_country':  parsed.get('vi_country', '')[:120],
@@ -1388,12 +1268,8 @@ class Command(BaseCommand):
                                 movie.save()
                                 total_updated += 1
 
-                        # ── Assign categories (both forced + scraped) ──
-                        assign_db_categories(
-                            movie,
-                            scraped_cats   = parsed['categories'],
-                            forced_db_cats = forced_db_cats,
-                        )
+                        # ── Assign categories (smart-detected) ──
+                        assign_db_categories(movie, db_cats)
 
                         # ── Download link sync ─────────────────────────
                         existing = {normalize_url(dl.url): dl for dl in movie.download_links.all()}
@@ -1402,15 +1278,18 @@ class Command(BaseCommand):
 
                         for norm, dl in current.items():
                             if norm not in existing:
-                                DownloadLink.objects.create(movie=movie, label=dl['label'], url=dl['url'])
+                                DownloadLink.objects.create(movie=movie, label=dl['label'], url=dl['url'], source=SOURCE_NAME)
                                 added += 1
                             else:
                                 if existing[norm].label != dl['label']:
                                     existing[norm].label = dl['label']
                                     existing[norm].save()
 
+                        # Only prune OUR OWN stale links — never delete links a
+                        # different source added (keeps cross-source fallbacks).
                         for norm in set(existing) - set(current):
-                            existing[norm].delete()
+                            if _is_own_link(existing[norm].url):
+                                existing[norm].delete()
 
                         total_posts_scraped += 1
                         status = "created" if created else ("updated" if updated else "unchanged")
@@ -1422,13 +1301,13 @@ class Command(BaseCommand):
                         connection.close()
                         continue
 
-                if not has_next_page(html):
-                    print(f"\n   ✅ No next page — end of category '{cat_def['label']}'.")
+                # Stop if the API reports we've reached the last page
+                if total_pages and page >= total_pages:
+                    print(f"\n   ✅ Reached last API page ({total_pages}).")
                     break
 
                 page += 1
 
-        # ── Final summary ──────────────────────────────────────
         print(f"\n\n{'=' * 60}")
         print(f"🎉  Scraping complete!")
         print(f"    Posts processed : {total_posts_scraped}")
@@ -1442,91 +1321,41 @@ class Command(BaseCommand):
     # ──────────────────────────────────────────────────────────
 
     def _resolve_category_arg(self, cat_arg: str) -> list[dict]:
-        """
-        Turn the --category value into a list of CATEGORY_DEFINITIONS dicts.
-
-        Accepts:
-          • A friendly alias key (e.g. "nollywood", "kdrama", "all")
-          • A full 9jarocks slug (e.g. "videodownload/korean-drama")
-          • A bare slug segment (e.g. "korean-drama")
-        """
-        # 1. Friendly alias
         if cat_arg in CATEGORY_ALIASES:
             keys = CATEGORY_ALIASES[cat_arg]
             return [_KEY_TO_DEF[k] for k in keys if k in _KEY_TO_DEF]
-
-        # 2. Full slug match
-        if cat_arg in _SLUG_TO_DEF:
-            return [_SLUG_TO_DEF[cat_arg]]
-
-        # 3. Bare slug → try with prefix
-        full_slug = f"videodownload/{cat_arg}"
-        if full_slug in _SLUG_TO_DEF:
-            return [_SLUG_TO_DEF[full_slug]]
-
-        # 4. Partial key match (e.g. "nollywood_series" or "k-drama")
         normalized = cat_arg.replace('-', '_')
         if normalized in _KEY_TO_DEF:
             return [_KEY_TO_DEF[normalized]]
-
         return []
 
     def _print_category_list(self):
-        print("\n📋  Available --category aliases\n")
-        print(f"  {'Alias':<18} {'DB categories assigned'}")
-        print("  " + "─" * 58)
+        print("\n📋  Available --category aliases (naijaprey.tv)\n")
+        print(f"  {'Alias':<12} {'Source category'}")
+        print("  " + "─" * 40)
         for alias, keys in CATEGORY_ALIASES.items():
-            if not keys:
-                db_cats_str = "(no 9jarocks slug — skipped)"
-            else:
-                db_cats = []
-                for k in keys:
-                    if k in _KEY_TO_DEF:
-                        db_cats.extend(_KEY_TO_DEF[k]['db_cats'])
-                db_cats_str = ', '.join(sorted(set(db_cats)))
-            print(f"  {alias:<18} {db_cats_str}")
+            labels = ', '.join(_KEY_TO_DEF[k]['label'] for k in keys if k in _KEY_TO_DEF)
+            print(f"  {alias:<12} {labels}")
         print()
-        print("  You can also pass a full slug, e.g.:")
-        print("    --category videodownload/korean-drama")
+        print("  DB categories are detected per-post from Country / Genre.")
         print()
-
-
-
-
-
-
 
 
 # # ── Basic usage ─────────────────────────────────────────────
-# python manage.py scrape_9jarocks                          # scrape everything
-# python manage.py scrape_9jarocks --list-categories        # print all aliases and exit
+# python manage.py scrape_naijaprey                       # scrape everything
+# python manage.py scrape_naijaprey --list-categories     # print aliases and exit
 
 # # ── Category aliases ────────────────────────────────────────
-# python manage.py scrape_9jarocks --category nollywood     # movies + series
-# python manage.py scrape_9jarocks --category hollywood     # movies + series
-# python manage.py scrape_9jarocks --category kdrama        # (alias: korean)
-# python manage.py scrape_9jarocks --category chinese       # (alias: cdrama)
-# python manage.py scrape_9jarocks --category thai
-# python manage.py scrape_9jarocks --category japanese
-# python manage.py scrape_9jarocks --category filipino
-# python manage.py scrape_9jarocks --category anime          # all series categories + ongoing
-# python manage.py scrape_9jarocks --category wrestling 
-# python manage.py scrape_9jarocks --category 18plus        # (alias: 18)
-# python manage.py scrape_9jarocks --category all           # everything (default)
+# python manage.py scrape_naijaprey --category movies
+# python manage.py scrape_naijaprey --category series
+# python manage.py scrape_naijaprey --category all        # default
 
 # # ── Page control ────────────────────────────────────────────
-# python manage.py scrape_9jarocks --startpage 5
-# python manage.py scrape_9jarocks --startpage 1 --endpage 10
-# python manage.py scrape_9jarocks --category nollywood --max-pages 3
+# python manage.py scrape_naijaprey --startpage 5
+# python manage.py scrape_naijaprey --startpage 1 --endpage 10
+# python manage.py scrape_naijaprey --category movies --max-pages 3
+# python manage.py scrape_naijaprey --per-page 50
 
 # # ── Speed / social ──────────────────────────────────────────
-# python manage.py scrape_9jarocks --no-social              # DB only, skip Twitter/Facebook
-# python manage.py scrape_9jarocks --delay 1.0              # 1s between post requests (default 0.3)
-
-# # ── Full slug (advanced) ────────────────────────────────────
-# python manage.py scrape_9jarocks --category videodownload/korean-drama
-# python manage.py scrape_9jarocks --category videodownload/nollywood-tv-series
-
-# # ── Combined examples ───────────────────────────────────────
-# python manage.py scrape_9jarocks --category kdrama --startpage 1 --endpage 5 --no-social
-# python manage.py scrape_9jarocks --category nollywood --delay 0.5 --max-pages 10
+# python manage.py scrape_naijaprey --no-social           # DB only
+# python manage.py scrape_naijaprey --delay 1.0           # 1s between API pages
