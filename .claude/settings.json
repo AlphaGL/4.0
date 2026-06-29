@@ -234,7 +234,12 @@
       "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film\" && ls watch2d_app 2>/dev/null && echo \"---\" && grep -rl \"download\" watch2d_app/lib 2>/dev/null | head -10)",
       "Bash(python -m py_compile movies/management/commands/backfill_download_meta.py)",
       "Bash(python manage.py migrate --noinput)",
-      "Bash(python manage.py backfill_download_meta)"
+      "Bash(python manage.py backfill_download_meta)",
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"=== how you currently use Start.io ===\" && grep -nE \"StartApp|startapp|Rewarded|rewarded|loadInterstitial|loadBanner|StartAppAd\" lib/services/ad_service.dart | head -25; echo \"\"; echo \"=== rewarded support in installed plugin ===\" && grep -rniE \"rewarded|loadRewardedVideoAd|setVideoListener|onVideoCompleted\" ~/AppData/Local/Pub/Cache/hosted/pub.dev/startapp_sdk*/lib/ 2>/dev/null | head -15 || find / -path \"*startapp_sdk*/lib/*.dart\" 2>/dev/null | head)",
+      "Read(//c//**)",
+      "Bash(grep -viE \"^\\\\s*//|comment\")",
+      "Bash(rm -f lib/services/admob_ads.dart)",
+      "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/**)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
@@ -247,7 +252,8 @@
       "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\screens",
       "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\config",
       "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\models",
-      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\android"
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\android",
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib"
     ]
   }
 }

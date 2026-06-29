@@ -230,7 +230,6 @@ def robots_txt(request):
 # inventory. Served at https://watch2d.org/app-ads.txt. Update this block
 # whenever Start.io revises its entries (Portal → app-ads.txt).
 APP_ADS_TXT = """\
-google.com, pub-8244106901953383, DIRECT, f08c47fec0942fa0
 start.io, 140648679, DIRECT
 pubnative.net, 1007349, RESELLER, d641df8625486a7b
 pubnative.net, 1008289, RESELLER, d641df8625486a7b

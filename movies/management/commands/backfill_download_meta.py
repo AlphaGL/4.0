@@ -119,4 +119,4 @@ class Command(BaseCommand):
                 updated, ['priority', 'season_number', 'episode_number'])
 
         self.stdout.write(self.style.SUCCESS(
-            f'✅ Backfilled {changed} link(s).'))
+            f'Backfilled {changed} link(s).'))
