@@ -149,6 +149,8 @@ PLATFORM_LINKS = {
     'twitter':  'https://x.com/watch2download',
     'facebook': 'https://facebook.com/WATCH2D/',
     'website':  'https://watch2d.org',
+    # Where "Get the App" points. Swap for your APKPure page if you prefer.
+    'app':      'https://watch2d.org',
 }
 
 TWITTER_FOOTER = (
@@ -408,7 +410,7 @@ def _post_movie_to_telegram(movie, is_new: bool):
             ]
 
             from automation.models import TelegramPost
-            TelegramPost.objects.get_or_create(
+            _, created = TelegramPost.objects.get_or_create(
                 content_type='movie',
                 content_id=movie.id,
                 defaults={'content_title': movie.title, 'success': True},
@@ -429,15 +431,22 @@ def _post_movie_to_telegram(movie, is_new: bool):
             ]
 
             from automation.models import TelegramUpdate
-            TelegramUpdate.objects.get_or_create(
+            _, created = TelegramUpdate.objects.get_or_create(
                 content_type='movie',
                 content_id=movie.id,
                 update_key=episode_label.strip(),
                 defaults={'content_title': movie.title, 'success': True},
             )
 
+        # Already posted this movie / this exact episode → don't repost.
+        if not created:
+            return
+
         caption = "\n".join(lines)
-        markup = {'inline_keyboard': [[{'text': '⬇️ Download Link', 'url': url}]]}
+        markup = {'inline_keyboard': [
+            [{'text': '⬇️ Download Link', 'url': url}],
+            [{'text': '📲 Get the Watch2D App', 'url': PLATFORM_LINKS['app']}],
+        ]}
         if movie.image_url:
             send_photo(channel, movie.image_url, caption, reply_markup=markup)
         else:

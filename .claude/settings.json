@@ -241,7 +241,8 @@
       "Bash(rm -f lib/services/admob_ads.dart)",
       "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/**)",
       "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"=== Start.io config still in manifest? ===\" && grep -nE \"startapp|APPLICATION_ID|SPLASH_ADS|StartAppFlutterHelper\" android/app/src/main/AndroidManifest.xml; echo \"\"; echo \"=== confirm AdMob fully gone from manifest ===\" && grep -nE \"gms.ads|admob\" android/app/src/main/AndroidManifest.xml || echo \"  AdMob gone ✓\")",
-      "Bash(python -m py_compile movies/management/commands/scrape_9jarocks.py movies/management/commands/scrape_thenkiri.py)"
+      "Bash(python -m py_compile movies/management/commands/scrape_9jarocks.py movies/management/commands/scrape_thenkiri.py)",
+      "Bash(python -m py_compile movies/management/commands/scrape_9jarocks.py movies/management/commands/scrape_thenkiri.py movies/management/commands/scrape_naijaprey.py)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",

@@ -213,6 +213,8 @@ PLATFORM_LINKS = {
     'twitter':  'https://x.com/watch2download',
     'facebook': 'https://facebook.com/WATCH2D/',
     'website':  'https://watch2d.org',
+    # Where "Get the App" points. Swap for your APKPure page if you prefer.
+    'app':      'https://watch2d.org',
 }
 
 TWITTER_FOOTER = (
@@ -546,7 +548,10 @@ def _post_movie_to_telegram(movie, is_new: bool):
             return
 
         caption = "\n".join(lines)
-        markup = {'inline_keyboard': [[{'text': '⬇️ Download Link', 'url': url}]]}
+        markup = {'inline_keyboard': [
+            [{'text': '⬇️ Download Link', 'url': url}],
+            [{'text': '📲 Get the Watch2D App', 'url': PLATFORM_LINKS['app']}],
+        ]}
         if movie.image_url:
             send_photo(channel, movie.image_url, caption, reply_markup=markup)
         else:
