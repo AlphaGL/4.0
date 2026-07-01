@@ -204,9 +204,27 @@ jobs:
           R2_SECRET_ACCESS_KEY=${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET=${{ vars.R2_BUCKET }}
           R2_PUBLIC_URL=${{ vars.R2_PUBLIC_URL }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEYS=${{ secrets.GEMINI_API_KEYS }}
           ENVEOF
       - name: Run cleanse_db
         run: python manage.py cleanse_db
+
+      # "Gist" entertainment-news feed — only the app-DB account scrapes it
+      # (that's the DB the app reads), which also halves Gemini usage.
+      - name: Scrape entertainment news (Gist)
+        if: ${{ vars.DATA_ONLY == 'true' }}
+        continue-on-error: true
+        # Curates the juiciest ~2/category. The scrape workflow fires every 6h,
+        # but news only needs refreshing ~twice a day — so run at 00:00 & 12:00
+        # UTC (and always on a manual dispatch).
+        run: |
+          H=$(date -u +%H)
+          if [ "$H" = "00" ] || [ "$H" = "12" ] || [ "${{ github.event_name }}" != "schedule" ]; then
+            python manage.py scrape_news
+          else
+            echo "Skipping Gist news this run (only ~00:00 & 12:00 UTC)."
+          fi
 
       # Organise download links for multi-source fallback (priority + per-episode
       # grouping) across EVERY source — 9jarocks, thenkiri, naijaprey, etc.

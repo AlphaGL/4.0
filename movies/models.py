@@ -337,3 +337,65 @@ class UpcomingTitle(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.release_date})"
+
+
+# ── "Gist": entertainment-news engagement feed ───────────────────────────────
+class NewsPost(models.Model):
+    """One scraped entertainment-news item, AI-enriched and (when possible)
+    linked to a catalogue title so it drives watches. Reactions live in
+    NewsReaction; the counts here are denormalised for the TRENDING sort."""
+    title      = models.CharField(max_length=300)
+    summary    = models.TextField(blank=True, default='')
+    hot_take   = models.TextField(blank=True, default='')   # AI discussion starter
+    url        = models.URLField(max_length=600, unique=True)  # source (dedup key)
+    source     = models.CharField(max_length=80, blank=True, default='')
+    image_url  = models.URLField(max_length=600, blank=True, default='')
+    # e.g. 'Nollywood', 'Hollywood', 'K-Drama', 'Music', 'Celebrity'.
+    category   = models.CharField(max_length=60, blank=True, default='', db_index=True)
+    # The ecosystem loop: link to a title we carry, so users can jump to Watch.
+    movie      = models.ForeignKey(Movie, null=True, blank=True,
+                                   on_delete=models.SET_NULL, related_name='news')
+    tmdb_id    = models.IntegerField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    created_at   = models.DateTimeField(auto_now_add=True, db_index=True)
+    # Denormalised engagement for ranking (kept fresh by refresh_news_counts).
+    reaction_count = models.PositiveIntegerField(default=0)
+    comment_count  = models.PositiveIntegerField(default=0)
+    is_published   = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-published_at', '-created_at']
+        indexes = [
+            models.Index(fields=['is_published', '-published_at']),
+            models.Index(fields=['category', '-published_at']),
+        ]
+
+    def __str__(self):
+        return self.title[:60]
+
+
+class NewsReaction(models.Model):
+    """A single user's reaction to a news item. Written by the app via Supabase
+    (user_id = the Supabase auth uid). One reaction per user per post."""
+    news    = models.ForeignKey(NewsPost, on_delete=models.CASCADE,
+                                related_name='reactions')
+    user_id = models.CharField(max_length=64, db_index=True)  # Supabase auth uid
+    emoji   = models.CharField(max_length=8)  # 🔥 😂 😮 💀 😍
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('news', 'user_id')  # one reaction per user per post
+        indexes = [models.Index(fields=['news', 'emoji'])]
+
+
+class NewsComment(models.Model):
+    """A user's 'shade'/comment on a news item (the live-room style thread)."""
+    news    = models.ForeignKey(NewsPost, on_delete=models.CASCADE,
+                                related_name='comments')
+    user_id = models.CharField(max_length=64, db_index=True)  # Supabase auth uid
+    user_name = models.CharField(max_length=80, blank=True, default='')
+    body    = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['created_at']

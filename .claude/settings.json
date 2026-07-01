@@ -242,7 +242,12 @@
       "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/lib/**)",
       "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && echo \"=== Start.io config still in manifest? ===\" && grep -nE \"startapp|APPLICATION_ID|SPLASH_ADS|StartAppFlutterHelper\" android/app/src/main/AndroidManifest.xml; echo \"\"; echo \"=== confirm AdMob fully gone from manifest ===\" && grep -nE \"gms.ads|admob\" android/app/src/main/AndroidManifest.xml || echo \"  AdMob gone ✓\")",
       "Bash(python -m py_compile movies/management/commands/scrape_9jarocks.py movies/management/commands/scrape_thenkiri.py)",
-      "Bash(python -m py_compile movies/management/commands/scrape_9jarocks.py movies/management/commands/scrape_thenkiri.py movies/management/commands/scrape_naijaprey.py)"
+      "Bash(python -m py_compile movies/management/commands/scrape_9jarocks.py movies/management/commands/scrape_thenkiri.py movies/management/commands/scrape_naijaprey.py)",
+      "Bash(python -m py_compile movies/management/commands/scrape_news.py)",
+      "Bash(python manage.py scrape_news --max-per-feed 2)",
+      "Bash(python manage.py scrape_news --keep 3)",
+      "Bash(python manage.py scrape_news --per-category 2)",
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && grep -rnE \"tasteProvider|class Taste|preferredCategories|watched.*categor|genres|historyProvider|currentUserProvider\" lib/providers/taste.dart lib/providers/providers.dart 2>/dev/null | head -15)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
@@ -256,7 +261,9 @@
       "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\config",
       "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\models",
       "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\android",
-      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib"
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib",
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\providers",
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\.github\\workflows"
     ]
   }
 }
