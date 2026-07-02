@@ -247,7 +247,14 @@
       "Bash(python manage.py scrape_news --max-per-feed 2)",
       "Bash(python manage.py scrape_news --keep 3)",
       "Bash(python manage.py scrape_news --per-category 2)",
-      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && grep -rnE \"tasteProvider|class Taste|preferredCategories|watched.*categor|genres|historyProvider|currentUserProvider\" lib/providers/taste.dart lib/providers/providers.dart 2>/dev/null | head -15)"
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && grep -rnE \"tasteProvider|class Taste|preferredCategories|watched.*categor|genres|historyProvider|currentUserProvider\" lib/providers/taste.dart lib/providers/providers.dart 2>/dev/null | head -15)",
+      "Bash(grep -nA3 \"class MovieCast\" movies/models.py)",
+      "Bash(python -m py_compile movies/management/commands/cleanse_db.py)",
+      "Bash(python manage.py cleanse_db)",
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && grep -nE \"Downloading…|Paused •|toStringAsFixed\\\\\\(0\\\\\\)}%|final existing|final prog\" lib/widgets/download_sheet.dart lib/screens/downloads_screen.dart | head)",
+      "Bash(grep -nA2 \"void _toast\" lib/widgets/download_sheet.dart)",
+      "Bash(grep -nA1 \"_findAnotherServer\" lib/widgets/download_sheet.dart)",
+      "Bash(grep -nA5 \"String? _avatarUrl\\(\\)\" lib/screens/live_room_screen.dart)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",

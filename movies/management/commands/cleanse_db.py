@@ -192,6 +192,14 @@ class Command(BaseCommand):
             UPDATE movies_movie_watchlisted_by wb SET movie_id=keep WHERE wb.movie_id=ANY(dups)
               AND NOT EXISTS (SELECT 1 FROM movies_movie_watchlisted_by x WHERE x.movie_id=keep AND x.user_id=wb.user_id);
             DELETE FROM movies_movie_watchlisted_by WHERE movie_id=ANY(dups);
+            -- Cast is TMDB-enrichment data; the kept copy has its own, so drop
+            -- the dups' cast rows (Django's CASCADE is app-level only, so a raw
+            -- DELETE below would otherwise hit this FK — that was the crash).
+            DELETE FROM movies_moviecast WHERE movie_id=ANY(dups);
+            -- Gist news → point it at the surviving movie so its Watch link works.
+            UPDATE movies_newspost SET movie_id=keep WHERE movie_id=ANY(dups);
+            -- NOTE: any NEW table that adds a FK to movies_movie MUST be handled
+            -- here too (Django on_delete is app-level; raw SQL bypasses it).
             DELETE FROM movies_movie WHERE id=ANY(dups);
           END LOOP;
         END $$;
