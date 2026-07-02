@@ -254,7 +254,11 @@
       "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && grep -nE \"Downloading…|Paused •|toStringAsFixed\\\\\\(0\\\\\\)}%|final existing|final prog\" lib/widgets/download_sheet.dart lib/screens/downloads_screen.dart | head)",
       "Bash(grep -nA2 \"void _toast\" lib/widgets/download_sheet.dart)",
       "Bash(grep -nA1 \"_findAnotherServer\" lib/widgets/download_sheet.dart)",
-      "Bash(grep -nA5 \"String? _avatarUrl\\(\\)\" lib/screens/live_room_screen.dart)"
+      "Bash(grep -nA5 \"String? _avatarUrl\\(\\)\" lib/screens/live_room_screen.dart)",
+      "Bash(grep -rnE 'emoji|this.title|Text\\\\\\(title|Text\\\\\\(.*emoji|$emoji|$\\\\{.*emoji' lib/widgets/movie_row.dart lib/widgets/top10_row.dart lib/widgets/upcoming_row.dart)",
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && grep -rnE \"'[^']*[⏳🕐🎬📺🔴🔵▶️✨🆕][^']*'|emoji.*title|title.*emoji|Coming Soon|Recently Added\" lib/screens/home_screen.dart lib/widgets/upcoming_row.dart lib/widgets/top10_row.dart 2>/dev/null | grep -iE \"emoji|coming|recent|title:\" | head -15)",
+      "Bash(python -m py_compile movies/contact.py movies/urls.py movies/models.py)",
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && grep -nE \"path: '/request'|path: '/scan'\" lib/router.dart)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",

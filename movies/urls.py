@@ -1,6 +1,7 @@
 # movies/urls.py (app-level)  ← FULL REPLACEMENT
 from django.urls import path
 from django.views.generic import TemplateView
+from .contact import contact
 from .scene_id import identify_scene
 from .views import (
     HomeView,
@@ -83,4 +84,7 @@ urlpatterns = [
     #    clip link (Gemini vision → TMDB). The app matches tmdb_id to its own
     #    catalogue. ────────────────────────────────────────────────────────────
     path('identify-scene/', identify_scene, name='identify_scene'),
+
+    # ── Contact / complaint form (emails admin via Brevo; hides the address) ──
+    path('contact/', contact, name='contact'),
 ]

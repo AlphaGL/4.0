@@ -388,6 +388,24 @@ class NewsReaction(models.Model):
         indexes = [models.Index(fields=['news', 'emoji'])]
 
 
+class ContactMessage(models.Model):
+    """A complaint / message a user sends from the app's Contact screen. Stored
+    here (so it's never lost) and emailed to the admin via Brevo."""
+    email      = models.EmailField(blank=True, default='')  # optional reply-to
+    subject    = models.CharField(max_length=140, blank=True, default='')
+    message    = models.TextField()
+    user_id    = models.CharField(max_length=64, blank=True, default='')
+    app_version = models.CharField(max_length=20, blank=True, default='')
+    handled    = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.subject or 'Message'} — {self.email or 'anon'}"
+
+
 class NewsComment(models.Model):
     """A user's 'shade'/comment on a news item (the live-room style thread)."""
     news    = models.ForeignKey(NewsPost, on_delete=models.CASCADE,
