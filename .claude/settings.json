@@ -258,7 +258,9 @@
       "Bash(grep -rnE 'emoji|this.title|Text\\\\\\(title|Text\\\\\\(.*emoji|$emoji|$\\\\{.*emoji' lib/widgets/movie_row.dart lib/widgets/top10_row.dart lib/widgets/upcoming_row.dart)",
       "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && grep -rnE \"'[^']*[⏳🕐🎬📺🔴🔵▶️✨🆕][^']*'|emoji.*title|title.*emoji|Coming Soon|Recently Added\" lib/screens/home_screen.dart lib/widgets/upcoming_row.dart lib/widgets/top10_row.dart 2>/dev/null | grep -iE \"emoji|coming|recent|title:\" | head -15)",
       "Bash(python -m py_compile movies/contact.py movies/urls.py movies/models.py)",
-      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && grep -nE \"path: '/request'|path: '/scan'\" lib/router.dart)"
+      "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && grep -nE \"path: '/request'|path: '/scan'\" lib/router.dart)",
+      "Bash(cd /c/Users/Ibeawuchi/Desktop/film/4.0)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('movies/views.py',encoding='utf-8'\\).read\\(\\)\\); print\\('views.py OK'\\)\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",

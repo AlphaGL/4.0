@@ -374,30 +374,30 @@ def app_ads_txt(request):
 
 
 # ── Monetag in-app ad pages ──────────────────────────────────────────────────
-# Monetag's web tags only FILL from a real page on the Monetag-registered domain.
-# Served from watch2d.org (the live site). The OLD watch2d.com Monetag site is
-# EXPIRED, so these zone IDs (created under it) will NOT fill — replace them with
-# zones created under a watch2d.org Monetag site.
+# Monetag's web tags only FILL from a real page on the Monetag-registered domain,
+# served from watch2d.org (the live site). These are the EXACT, unedited snippets
+# from the "WATCH2DAPP" Monetag site — pasted verbatim. Monetag rejects tags that
+# are rebuilt from just the zone id, so DO NOT reconstruct them: to change a
+# format, paste the whole <script>…</script> Monetag gives you, as-is.
 _MONETAG_TAGS = {
-    'vignette': ("11193756", "https://n6wxm.com/vignette.min.js"),  # interstitial — REPLACE w/ watch2d.org zone
-    'inpage':   ("11193759", "https://nap5k.com/tag.min.js"),       # in-page push — REPLACE w/ watch2d.org zone
+    'vignette': "<script>(function(s){s.dataset.zone='11193756',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>",  # interstitial
+    'inpage':   "<script>(function(s){s.dataset.zone='11193759',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>",       # in-page push
 }
+# Direct-link offer (no <script> — it's a monetized URL loaded full-screen):
+#   https://omg10.com/4/11193757   (used by the Flutter download gate)
 
 
 def ad_tag(request, fmt):
-    pair = _MONETAG_TAGS.get(fmt)
-    if not pair:
+    snippet = _MONETAG_TAGS.get(fmt)
+    if not snippet:
         return HttpResponse(status=404)
-    zone, src = pair
+    # Inject Monetag's snippet VERBATIM — no rebuilding, so the tag stays valid.
     html = (
         "<!DOCTYPE html><html><head>"
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<meta name="monetag" content="173862e732b4bc52fe401819c47b5614">'
         "<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}</style>"
-        "</head><body>"
-        "<script>(function(s){s.dataset.zone='" + zone + "',s.src='" + src + "'})"
-        "([document.documentElement,document.body].filter(Boolean).pop()"
-        ".appendChild(document.createElement('script')))</script>"
-        "</body></html>"
+        "</head><body>" + snippet + "</body></html>"
     )
     return HttpResponse(html)
 
