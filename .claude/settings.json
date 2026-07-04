@@ -261,7 +261,8 @@
       "Bash(cd \"c:/Users/Ibeawuchi/Desktop/film/watch2d_app\" && grep -nE \"path: '/request'|path: '/scan'\" lib/router.dart)",
       "Bash(cd /c/Users/Ibeawuchi/Desktop/film/4.0)",
       "Bash(python -c \"import ast; ast.parse\\(open\\('movies/views.py',encoding='utf-8'\\).read\\(\\)\\); print\\('views.py OK'\\)\")",
-      "Bash(cd /c/Users/Ibeawuchi/Desktop/film 2>/dev/null *)"
+      "Bash(cd /c/Users/Ibeawuchi/Desktop/film 2>/dev/null *)",
+      "Read(//c/Users/Ibeawuchi/AppData/Local/Temp/**)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
