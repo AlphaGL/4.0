@@ -39,8 +39,14 @@ UA = {'User-Agent': ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                      'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 '
                      'Safari/537.36')}
 
-# (source name, fallback category, RSS url). Add/remove freely. Spread across
-# categories so no fan-base is left out (anime, K-drama, gaming, music, etc.).
+# The ONLY categories allowed into the Gist feed. Anything that doesn't clearly
+# fall into one of these is dropped (no "Other"/uncategorized bucket).
+ALLOWED_CATEGORIES = {
+    'Nollywood', 'Hollywood', 'K-Drama', 'Bollywood', 'Celebrity', 'Anime',
+}
+
+# (source name, fallback category, RSS url). Every fallback category MUST be in
+# ALLOWED_CATEGORIES. (Music & Gaming feeds were removed on purpose.)
 NEWS_FEEDS = [
     ('Variety',          'Hollywood', 'https://variety.com/feed/'),
     ('ScreenRant',       'Hollywood', 'https://screenrant.com/feed/'),
@@ -48,11 +54,8 @@ NEWS_FEEDS = [
     ('Deadline',         'Hollywood', 'https://deadline.com/feed/'),
     ('ComingSoon',       'Hollywood', 'https://www.comingsoon.net/feed'),
     ('BellaNaija',       'Nollywood', 'https://www.bellanaija.com/feed/'),
-    ('Notjustok',        'Music',     'https://notjustok.com/feed/'),
-    ('Billboard',        'Music',     'https://www.billboard.com/feed/'),
     ('AnimeNewsNetwork', 'Anime',     'https://www.animenewsnetwork.com/newsroom/rss.xml'),
     ('Soompi',           'K-Drama',   'https://www.soompi.com/feed'),
-    ('IGN',              'Gaming',    'https://feeds.ign.com/ign/all'),
 ]
 
 _CURATE_PROMPT = (
@@ -61,13 +64,17 @@ _CURATE_PROMPT = (
     "reaction-worthy stories — celebrity drama, scandals, breakups, feuds, "
     "shocking reveals, huge castings, major trailers, big wins.\n"
     "IMPORTANT: SPREAD the picks ACROSS categories — up to {per_cat} per "
-    "category — so Anime, K-Drama, Nollywood, Hollywood, Music, Celebrity and "
-    "Gaming fans all get something. A category with nothing genuinely juicy: "
-    "skip it (don't pad). IGNORE dry business / box-office / executive news.\n"
+    "category — so Anime, K-Drama, Nollywood, Hollywood, Bollywood and Celebrity "
+    "fans all get something. A category with nothing genuinely juicy: skip it "
+    "(don't pad). IGNORE dry business / box-office / executive news, and IGNORE "
+    "anything about music or gaming.\n"
+    "Only use these categories: Nollywood, Hollywood, K-Drama, Bollywood, "
+    "Celebrity, Anime. If a story fits NONE of them, DROP it (do not invent an "
+    "'Other' category).\n"
     "For each pick return the item's number, a fun NON-abusive one-line hot "
     "take (<120 chars), its category, and the movie/show it's about (or null).\n"
     'Return STRICT JSON only: {"picks":[{"n":<number>,"category":"Nollywood|'
-    'Hollywood|K-Drama|Bollywood|Music|Celebrity|Gaming|Anime|Other",'
+    'Hollywood|K-Drama|Bollywood|Celebrity|Anime",'
     '"hot_take":"...","title":"... or null"}]}\n\nHeadlines:\n{headlines}'
 )
 
@@ -209,8 +216,15 @@ class Command(BaseCommand):
 
         # ── Save ──────────────────────────────────────────────────────────────
         added = 0
+        skipped_cat = 0
         for c, enr in chosen:
             if NewsPost.objects.filter(url=c['url']).exists():
+                continue
+            # Only allow the whitelisted categories — drop anything else (incl.
+            # music, gaming, or an 'Other'/blank category) so it never shows.
+            category = (enr.get('category') or c['default_cat'] or '').strip()
+            if category not in ALLOWED_CATEGORIES:
+                skipped_cat += 1
                 continue
             movie = _match_movie(enr.get('title'))
             NewsPost.objects.create(
@@ -220,7 +234,7 @@ class Command(BaseCommand):
                 url=c['url'][:600],
                 source=c['source'],
                 image_url=(c['image'] or '')[:600],
-                category=(enr.get('category') or c['default_cat'])[:60],
+                category=category[:60],
                 movie=movie,
                 tmdb_id=movie.tmdb_id if movie else None,
                 published_at=c['published'],
@@ -232,4 +246,5 @@ class Command(BaseCommand):
         })) or '-'
         self.stdout.write(self.style.SUCCESS(
             f'Gist: reviewed {len(candidates)} candidate(s), kept {added} '
-            f'juicy item(s) across [{cats}].'))
+            f'juicy item(s) across [{cats}]'
+            + (f', dropped {skipped_cat} off-category.' if skipped_cat else '.')))
