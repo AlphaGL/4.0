@@ -258,8 +258,8 @@ PLATFORM_LINKS = {
     'twitter':  'https://x.com/watch2download',
     'facebook': 'https://facebook.com/WATCH2D/',
     'website':  'https://watch2d.org',
-    # Where "Get the App" points. Swap for your APKPure page if you prefer.
-    'app':      'https://watch2d.org',
+    # Where "Get the App" button points — the direct APK download.
+    'app':      'https://dl.watch2d.org/watch2d-latest.apk',
 }
 
 TWITTER_FOOTER = (
