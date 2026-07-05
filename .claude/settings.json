@@ -267,7 +267,11 @@
       "Bash(cd /c/Users/Ibeawuchi/Desktop/film/watch2d_app 2>/dev/null *)",
       "Bash(python manage.py migrate movies 0021)",
       "Bash(timeout 240 python manage.py scrape_news)",
-      "Bash(grep -v \"// \")"
+      "Bash(grep -v \"// \")",
+      "Bash(cd /c/Users/Ibeawuchi/Desktop/film/watch2d_app)",
+      "Bash(ls .github/workflows/)",
+      "Bash(grep -rnE \"flutter analyze|flutter test|fatal|dart analyze\" .github/workflows/)",
+      "Bash(flutter test *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
