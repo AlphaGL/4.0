@@ -266,7 +266,8 @@
       "Bash(python -c \"import ast; ast.parse\\(open\\('4.0/movies/management/commands/scrape_news.py',encoding='utf-8'\\).read\\(\\)\\); print\\('scrape_news OK'\\)\")",
       "Bash(cd /c/Users/Ibeawuchi/Desktop/film/watch2d_app 2>/dev/null *)",
       "Bash(python manage.py migrate movies 0021)",
-      "Bash(timeout 240 python manage.py scrape_news)"
+      "Bash(timeout 240 python manage.py scrape_news)",
+      "Bash(grep -v \"// \")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
