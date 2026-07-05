@@ -271,7 +271,8 @@
       "Bash(cd /c/Users/Ibeawuchi/Desktop/film/watch2d_app)",
       "Bash(ls .github/workflows/)",
       "Bash(grep -rnE \"flutter analyze|flutter test|fatal|dart analyze\" .github/workflows/)",
-      "Bash(flutter test *)"
+      "Bash(flutter test *)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('movies/scene_id.py',encoding='utf-8'\\).read\\(\\)\\); print\\('scene_id.py OK'\\)\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",

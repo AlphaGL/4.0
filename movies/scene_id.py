@@ -29,7 +29,8 @@ from . import tmdb
 
 GEMINI_MODEL = config('GEMINI_MODEL', default='gemini-2.5-flash')
 MAX_IMAGES = 4
-MAX_DIM = 1024  # downscale frames before sending (saves quota + bandwidth)
+MAX_DIM = 1280  # downscale frames before sending (higher = better detail for
+#                 identification, still small enough for quota + bandwidth)
 
 UA = ('Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/120 Mobile Safari/537.36')
@@ -145,16 +146,28 @@ def resolve_social_url(url):
 
 # ── Gemini vision call ───────────────────────────────────────────────────────
 _PROMPT = (
-    "You are a film & TV identification expert. Look at the frame(s) below, "
-    "taken from a movie or TV show, and identify what it is.\n"
+    "You are a film & TV identification expert. Look VERY carefully at the "
+    "frame(s) below, taken from a movie or TV show, and identify EXACTLY what "
+    "it is.\n"
     "{hint}"
+    "Use EVERY clue: the actors' faces, any on-screen text or subtitles, "
+    "signage/logos, channel or streaming watermarks, costumes, setting, time "
+    "period, colour grade and visual style. If several frames are given, they "
+    "are from the SAME title — combine them.\n"
+    "Be precise and literal: identify the SPECIFIC film or show and the correct "
+    "entry in a franchise/sequel, with the correct release year. Distinguish "
+    "remakes and same-named titles by their year and cast. For a TV show, name "
+    "the SHOW itself (not just its genre). Do NOT guess wildly — if you are not "
+    "sure, LOWER the confidence and give alternates rather than inventing a "
+    "title.\n"
     "Return STRICT JSON only, no prose, in exactly this shape:\n"
-    '{"matches":[{"title":"<title>","year":<release year or null>,'
+    '{"matches":[{"title":"<exact title>","year":<release year or null>,'
     '"media_type":"movie or tv","cast":["actor names you recognise"],'
     '"confidence":"high or medium or low"}],"note":"<short note if unsure, '
     'else empty>"}\n'
-    "Give up to 3 candidate matches, most likely first. If you genuinely "
-    "cannot tell, return an empty matches list."
+    "Give up to 3 candidate matches, MOST LIKELY FIRST. Only mark a match "
+    "'high' when you are genuinely certain. If you truly cannot tell, return an "
+    "empty matches list."
 )
 
 
