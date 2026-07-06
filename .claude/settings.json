@@ -281,7 +281,14 @@
       "Bash(taskkill //F //IM python.exe //FI \"WINDOWTITLE eq *http.server*\")",
       "Bash(pkill -f \"http.server\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\('movies/management/commands/notify_new_content.py',encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
-      "Bash(ls -lh build/app/outputs/flutter-apk/app-release.apk)"
+      "Bash(ls -lh build/app/outputs/flutter-apk/app-release.apk)",
+      "Read(//c/Users/Ibeawuchi/AppData/Local/Android/sdk/ndk/**)",
+      "Read(//c/Users/Ibeawuchi/AppData/Local/Android/sdk/ndk/28.2.13676358/**)",
+      "Read(//c/Users/Ibeawuchi/AppData/Local/Android/sdk/cmdline-tools/latest/bin/**)",
+      "Bash(rm -rf C:/Users/Ibeawuchi/AppData/Local/Android/sdk/ndk/28.2.13676358)",
+      "Bash(rm -f lib/widgets/adsterra_banner.dart)",
+      "Bash(xargs echo \"manifest provider:\")",
+      "Bash(xargs echo \"pubspec:\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
