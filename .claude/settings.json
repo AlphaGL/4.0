@@ -277,7 +277,10 @@
       "Bash(echo \"Copied to: C:\\\\\\\\Users\\\\\\\\Ibeawuchi\\\\\\\\Desktop\\\\\\\\film\\\\\\\\test_vast.html\")",
       "Bash(curl -s -I -A 'Mozilla/5.0 \\(Linux; Android 12\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/124 Mobile Safari/537.36' -L --max-time 20 https://www.videosprofitnetwork.com/watch.xml?key=2a6762fd0266ea465592351cc39d93bb)",
       "Bash(xargs echo \"dead-ref count \\(expect 0\\):\")",
-      "Bash(python -m http.server 8000 --bind 127.0.0.1)"
+      "Bash(python -m http.server 8000 --bind 127.0.0.1)",
+      "Bash(taskkill //F //IM python.exe //FI \"WINDOWTITLE eq *http.server*\")",
+      "Bash(pkill -f \"http.server\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('movies/management/commands/notify_new_content.py',encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
