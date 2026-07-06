@@ -373,29 +373,33 @@ def app_ads_txt(request):
     return HttpResponse(APP_ADS_TXT, content_type="text/plain")
 
 
-# ── Monetag in-app ad pages ──────────────────────────────────────────────────
-# Monetag's web tags only FILL from a real page on the Monetag-registered domain,
-# served from watch2d.org (the live site). These are the EXACT, unedited snippets
-# from the "WATCH2DAPP" Monetag site — pasted verbatim. Monetag rejects tags that
-# are rebuilt from just the zone id, so DO NOT reconstruct them: to change a
-# format, paste the whole <script>…</script> Monetag gives you, as-is.
-_MONETAG_TAGS = {
-    'vignette': "<script>(function(s){s.dataset.zone='11193756',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>",  # interstitial
-    'inpage':   "<script>(function(s){s.dataset.zone='11193759',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>",       # in-page push
+# ── Adsterra in-app ad pages ──────────────────────────────────────────────────
+# Adsterra web tags, served from a real page on watch2d.org so they fill. These
+# are the EXACT, unedited tags from the watch2d.org Adsterra site — do NOT
+# rebuild them; to change a format, paste the whole snippet Adsterra gives you.
+_AD_TAGS = {
+    'adsterra_native': (
+        '<script async="async" data-cfasync="false" '
+        'src="https://probationthimbledespite.com/040828910c3bdfc48913fd8d253a6597/invoke.js"></script>'
+        '<div id="container-040828910c3bdfc48913fd8d253a6597"></div>'
+    ),
+    'adsterra_social': (
+        '<script src="https://probationthimbledespite.com/86/57/9f/'
+        '86579fa41364fe35a2c4337a24b48205.js"></script>'
+    ),
 }
-# Direct-link offer (no <script> — it's a monetized URL loaded full-screen):
-#   https://omg10.com/4/11193757   (used by the Flutter download gate)
+# Adsterra Smartlink (direct-link offer, loaded full-screen by the Flutter app):
+#   https://probationthimbledespite.com/maydkyrw2?key=46f141d0f51b741caabb347f4ac7e6a0
 
 
 def ad_tag(request, fmt):
-    snippet = _MONETAG_TAGS.get(fmt)
+    snippet = _AD_TAGS.get(fmt)
     if not snippet:
         return HttpResponse(status=404)
-    # Inject Monetag's snippet VERBATIM — no rebuilding, so the tag stays valid.
+    # Inject the Adsterra tag VERBATIM — no rebuilding, so it stays valid.
     html = (
         "<!DOCTYPE html><html><head>"
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        '<meta name="monetag" content="173862e732b4bc52fe401819c47b5614">'
         "<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}</style>"
         "</head><body>" + snippet + "</body></html>"
     )

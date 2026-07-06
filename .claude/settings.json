@@ -272,7 +272,12 @@
       "Bash(ls .github/workflows/)",
       "Bash(grep -rnE \"flutter analyze|flutter test|fatal|dart analyze\" .github/workflows/)",
       "Bash(flutter test *)",
-      "Bash(python -c \"import ast; ast.parse\\(open\\('movies/scene_id.py',encoding='utf-8'\\).read\\(\\)\\); print\\('scene_id.py OK'\\)\")"
+      "Bash(python -c \"import ast; ast.parse\\(open\\('movies/scene_id.py',encoding='utf-8'\\).read\\(\\)\\); print\\('scene_id.py OK'\\)\")",
+      "Bash(cp \"C:/Users/IBEAWU~1/AppData/Local/Temp/claude/c--Users-Ibeawuchi-Desktop-film-4-0/eb8ea360-2353-4b9c-ba7d-9337b6f9cf5f/scratchpad/test_vast.html\" \"C:/Users/Ibeawuchi/Desktop/film/test_vast.html\")",
+      "Bash(echo \"Copied to: C:\\\\\\\\Users\\\\\\\\Ibeawuchi\\\\\\\\Desktop\\\\\\\\film\\\\\\\\test_vast.html\")",
+      "Bash(curl -s -I -A 'Mozilla/5.0 \\(Linux; Android 12\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/124 Mobile Safari/537.36' -L --max-time 20 https://www.videosprofitnetwork.com/watch.xml?key=2a6762fd0266ea465592351cc39d93bb)",
+      "Bash(xargs echo \"dead-ref count \\(expect 0\\):\")",
+      "Bash(python -m http.server 8000 --bind 127.0.0.1)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
