@@ -280,7 +280,8 @@
       "Bash(python -m http.server 8000 --bind 127.0.0.1)",
       "Bash(taskkill //F //IM python.exe //FI \"WINDOWTITLE eq *http.server*\")",
       "Bash(pkill -f \"http.server\")",
-      "Bash(python -c \"import ast; ast.parse\\(open\\('movies/management/commands/notify_new_content.py',encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")"
+      "Bash(python -c \"import ast; ast.parse\\(open\\('movies/management/commands/notify_new_content.py',encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(ls -lh build/app/outputs/flutter-apk/app-release.apk)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
