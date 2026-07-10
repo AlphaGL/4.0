@@ -290,7 +290,19 @@
       "Bash(xargs echo \"manifest provider:\")",
       "Bash(xargs echo \"pubspec:\")",
       "Read(//c/Users/Ibeawuchi/Desktop/film/4.0/android/app/**)",
-      "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/android/app/**)"
+      "Read(//c/Users/Ibeawuchi/Desktop/film/watch2d_app/android/app/**)",
+      "Bash(npx --version)",
+      "Bash(ls -d static)",
+      "Bash(ls static/css)",
+      "Bash(ls -d */static)",
+      "Bash(ls build.sh render.yaml)",
+      "Bash(npx --yes tailwindcss@3.4.17 -i ./tailwind_src/input.css -o ./movies/static/css/tw.min.css --minify)",
+      "Bash(npm cache *)",
+      "Bash(grep -nE \"@apply|\\\\.nav-link|\\\\.mobile-nav-link|\\\\.telegram-float|\\\\.telegram-icon|\\\\.pulse-ring|/\\\\* Navigation Links|/\\\\* Telegram Float|/\\\\* PWA Specific\" movies/templates/movies/base.html)",
+      "Bash(python manage.py findstatic css/tw.min.css)",
+      "Bash(grep -rnE \"class\\(List\\)?.*[\\\\`+].*\\(bg-|text-|border-|from-|to-\\)\" movies/templates/ movies/static/)",
+      "Bash(python manage.py findstatic css/tw.min.css --verbosity 0)",
+      "Bash(grep -vE \"\\\\.b-done|/\\\\*\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
@@ -308,7 +320,8 @@
       "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\lib\\providers",
       "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\.github\\workflows",
       "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\android\\app\\src\\main",
-      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\android\\app"
+      "c:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app\\android\\app",
+      "C:\\Users\\Ibeawuchi\\AppData\\Local\\Temp"
     ]
   }
 }

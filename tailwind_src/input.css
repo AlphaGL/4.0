@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Component classes moved out of base.html's inline <style> so the Tailwind
+   CLI can compile their @apply directives (the Play CDN used to do this at
+   runtime in the browser — that was the slow part). */
+@layer components {
+  /* Navigation Links */
+  .nav-link {
+    @apply flex items-center px-4 py-2.5 rounded-2xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300 whitespace-nowrap backdrop-blur-sm border border-transparent hover:border-primary-200 dark:hover:border-primary-800;
+  }
+  .nav-link.active {
+    @apply bg-gradient-to-r from-primary-500/10 to-accent-500/10 text-primary-700 dark:text-primary-300 border-primary-200 dark:border-primary-800 shadow-md;
+  }
+  .nav-link.special-link {
+    @apply bg-gradient-to-r from-accent-500/10 to-pink-500/10 text-accent-700 dark:text-accent-300 border-accent-200 dark:border-accent-800;
+  }
+
+  /* Mobile Navigation Links */
+  .mobile-nav-link {
+    @apply flex items-center px-4 py-3 rounded-2xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300 backdrop-blur-sm border border-transparent hover:border-primary-200 dark:hover:border-primary-800;
+  }
+  .mobile-nav-link.active {
+    @apply bg-gradient-to-r from-primary-500/10 to-accent-500/10 text-primary-700 dark:text-primary-300 border-primary-200 dark:border-primary-800 shadow-md;
+  }
+
+  /* Telegram Float */
+  .telegram-float { @apply relative block; }
+  .telegram-icon {
+    @apply w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-2xl relative z-10 hover:shadow-blue-500/25 transition-all duration-300;
+  }
+  .pulse-ring {
+    @apply absolute w-16 h-16 bg-blue-500/30 rounded-full animate-pulse-slow;
+  }
+}

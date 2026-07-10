@@ -514,7 +514,7 @@
           {% if series.image_url %}<img src="{{ series.image_url }}" alt="{{ series.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
           <div class="gc-ov"></div>
           <div class="gc-play"><div class="gc-play-btn"><i class="fas fa-play"></i></div></div>
-          <span class="cbadge cbtl b-ep" style="font-size:.48rem;">EP</span>
+          <span class="cbadge cbtl b-ep" style="font-size:.48rem;">NEW EP</span>
           <span class="cbadge cbtr b-hd" style="font-size:.48rem;">HD</span>
         </div>
         <div class="gc-ttl">{{ series.title }}</div>
@@ -560,7 +560,7 @@
             {% if movie.image_url %}<img src="{{ movie.image_url }}" alt="{{ movie.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
             <div class="c-ov"></div>
             <div class="c-play"><div class="c-play-btn"><i class="fas fa-play"></i></div></div>
-            {% if movie.title_b and not movie.completed %}<span class="cbadge cbtl b-ep">EP</span>
+            {% if movie.title_b and not movie.completed %}<span class="cbadge cbtl b-ep">NEW EP</span>
             {% elif movie.created_at|is_recent %}<span class="cbadge cbtl b-new">NEW</span>{% endif %}
             <span class="cbadge cbtr b-hd">HD</span>
           </div>
@@ -626,7 +626,6 @@
           {% if series.image_url %}<img src="{{ series.image_url }}" alt="{{ series.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
           <div class="gc-ov"></div>
           <div class="gc-play"><div class="gc-play-btn" style="color:#2dbd6e;"><i class="fas fa-play"></i></div></div>
-          <span class="cbadge cbtl b-done" style="font-size:.48rem;"><i class="fas fa-check" style="font-size:.43rem;"></i> DONE</span>
           <span class="cbadge cbtr b-hd" style="font-size:.48rem;">HD</span>
         </div>
         <div class="gc-ttl">{{ series.title }}</div>

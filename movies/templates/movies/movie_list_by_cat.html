@@ -425,13 +425,11 @@
           <div class="gc-ov"></div>
           <div class="gc-play"><div class="gc-play-btn"><i class="fas fa-play"></i></div></div>
 
-          {# Left badge: NEW → EP → DONE #}
-          {% if movie.created_at|is_recent %}
+          {# Left badge: NEW EP (ongoing series) → NEW (recently added) #}
+          {% if movie.title_b and not movie.completed %}
+            <span class="cbadge cbtl b-ep">NEW EP</span>
+          {% elif movie.created_at|is_recent %}
             <span class="cbadge cbtl b-new">NEW</span>
-          {% elif movie.title_b and not movie.completed %}
-            <span class="cbadge cbtl b-ep">EP</span>
-          {% elif movie.completed %}
-            <span class="cbadge cbtl b-done"><i class="fas fa-check" style="font-size:.4rem;"></i> DONE</span>
           {% endif %}
 
           <span class="cbadge cbtr b-hd">HD</span>

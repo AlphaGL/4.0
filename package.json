@@ -1,0 +1,13 @@
+{
+  "name": "watch2d-site-css",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tailwind static CSS build for watch2d.org (replaces the slow Play CDN).",
+  "scripts": {
+    "css": "tailwindcss -i ./tailwind_src/input.css -o ./movies/static/css/tw.min.css --minify",
+    "css:watch": "tailwindcss -i ./tailwind_src/input.css -o ./movies/static/css/tw.min.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

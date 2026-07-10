@@ -203,6 +203,7 @@
   .cbtl { top:5px; left:5px; }
   .cbtr { top:5px; right:5px; }
   .b-new  { background:#e50914; color:#fff; }
+  .b-ep   { background:#7c3aed; color:#fff; }
   .b-hd   { background:rgba(0,0,0,.55); color:#ccc; border:1px solid rgba(255,255,255,.18); }
 
   /* shimmer placeholder */
@@ -356,7 +357,9 @@
           {% endif %}
           <div class="gc-ov"></div>
           <div class="gc-play"><div class="gc-play-btn"><i class="fas fa-play"></i></div></div>
-          {% if movie.created_at|is_recent %}
+          {% if movie.title_b and not movie.completed %}
+          <span class="cbadge cbtl b-ep">NEW EP</span>
+          {% elif movie.created_at|is_recent %}
           <span class="cbadge cbtl b-new">NEW</span>
           {% endif %}
           <span class="cbadge cbtr b-hd">HD</span>
