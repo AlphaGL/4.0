@@ -67,6 +67,8 @@ class Movie(models.Model):
                                        help_text="Matched TheMovieDB id, if any.")
     tmdb_synced  = models.BooleanField(default=False,
                                        help_text="TMDB enrichment has been attempted.")
+    genres_synced = models.BooleanField(default=False,
+                                        help_text="TMDB genres have been linked as categories.")
     tmdb_seasons = models.TextField(
         blank=True, default='',
         help_text='JSON map of season_number → episode_count for series, from '

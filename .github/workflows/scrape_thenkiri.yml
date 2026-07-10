@@ -239,6 +239,13 @@ jobs:
       - name: Enrich new titles from TMDB (rating/trailer/cast/poster)
         continue-on-error: true
         run: python manage.py enrich_tmdb --workers 6
+      # Tag movies with TMDB's real genres as browsable categories. New titles
+      # are tagged by enrich_tmdb above; this clears the existing backlog a
+      # chunk at a time (resumable via genres_synced), so it finishes over a few
+      # runs and then just keeps up.
+      - name: Tag movies with TMDB genres
+        continue-on-error: true
+        run: python manage.py backfill_genres --workers 6 --limit 6000
       - name: Refresh Netflix/Prime availability (TMDB watch-providers, NG)
         continue-on-error: true
         run: python manage.py fetch_providers --region NG --days 7 --workers 6

@@ -17,6 +17,7 @@ from decouple import config
 
 from movies.models import Movie, Person, MovieCast
 from movies import tmdb
+from movies.genres import link_tmdb_genres
 from movies.r2 import rehost_image, is_configured as r2_ready
 
 
@@ -104,8 +105,12 @@ class Command(BaseCommand):
                     if new_img:
                         updates['image_url'] = new_img
 
+                updates['genres_synced'] = True
                 Movie.objects.filter(pk=m.id).update(**updates)
                 _sync_cast(m.id, d.get('cast_list'), r2)
+                # Link TMDB's canonical genres as browsable categories.
+                if d['genres']:
+                    link_tmdb_genres(m, d['genres'])
                 return (m, True)
             finally:
                 connections.close_all()
