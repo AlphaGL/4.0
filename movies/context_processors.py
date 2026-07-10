@@ -1,4 +1,5 @@
 # movies/context_processors.py
+from django.conf import settings
 from django.core.cache import cache
 from .models import Category
 
@@ -11,4 +12,9 @@ def categories_processor(request):
     if cats is None:
         cats = list(Category.objects.all())
         cache.set(_CACHE_KEY, cats, _CACHE_TTL)
-    return {'categories': cats}
+    return {
+        'categories': cats,
+        # Monetag Telegram Mini App zone id (empty until configured) — read by
+        # the Mini App script in base.html.
+        'MONETAG_MINIAPP_ZONE': getattr(settings, 'MONETAG_MINIAPP_ZONE', ''),
+    }

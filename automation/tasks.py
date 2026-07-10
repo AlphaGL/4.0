@@ -17,6 +17,20 @@ from .models import TelegramPost, TelegramUpdate
 logger = logging.getLogger(__name__)
 
 SITE_URL = lambda: getattr(settings, 'SITE_URL', 'https://watch2d.org')
+MINIAPP_URL = lambda: getattr(settings, 'TELEGRAM_MINIAPP_URL', '')
+
+
+def _movie_button_url(movie) -> str:
+    """URL for the 'Download Link' button under a movie/episode post.
+
+    Routes through the Telegram Mini App (t.me/watch2d_bot/watch?startapp=…) so
+    tapping it opens the movie INSIDE Telegram → Monetag ad → movie page (stream
+    inline, or download bounces to Chrome). Falls back to the plain site link if
+    the Mini App URL isn't configured."""
+    base = MINIAPP_URL()
+    if base:
+        return f"{base}?startapp=movie{movie.pk}"
+    return f"{SITE_URL()}/movie/{movie.pk}/"
 
 
 # ============================================================
@@ -70,7 +84,7 @@ def _post_new_movies() -> int:
 
 
 def _post_movie(movie, channel: str) -> bool:
-    url = f"{SITE_URL()}/movie/{movie.pk}/"
+    url = _movie_button_url(movie)
     emoji = "🎬" if not movie.is_series else "📺"
 
     lines = [f"{emoji} <b>{movie.title}</b>", ""]
@@ -146,7 +160,7 @@ def _post_movie_updates() -> int:
 
 def _post_movie_episode_update(movie, episode_label: str, channel: str) -> bool:
     """Post a 'new episode available' notification for a series."""
-    url = f"{SITE_URL()}/movie/{movie.pk}/"
+    url = _movie_button_url(movie)
 
     lines = [
         f"🆕 <b>New Episode Available!</b>",

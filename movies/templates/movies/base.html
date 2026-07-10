@@ -6,6 +6,80 @@
   {# viewport-fit=cover lets the PWA draw edge-to-edge under the iOS notch/home-bar #}
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
+  {# ═══════════════════════════════════════════════════════════════════════
+     Telegram Mini App (t.me/watch2d_bot/watch)
+     Runs ONLY inside Telegram — no effect on the normal website, so the site
+     stays fast for regular visitors.
+       • ?startapp=movie<id> on the homepage  → jumps straight to that movie
+       • loads Telegram + Monetag SDKs (inside Telegram only)
+       • Download links open in Chrome (WebView can't save files); streaming
+         stays inline
+       • Monetag interstitial shows once per session on the movie page
+     ══════════════════════════════════════════════════════════════════════ #}
+  <script>
+  (function () {
+    try {
+      var inTg = location.hash.indexOf('tgWebApp') !== -1
+                 || sessionStorage.getItem('w2d_tg') === '1';
+      if (!inTg) return;
+      sessionStorage.setItem('w2d_tg', '1');
+      document.documentElement.classList.add('tg-miniapp');
+
+      // Deep-link: homepage + ?startapp=movie<id>  →  that movie's page.
+      var m = location.hash.match(/tgWebAppStartParam=([A-Za-z0-9_\-]+)/);
+      if (m && location.pathname === '/') {
+        var id = (m[1].match(/\d+/) || [])[0];
+        if (id) { location.replace('/movie/' + id + '/'); return; }
+      }
+
+      // Telegram SDK (openLink + expand) — loaded only inside Telegram.
+      var s = document.createElement('script');
+      s.src = 'https://telegram.org/js/telegram-web-app.js';
+      s.onload = function () { try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch (e) {} };
+      document.head.appendChild(s);
+
+      {% if MONETAG_MINIAPP_ZONE %}
+      // Monetag Mini App SDK — loaded only inside Telegram (keeps site fast).
+      var ms = document.createElement('script');
+      ms.src = 'https://libtl.com/sdk.js';
+      ms.setAttribute('data-zone', '{{ MONETAG_MINIAPP_ZONE }}');
+      ms.setAttribute('data-sdk', 'show_{{ MONETAG_MINIAPP_ZONE }}');
+      document.head.appendChild(ms);
+      {% endif %}
+
+      document.addEventListener('DOMContentLoaded', function () {
+        // Downloads can't save inside the WebView → open them in Chrome.
+        document.querySelectorAll('a[href*="download_gate"], a[data-external]').forEach(function (a) {
+          a.addEventListener('click', function (ev) {
+            try {
+              if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) {
+                ev.preventDefault();
+                Telegram.WebApp.openLink(new URL(a.getAttribute('href'), location.origin).href);
+              }
+            } catch (e) {}
+          });
+        });
+
+        {% if MONETAG_MINIAPP_ZONE %}
+        // Interstitial: once per session, on the movie page, before content.
+        try {
+          if (/^\/movie\//.test(location.pathname) && sessionStorage.getItem('w2d_ad') !== '1') {
+            var tries = 0;
+            (function poll() {
+              var show = window['show_{{ MONETAG_MINIAPP_ZONE }}'];
+              if (typeof show === 'function') {
+                sessionStorage.setItem('w2d_ad', '1');
+                show().catch(function () {});
+              } else if (tries++ < 20) { setTimeout(poll, 300); }
+            })();
+          }
+        } catch (e) {}
+        {% endif %}
+      });
+    } catch (e) {}
+  })();
+  </script>
+
   {# -- PWA Meta Tags -- #}
   <meta name="application-name" content="Watch2D">
   <meta name="mobile-web-app-capable" content="yes">

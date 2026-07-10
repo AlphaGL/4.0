@@ -302,7 +302,11 @@
       "Bash(python manage.py findstatic css/tw.min.css)",
       "Bash(grep -rnE \"class\\(List\\)?.*[\\\\`+].*\\(bg-|text-|border-|from-|to-\\)\" movies/templates/ movies/static/)",
       "Bash(python manage.py findstatic css/tw.min.css --verbosity 0)",
-      "Bash(grep -vE \"\\\\.b-done|/\\\\*\")"
+      "Bash(grep -vE \"\\\\.b-done|/\\\\*\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('automation/tasks.py'\\).read\\(\\)\\); print\\('tasks.py OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('automation/tasks.py', encoding='utf-8'\\).read\\(\\)\\); print\\('tasks.py syntax OK'\\)\")",
+      "Bash(DJANGO_SETTINGS_MODULE=master.settings python -c \"import django; django.setup\\(\\); from django.conf import settings; print\\('ZONE =', settings.MONETAG_MINIAPP_ZONE\\); print\\('MINIAPP_URL =', settings.TELEGRAM_MINIAPP_URL\\)\")",
+      "Bash(sed -n '/ALLOWED_HOSTS = \\\\[/,/\\\\]/p' master/settings.py)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
