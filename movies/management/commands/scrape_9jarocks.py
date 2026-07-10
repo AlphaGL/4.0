@@ -474,7 +474,11 @@ def _post_movie_to_telegram(movie, is_new: bool):
         if not channel:
             return
 
-        url = f"{site_url}/movies/movie/{movie.pk}/"
+        # 'Download Link' opens the Telegram Mini App -> Monetag ad -> movie page
+        # (stream inline, or download bounces to Chrome). Mini App links only work
+        # inside Telegram, so Twitter/Facebook below keep the normal website URL.
+        miniapp = getattr(settings, 'TELEGRAM_MINIAPP_URL', 'https://t.me/watch2d_bot/watch')
+        url = f"{miniapp}?startapp=movie{movie.pk}"
         tg_tags, _, _ = _detect_hashtags(movie)
 
         if is_new:
