@@ -306,7 +306,14 @@
       "Bash(python -c \"import ast; ast.parse\\(open\\('automation/tasks.py'\\).read\\(\\)\\); print\\('tasks.py OK'\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\('automation/tasks.py', encoding='utf-8'\\).read\\(\\)\\); print\\('tasks.py syntax OK'\\)\")",
       "Bash(DJANGO_SETTINGS_MODULE=master.settings python -c \"import django; django.setup\\(\\); from django.conf import settings; print\\('ZONE =', settings.MONETAG_MINIAPP_ZONE\\); print\\('MINIAPP_URL =', settings.TELEGRAM_MINIAPP_URL\\)\")",
-      "Bash(sed -n '/ALLOWED_HOSTS = \\\\[/,/\\\\]/p' master/settings.py)"
+      "Bash(sed -n '/ALLOWED_HOSTS = \\\\[/,/\\\\]/p' master/settings.py)",
+      "Bash(DJANGO_SETTINGS_MODULE=master.settings python -c \"import django;django.setup\\(\\);from django.conf import settings;d=settings.DATABASES['default'];print\\('ENGINE:',d.get\\('ENGINE'\\)\\);print\\('HOST:',str\\(d.get\\('HOST'\\)\\)[:40]\\);print\\('NAME:',str\\(d.get\\('NAME'\\)\\)[:40]\\)\")",
+      "Bash(python manage.py showmigrations movies)",
+      "Bash(python manage.py showmigrations)",
+      "Bash(export DATABASE_URL='postgresql://postgres.scsikofwbmcchkxvrvsw:all_in_one_db@aws-1-eu-west-1.pooler.supabase.com:6543/postgres')",
+      "Bash(python -c \"import django;django.setup\\(\\);from django.conf import settings;print\\('HOST:',settings.DATABASES['default']['HOST']\\)\")",
+      "Bash(export DJANGO_SETTINGS_MODULE=master.settings)",
+      "Bash(export PYTHONIOENCODING=utf-8)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
