@@ -313,7 +313,12 @@
       "Bash(export DATABASE_URL='postgresql://postgres.scsikofwbmcchkxvrvsw:all_in_one_db@aws-1-eu-west-1.pooler.supabase.com:6543/postgres')",
       "Bash(python -c \"import django;django.setup\\(\\);from django.conf import settings;print\\('HOST:',settings.DATABASES['default']['HOST']\\)\")",
       "Bash(export DJANGO_SETTINGS_MODULE=master.settings)",
-      "Bash(export PYTHONIOENCODING=utf-8)"
+      "Bash(export PYTHONIOENCODING=utf-8)",
+      "Bash(curl -s -A \"Mozilla/5.0\" https://watch2d.org/)",
+      "Bash(curl -s -o /dev/null -w \"home: %{http_code}\\\\n\" -A \"Mozilla/5.0\" https://watch2d.org/)",
+      "Bash(curl -s -o /dev/null -w \"movie 25008: %{http_code}\\\\n\" -A \"Mozilla/5.0\" https://watch2d.org/movie/25008/)",
+      "Bash(curl -s -L -o /dev/null -w \"%{url_effective} -> %{http_code}\\\\n\" -A \"Mozilla/5.0\" https://watch2d.org/)",
+      "Bash(curl -s -L -A \"Mozilla/5.0\" https://watch2d.org/)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
