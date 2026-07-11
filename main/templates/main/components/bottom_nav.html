@@ -17,7 +17,7 @@
       </a>
 
       {# Anime #}
-      <a href="{% url 'anime:list' %}"
+      <a href="/category/13/anime/"
          class="flex flex-col items-center justify-center py-3 transition-all relative group
                 {% if 'anime' in request.path %}text-purple-600 dark:text-purple-400{% else %}text-gray-500 dark:text-gray-400{% endif %}">
         <div class="w-10 h-10 flex items-center justify-center rounded-xl mb-0.5 transition-all
@@ -28,7 +28,7 @@
       </a>
 
       {# Manga #}
-      <a href="{% url 'manga:list' %}"
+      <a href="/"
          class="flex flex-col items-center justify-center py-3 transition-all relative group
                 {% if 'manga' in request.path %}text-pink-600 dark:text-pink-400{% else %}text-gray-500 dark:text-gray-400{% endif %}">
         <div class="w-10 h-10 flex items-center justify-center rounded-xl mb-0.5 transition-all
@@ -57,7 +57,7 @@
     </a>
 
     {# Anime #}
-    <a href="{% url 'anime:list' %}"
+    <a href="/category/13/anime/"
        class="group relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all
               {% if 'anime' in request.path %}bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105{% endif %}">
       <i class="fas fa-play-circle text-xl"></i>
@@ -67,7 +67,7 @@
     </a>
 
     {# Manga #}
-    <a href="{% url 'manga:list' %}"
+    <a href="/"
        class="group relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all
               {% if 'manga' in request.path %}bg-gradient-to-br from-pink-500 to-pink-600 text-white shadow-lg shadow-pink-500/30{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105{% endif %}">
       <i class="fas fa-book text-xl"></i>

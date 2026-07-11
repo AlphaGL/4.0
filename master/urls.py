@@ -63,11 +63,14 @@ urlpatterns = [
     path('',        include(('movies.urls', 'movies'), namespace='movies')),
     path('movies/', include(('movies.urls', 'movies'), namespace='movies')),
 
-    # 🎭 Anime
-    path('anime/', include('anime.urls')),
-
-    # 📚 Manga
-    path('manga/', include('manga.urls')),
+    # 🎭 Anime / 📚 Manga — sections retired. 301-redirect every old URL so any
+    # indexed links pass their SEO value on instead of 404ing. Anime → the
+    # movies-app Anime category (real content); manga → home. (The apps stay
+    # installed so imports elsewhere still resolve; only the routes are gone.)
+    path('anime/', RedirectView.as_view(url='/category/13/anime/', permanent=True)),
+    re_path(r'^anime/.+$', RedirectView.as_view(url='/category/13/anime/', permanent=True)),
+    path('manga/', RedirectView.as_view(url='/', permanent=True)),
+    re_path(r'^manga/.+$', RedirectView.as_view(url='/', permanent=True)),
 
     # ── Auth ──────────────────────────────────────────────────────────────────
     path('logout/',   LogoutView.as_view(), name='logout'),

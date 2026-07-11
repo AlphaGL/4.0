@@ -162,9 +162,11 @@ TELEGRAM_MOVIES_CHANNEL = config('TELEGRAM_MOVIES_CHANNEL', default='')
 TELEGRAM_ANIME_CHANNEL  = config('TELEGRAM_ANIME_CHANNEL', default='')
 TELEGRAM_MANGA_CHANNEL  = config('TELEGRAM_MANGA_CHANNEL', default='')
 
-# Telegram Mini App (t.me/watch2d_bot/watch). Scraper post buttons route through
-# this so they open INSIDE Telegram → Monetag Mini App ad → the movie page.
-TELEGRAM_MINIAPP_URL    = config('TELEGRAM_MINIAPP_URL', default='https://t.me/watch2d_bot/watch')
+# Telegram Mini App (t.me/watch2d_bot/watch). OPT-IN per deploy/account: set this
+# ONLY on the account whose DB the Mini App/site actually serves (the web DB).
+# Empty (default) => scraper posts use the normal site link, so the OTHER account
+# (different DB, different movie ids) doesn't 404 inside the Mini App.
+TELEGRAM_MINIAPP_URL    = config('TELEGRAM_MINIAPP_URL', default='')
 # Monetag "Telegram Mini App" zone id. Shows a rewarded interstitial once per
 # session on the movie page inside the Mini App. Not secret (it ships in the page
 # source), so it defaults to the live zone; override via env if it ever changes.

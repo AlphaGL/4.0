@@ -39,21 +39,7 @@ class StaticViewSitemap(Sitemap):
             # Movies
             ('movies:home',       {},  1.0, 'daily'),
             ('movies:search_results', {}, 0.6, 'weekly'),
-
-            # Anime
-            ('anime:list',            {}, 0.9, 'daily'),
-            ('anime:trending',        {}, 0.8, 'daily'),
-            ('anime:featured',        {}, 0.8, 'weekly'),
-            ('anime:recently_added',  {}, 0.8, 'daily'),
-            ('anime:category_list',   {}, 0.7, 'weekly'),
-            ('anime:search',          {}, 0.6, 'weekly'),
-
-            # Manga
-            ('manga:list',        {}, 0.9, 'daily'),
-            ('manga:trending',    {}, 0.8, 'daily'),
-            ('manga:featured',    {}, 0.8, 'weekly'),
-            ('manga:category_list', {}, 0.7, 'weekly'),
-            ('manga:search',      {}, 0.6, 'weekly'),
+            # (Anime/manga sections retired — their URLs are 301-redirected.)
         ]
 
     def location(self, item):
@@ -230,10 +216,6 @@ sitemaps = {
     'static':           StaticViewSitemap(),
     'movies':           MovieSitemap(),
     'movie-categories': MovieCategorySitemap(),
-    'anime':            AnimeSitemap(),
-    'anime-episodes':   AnimeEpisodeSitemap(),
-    'anime-categories': AnimeCategorySitemap(),
-    'manga':            MangaSitemap(),
-    'manga-chapters':   MangaChapterSitemap(),
-    'manga-categories': MangaCategorySitemap(),
+    # Anime/manga sitemaps removed — those sections are retired (URLs 301-redirect).
+    # The Anime*/Manga* Sitemap classes above are now unused but harmless.
 }

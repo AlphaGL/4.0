@@ -1030,8 +1030,12 @@ class CategoryMoviesView(ListView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        self.category = get_object_or_404(Category, id=self.kwargs['cat_id'])
-        cache_key = f'cat_movies_{self.category.pk}_v1'
+        # get() already resolved self.category — reuse it instead of a 2nd query.
+        category = getattr(self, 'category', None)
+        if category is None:
+            category = get_object_or_404(Category, id=self.kwargs['cat_id'])
+        self.category = category
+        cache_key = f'cat_movies_{category.pk}_v1'
         qs = cache.get(cache_key)
         if qs is None:
             qs = list(
@@ -1074,7 +1078,7 @@ class MovieDetailView(DetailView):
             queryset = self.get_queryset()
         obj = get_object_or_404(queryset, pk=self.kwargs['pk'])
         Movie.objects.filter(pk=obj.pk).update(views=F('views') + 1)
-        obj.refresh_from_db(fields=['views'])
+        obj.views = (obj.views or 0) + 1   # reflect the bump without an extra round-trip
         return obj
 
     def get(self, request, *args, **kwargs):
@@ -1163,32 +1167,44 @@ class MovieDetailView(DetailView):
         # ── Related movies — by category, deterministic order (NO order_by('?'))
         # order_by('?') = ORDER BY RANDOM() = full table scan every request.
         # Use pk descending (fast index scan) filtered by same category instead.
-        if movie_categories:
-            related_movies = list(
-                Movie.objects
-                .only('id', 'title', 'slug', 'image_url', 'created_at')
-                .filter(categories__in=movie_categories)
-                .exclude(id=movie.id)
-                .distinct()
-                .order_by('-created_at')[:12]
-            )
-        else:
-            related_movies = list(
-                Movie.objects
-                .only('id', 'title', 'slug', 'image_url', 'created_at')
-                .exclude(id=movie.id)
-                .order_by('-created_at')[:12]
-            )
+        # Cached per-movie (30 min) — this m2m join+distinct is the page's heaviest
+        # query and its result changes rarely, so skip the round-trip on repeats.
+        rel_key = f'movie_related_{movie.id}_v1'
+        related_movies = cache.get(rel_key)
+        if related_movies is None:
+            if movie_categories:
+                related_movies = list(
+                    Movie.objects
+                    .only('id', 'title', 'slug', 'image_url', 'created_at')
+                    .filter(categories__in=movie_categories)
+                    .exclude(id=movie.id)
+                    .distinct()
+                    .order_by('-created_at')[:12]
+                )
+            else:
+                related_movies = list(
+                    Movie.objects
+                    .only('id', 'title', 'slug', 'image_url', 'created_at')
+                    .exclude(id=movie.id)
+                    .order_by('-created_at')[:12]
+                )
+            cache.set(rel_key, related_movies, 60 * 30)
 
         context['related_movies'] = related_movies
 
         # ── Cast (TMDB-enriched). Top-billed first; capped for the row. ───────
-        context['cast'] = list(
-            MovieCast.objects
-            .filter(movie=movie)
-            .select_related('person')
-            .order_by('order')[:18]
-        )
+        # Cached per-movie (6h) — cast essentially never changes after enrichment.
+        cast_key = f'movie_cast_{movie.id}_v1'
+        cast = cache.get(cast_key)
+        if cast is None:
+            cast = list(
+                MovieCast.objects
+                .filter(movie=movie)
+                .select_related('person')
+                .order_by('order')[:18]
+            )
+            cache.set(cast_key, cast, 60 * 60 * 6)
+        context['cast'] = cast
 
         context['categories']     = get_sidebar_categories()
         context['full_image_url'] = request.build_absolute_uri(movie.image_url)

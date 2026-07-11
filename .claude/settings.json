@@ -323,7 +323,16 @@
       "Bash(curl -s -L -o /dev/null -w \"movie 25008: %{http_code}\\\\n\" -A \"Mozilla/5.0\" https://watch2d.org/movie/25008/)",
       "Bash(curl -s --compressed --max-time 20 -A \"Mozilla/5.0\" https://www.watch2d.org/)",
       "Bash(echo \"=== exit: $? \\(28=timeout\\) ===\")",
-      "Bash(DJANGO_SETTINGS_MODULE=master.settings PYTHONIOENCODING=utf-8 python -c ' *)"
+      "Bash(DJANGO_SETTINGS_MODULE=master.settings PYTHONIOENCODING=utf-8 python -c ' *)",
+      "Bash(curl -s --compressed --max-time 25 -A Mozilla/5.0 https://www.watch2d.org/?cb=__TRACKED_VAR____TRACKED_VAR__)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('movies/views.py', encoding='utf-8'\\).read\\(\\)\\); print\\('views.py syntax OK'\\)\")",
+      "Bash(DJANGO_SETTINGS_MODULE=master.settings python manage.py check)",
+      "Bash(curl -o /dev/null -s -L --max-time 30 -A Mozilla/5.0 -w ' HTTP=%{http_code} TTFB=%{time_starttransfer}s total=%{time_total}s\\\\n' https://www.watch2d.org/)",
+      "Bash(curl -s -L --max-time 30 --compressed -A \"Mozilla/5.0\" \"https://www.watch2d.org/\")",
+      "Bash(export DJANGO_SETTINGS_MODULE=master.settings PYTHONIOENCODING=utf-8)",
+      "Bash(export DATABASE_URL='postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres')",
+      "Bash(mkdir -p movies/templates/partials)",
+      "Bash(sed -n '183,766p' anime/templates/anime/base.html)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",

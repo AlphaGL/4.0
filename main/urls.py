@@ -1,5 +1,6 @@
 # main/urls.py
 from django.urls import path
+from django.views.generic import RedirectView
 from . import views
 from .pwa_views import (
     manifest_view, 
@@ -13,8 +14,9 @@ app_name = 'main'
 urlpatterns = [
     
     path('access/', views.ping_view, name='ping'),
-    # Main homepage
-    path('', views.UnifiedHomeView.as_view(), name='home'),
+    # Main homepage retired — the real home is the movies app at '/'. Redirect,
+    # because this vestigial page referenced the now-removed anime/manga URLs.
+    path('', RedirectView.as_view(url='/', permanent=False), name='home'),
     
     # PWA URLs
     path('manifest.json', manifest_view, name='pwa_manifest'),
