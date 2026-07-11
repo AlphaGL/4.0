@@ -154,6 +154,9 @@
   </div>
 </div>
 
+{# Recent movies so a 500 still lands on browsable content #}
+{% include 'partials/suggested_movies.html' %}
+
 <script>
   // Auto-retry logic (optional)
   let retryCount = 0;

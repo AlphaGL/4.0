@@ -87,7 +87,7 @@
 
       // Downloads can't save inside the WebView → open them in Chrome.
       document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('a[href*="download_gate"], a[data-external]').forEach(function (a) {
+        document.querySelectorAll('a[href*="/download/"], a[data-external]').forEach(function (a) {
           a.addEventListener('click', function (ev) {
             try {
               if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) {
@@ -1182,6 +1182,11 @@
   {% if not disable_global_popunder %}
   <script>
     (function () {
+      // Skip the website popunder entirely inside the Telegram Mini App — it uses
+      // window.open(), which hijacks navigation in Telegram's WebView and lands
+      // users on a broken/404 page. The Mini App runs its own Monetag SDK ad.
+      if (document.documentElement.classList.contains('tg-miniapp')) return;
+
       var AD_URL = 'https://omg10.com/4/9160518';
 
       function openAd() {
@@ -1327,6 +1332,26 @@
 
 
   {% block extra_js %}{% endblock %}
+
+  {# Website-only Monetag ads: popunder (zone 11272472) + push (11272474).
+     Skipped inside the Telegram Mini App, which runs its own SDK rewarded ad —
+     so Mini App users don't get double ads. #}
+  <script>
+  (function () {
+    try {
+      if (document.documentElement.classList.contains('tg-miniapp')) return;
+      // Popunder / Onclick
+      (function (s) { s.dataset.zone = '11272472'; s.src = 'https://al5sm.com/tag.min.js'; })(
+        [document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script'))
+      );
+      // Push notifications
+      var p = document.createElement('script');
+      p.src = 'https://5gvci.com/act/files/tag.min.js?z=11272474';
+      p.async = true; p.setAttribute('data-cfasync', 'false');
+      document.body.appendChild(p);
+    } catch (e) {}
+  })();
+  </script>
 
   {# Review-prompt popup (shared with anime/main) — asks users for a Google review #}
   {% include 'partials/review_popup.html' %}

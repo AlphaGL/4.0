@@ -28,23 +28,45 @@ def ping_view(request):
 # Custom Error Handlers
 # ============================================================
 
+def _suggested_movies(limit=12):
+    """A few recent movies to show on error pages so users aren't dead-ended.
+    Cached + wrapped in try/except so an error page NEVER fails itself — this
+    matters most for 500, which may itself be caused by a DB problem."""
+    try:
+        from django.core.cache import cache
+        from movies.models import Movie
+        movies = cache.get('error_page_movies_v1')
+        if movies is None:
+            movies = list(
+                Movie.objects.only('id', 'title', 'slug', 'image_url')
+                .order_by('-created_at')[:limit]
+            )
+            cache.set('error_page_movies_v1', movies, 60 * 30)
+        return movies
+    except Exception:
+        return []
+
+
 def custom_404_view(request, exception):
-    context = {'exception': str(exception) if exception else None}
+    context = {'exception': str(exception) if exception else None,
+               'suggested_movies': _suggested_movies()}
     return render(request, '404.html', context, status=404)
 
 def custom_500_view(request):
-    return render(request, '500.html', {}, status=500)
+    return render(request, '500.html', {'suggested_movies': _suggested_movies()}, status=500)
 
 def custom_403_view(request, exception):
-    context = {'exception': str(exception) if exception else None}
+    context = {'exception': str(exception) if exception else None,
+               'suggested_movies': _suggested_movies()}
     return render(request, '403.html', context, status=403)
 
 def custom_400_view(request, exception):
-    context = {'exception': str(exception) if exception else None}
+    context = {'exception': str(exception) if exception else None,
+               'suggested_movies': _suggested_movies()}
     return render(request, '400.html', context, status=400)
 
 def custom_503_view(request):
-    return render(request, '503.html', status=503)
+    return render(request, '503.html', {'suggested_movies': _suggested_movies()}, status=503)
 
 
 # ============================================================

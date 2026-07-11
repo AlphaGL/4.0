@@ -81,6 +81,9 @@
   </div>
 </div>
 
+{# Recent movies so a 404 still lands on browsable content #}
+{% include 'partials/suggested_movies.html' %}
+
 <script>
   // Add some fun interaction
   document.addEventListener('DOMContentLoaded', function() {
