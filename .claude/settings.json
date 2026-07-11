@@ -318,7 +318,12 @@
       "Bash(curl -s -o /dev/null -w \"home: %{http_code}\\\\n\" -A \"Mozilla/5.0\" https://watch2d.org/)",
       "Bash(curl -s -o /dev/null -w \"movie 25008: %{http_code}\\\\n\" -A \"Mozilla/5.0\" https://watch2d.org/movie/25008/)",
       "Bash(curl -s -L -o /dev/null -w \"%{url_effective} -> %{http_code}\\\\n\" -A \"Mozilla/5.0\" https://watch2d.org/)",
-      "Bash(curl -s -L -A \"Mozilla/5.0\" https://watch2d.org/)"
+      "Bash(curl -s -L -A \"Mozilla/5.0\" https://watch2d.org/)",
+      "Bash(curl -s -L -o /dev/null -w \"home: %{http_code}\\\\n\" -A \"Mozilla/5.0\" https://watch2d.org/)",
+      "Bash(curl -s -L -o /dev/null -w \"movie 25008: %{http_code}\\\\n\" -A \"Mozilla/5.0\" https://watch2d.org/movie/25008/)",
+      "Bash(curl -s --compressed --max-time 20 -A \"Mozilla/5.0\" https://www.watch2d.org/)",
+      "Bash(echo \"=== exit: $? \\(28=timeout\\) ===\")",
+      "Bash(DJANGO_SETTINGS_MODULE=master.settings PYTHONIOENCODING=utf-8 python -c ' *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",

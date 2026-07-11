@@ -25,18 +25,16 @@
       sessionStorage.setItem('w2d_tg', '1');
       document.documentElement.classList.add('tg-miniapp');
 
-      // Deep-link: homepage + ?startapp=movie<id>  →  that movie's page.
-      var m = location.hash.match(/tgWebAppStartParam=([A-Za-z0-9_\-]+)/);
-      if (m && location.pathname === '/') {
-        var id = (m[1].match(/\d+/) || [])[0];
-        if (id) { location.replace('/movie/' + id + '/'); return; }
-      }
+      var onHome = (location.pathname === '/' || location.pathname === '');
+      function movieId(v) { var m = (v || '').match(/\d+/); return m ? m[0] : ''; }
 
-      // Telegram SDK (openLink + expand) — loaded only inside Telegram.
-      var s = document.createElement('script');
-      s.src = 'https://telegram.org/js/telegram-web-app.js';
-      s.onload = function () { try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch (e) {} };
-      document.head.appendChild(s);
+      // Fast path: read the start param straight from the launch hash and
+      // redirect before the homepage renders (avoids a flash).
+      var hm = location.hash.match(/tgWebAppStartParam=([A-Za-z0-9_\-]+)/);
+      if (onHome && hm) {
+        var hid = movieId(hm[1]);
+        if (hid) { location.replace('/movie/' + hid + '/'); return; }
+      }
 
       {% if MONETAG_MINIAPP_ZONE %}
       // Monetag Mini App SDK — loaded only inside Telegram (keeps site fast).
@@ -47,8 +45,44 @@
       document.head.appendChild(ms);
       {% endif %}
 
+      // Show the Monetag interstitial once per session, on whichever page the
+      // user lands on. Polls up to ~12s so a slow connection still gets the ad.
+      function showAdOnce() {
+        {% if MONETAG_MINIAPP_ZONE %}
+        try {
+          if (sessionStorage.getItem('w2d_ad') === '1') return;
+          var tries = 0;
+          (function poll() {
+            var show = window['show_{{ MONETAG_MINIAPP_ZONE }}'];
+            if (typeof show === 'function') {
+              sessionStorage.setItem('w2d_ad', '1');
+              show().catch(function () {});
+            } else if (tries++ < 40) { setTimeout(poll, 300); }
+          })();
+        } catch (e) {}
+        {% endif %}
+      }
+
+      // Telegram SDK: reliable start_param (fallback for the hash path above),
+      // plus expand + openLink for downloads.
+      var s = document.createElement('script');
+      s.src = 'https://telegram.org/js/telegram-web-app.js';
+      s.onload = function () {
+        try {
+          var wa = window.Telegram.WebApp;
+          wa.ready(); wa.expand();
+          if (onHome) {
+            var sid = movieId(wa.initDataUnsafe && wa.initDataUnsafe.start_param);
+            if (sid) { location.replace('/movie/' + sid + '/'); return; }
+          }
+          showAdOnce();               // no redirect needed → show the ad here
+        } catch (e) { showAdOnce(); }
+      };
+      s.onerror = showAdOnce;
+      document.head.appendChild(s);
+
+      // Downloads can't save inside the WebView → open them in Chrome.
       document.addEventListener('DOMContentLoaded', function () {
-        // Downloads can't save inside the WebView → open them in Chrome.
         document.querySelectorAll('a[href*="download_gate"], a[data-external]').forEach(function (a) {
           a.addEventListener('click', function (ev) {
             try {
@@ -59,22 +93,6 @@
             } catch (e) {}
           });
         });
-
-        {% if MONETAG_MINIAPP_ZONE %}
-        // Interstitial: once per session, on the movie page, before content.
-        try {
-          if (/^\/movie\//.test(location.pathname) && sessionStorage.getItem('w2d_ad') !== '1') {
-            var tries = 0;
-            (function poll() {
-              var show = window['show_{{ MONETAG_MINIAPP_ZONE }}'];
-              if (typeof show === 'function') {
-                sessionStorage.setItem('w2d_ad', '1');
-                show().catch(function () {});
-              } else if (tries++ < 20) { setTimeout(poll, 300); }
-            })();
-          }
-        } catch (e) {}
-        {% endif %}
       });
     } catch (e) {}
   })();
