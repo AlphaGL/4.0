@@ -332,7 +332,10 @@
       "Bash(export DJANGO_SETTINGS_MODULE=master.settings PYTHONIOENCODING=utf-8)",
       "Bash(export DATABASE_URL='postgresql://postgres.bajioejyqvaqopkeudoj:watch2dapp_project@aws-1-us-east-1.pooler.supabase.com:6543/postgres')",
       "Bash(mkdir -p movies/templates/partials)",
-      "Bash(sed -n '183,766p' anime/templates/anime/base.html)"
+      "Bash(sed -n '183,766p' anime/templates/anime/base.html)",
+      "Bash(curl -s -o /dev/null -w \"  home: %{http_code}\\\\n\" --max-time 25 -A \"Mozilla/5.0\" -L https://www.watch2d.org/)",
+      "Bash(curl -s -o /dev/null -w \"  /anime/ : %{http_code} -> %{redirect_url}\\\\n\" --max-time 25 -A \"Mozilla/5.0\" https://www.watch2d.org/anime/)",
+      "Bash(curl -s -o /dev/null -w \"  /manga/ : %{http_code} -> %{redirect_url}\\\\n\" --max-time 25 -A \"Mozilla/5.0\" https://www.watch2d.org/manga/)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",
