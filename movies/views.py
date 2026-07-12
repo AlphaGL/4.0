@@ -373,6 +373,20 @@ def app_ads_txt(request):
     return HttpResponse(APP_ADS_TXT, content_type="text/plain")
 
 
+# Web ads.txt — authorizes the ad networks running on watch2d.org so advertisers
+# treat the inventory as VERIFIED (higher CPM). Paste the exact lines from your
+# Monetag dashboard (Sites → watch2d.org → ads.txt) between the markers below,
+# plus any other network you run on the site. One entry per line.
+ADS_TXT = """\
+# ─── Monetag (paste your exact lines from the Monetag ads.txt panel) ───
+# monetag.com, <your-publisher-id>, DIRECT, <cert>
+"""
+
+
+def ads_txt(request):
+    return HttpResponse(ADS_TXT, content_type="text/plain")
+
+
 # ── Adsterra in-app ad pages ──────────────────────────────────────────────────
 # Adsterra web tags, served from a real page on watch2d.org so they fill. These
 # are the EXACT, unedited tags from the watch2d.org Adsterra site — do NOT

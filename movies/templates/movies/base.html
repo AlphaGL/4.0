@@ -227,9 +227,9 @@
 
 
 
-<!-- Monetag push notifications ads -->
- <script src="https://5gvci.com/act/files/tag.min.js?z=10895420" data-cfasync="false" async></script>
- 
+<!-- Push notifications now run only on the download/stream gate pages (not
+     site-wide) — less intrusive. See head_extra in download_gate/stream_gate. -->
+
 </head>
 
 <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800 text-gray-900 dark:text-gray-100 min-h-screen font-sans">
@@ -1345,26 +1345,6 @@
 
 
   {% block extra_js %}{% endblock %}
-
-  {# Website-only Monetag ads: popunder (zone 11272472) + push (11272474).
-     Skipped inside the Telegram Mini App, which runs its own SDK rewarded ad —
-     so Mini App users don't get double ads. #}
-  <script>
-  (function () {
-    try {
-      if (document.documentElement.classList.contains('tg-miniapp')) return;
-      // Popunder / Onclick
-      (function (s) { s.dataset.zone = '11272472'; s.src = 'https://al5sm.com/tag.min.js'; })(
-        [document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script'))
-      );
-      // Push notifications
-      var p = document.createElement('script');
-      p.src = 'https://5gvci.com/act/files/tag.min.js?z=11272474';
-      p.async = true; p.setAttribute('data-cfasync', 'false');
-      document.body.appendChild(p);
-    } catch (e) {}
-  })();
-  </script>
 
   {# Review-prompt popup (shared with anime/main) — asks users for a Google review #}
   {% include 'partials/review_popup.html' %}

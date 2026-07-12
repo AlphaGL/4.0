@@ -545,6 +545,16 @@ def _post_movie_to_telegram(movie, is_new: bool):
             ]
 
             from automation.models import TelegramUpdate
+            from django.utils import timezone as _tz_now
+            from datetime import timedelta as _tz_td
+            # Cooldown: the scraped episode label (title_b) is volatile — minor
+            # formatting changes looked like new episodes and re-posted the same
+            # series repeatedly. Cap episode-update posts to once per 12h / movie.
+            if TelegramUpdate.objects.filter(
+                content_type='movie', content_id=movie.id,
+                posted_at__gte=_tz_now.now() - _tz_td(hours=12),
+            ).exists():
+                return
             _, created = TelegramUpdate.objects.get_or_create(
                 content_type='movie',
                 content_id=movie.id,
