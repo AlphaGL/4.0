@@ -327,6 +327,16 @@
               <span>Coming Soon</span>
             </a>
 
+            <a href="{% url 'movies:az_index' %}" class="nav-link {% if request.resolver_match.url_name == 'az_index' or request.resolver_match.url_name == 'az_letter' %}active{% endif %}">
+              <i class="fas fa-sort-alpha-down mr-2"></i>
+              <span>A–Z</span>
+            </a>
+
+            <a href="{% url 'movies:genres_index' %}" class="nav-link {% if request.resolver_match.url_name == 'genres_index' %}active{% endif %}">
+              <i class="fas fa-tags mr-2"></i>
+              <span>Genres</span>
+            </a>
+
             {# Dynamic Categories #}
             {% for category in categories %}
               <a href="{% url 'movies:category_movies' category.id category.slug %}" 

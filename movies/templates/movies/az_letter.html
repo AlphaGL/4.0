@@ -1,0 +1,56 @@
+{% extends 'movies/base.html' %}
+
+{% block title %}Movies & Series Starting With "{{ letter }}"{% if page_obj.number > 1 %} — Page {{ page_obj.number }}{% endif %} | Watch2D{% endblock %}
+{% block meta_description %}All movies and TV series starting with "{{ letter }}" on Watch2D. Download in HD, free — page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.{% endblock %}
+{% block meta_keywords %}movies starting with {{ letter }}, {{ letter }} movies download, watch2d {{ letter }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <nav class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+    <a href="{% url 'movies:az_index' %}" class="hover:text-primary-600 dark:hover:text-primary-400">A–Z</a>
+    <span class="mx-1">/</span><span class="text-gray-700 dark:text-gray-300">{{ letter }}</span>
+  </nav>
+
+  <h1 class="text-2xl font-black text-gray-900 dark:text-white mb-4">Titles starting with "{{ letter }}"</h1>
+
+  {# Letter navigation — keeps every letter page one click apart (crawl depth) #}
+  <div class="flex flex-wrap gap-2 mb-6">
+    {% for L in letters %}
+    <a href="{% url 'movies:az_letter' L %}"
+       class="px-3 py-1 rounded-lg text-sm font-bold transition-all {% if L == letter %}bg-primary-500 text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-100 dark:hover:bg-gray-700{% endif %}">
+      {{ L }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+    {% for m in movies %}
+    <a href="/movie/{{ m.id }}/{{ m.slug }}/" class="group block">
+      <div class="aspect-[2/3] rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 shadow-sm">
+        {% if m.image_url %}
+        <img src="{{ m.image_url }}" alt="{{ m.title }}" loading="lazy"
+             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+        {% endif %}
+      </div>
+      <p class="mt-1.5 text-[11px] leading-tight text-gray-600 dark:text-gray-400 line-clamp-2 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+        {{ m.title }}
+      </p>
+    </a>
+    {% empty %}
+    <p class="col-span-full text-gray-500 dark:text-gray-400 py-10 text-center">No titles found for "{{ letter }}".</p>
+    {% endfor %}
+  </div>
+
+  {% if is_paginated %}
+  <div class="flex items-center justify-center gap-3 mt-10">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-500 hover:text-white transition-all font-medium">← Prev</a>
+    {% endif %}
+    <span class="text-sm text-gray-600 dark:text-gray-400">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-500 hover:text-white transition-all font-medium">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

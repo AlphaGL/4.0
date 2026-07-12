@@ -39,6 +39,8 @@ class StaticViewSitemap(Sitemap):
             # Movies
             ('movies:home',       {},  1.0, 'daily'),
             ('movies:search_results', {}, 0.6, 'weekly'),
+            ('movies:az_index',   {}, 0.8, 'weekly'),
+            ('movies:genres_index', {}, 0.8, 'weekly'),
             # (Anime/manga sections retired — their URLs are 301-redirected.)
         ]
 
@@ -208,6 +210,19 @@ class MangaCategorySitemap(Sitemap):
         return reverse('manga:category_detail', args=[obj.slug])
 
 
+class AZLetterSitemap(Sitemap):
+    """One entry per A–Z letter page (long-tail browse hubs)."""
+    priority = 0.6
+    changefreq = 'weekly'
+
+    def items(self):
+        from movies.views import AZ_LETTERS
+        return AZ_LETTERS
+
+    def location(self, letter):
+        return reverse('movies:az_letter', args=[letter])
+
+
 # =============================================================================
 # REGISTRY — imported by urls.py
 # =============================================================================
@@ -216,6 +231,7 @@ sitemaps = {
     'static':           StaticViewSitemap(),
     'movies':           MovieSitemap(),
     'movie-categories': MovieCategorySitemap(),
+    'az-letters':       AZLetterSitemap(),
     # Anime/manga sitemaps removed — those sections are retired (URLs 301-redirect).
     # The Anime*/Manga* Sitemap classes above are now unused but harmless.
 }

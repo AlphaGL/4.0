@@ -1,0 +1,25 @@
+{% extends 'movies/base.html' %}
+
+{% block title %}Browse Movies & Series A–Z — Full List | Watch2D{% endblock %}
+{% block meta_description %}Browse every movie and TV series on Watch2D alphabetically, A to Z. Find and download any title in HD, free.{% endblock %}
+{% block meta_keywords %}movies a-z, browse movies alphabetically, all movies list, tv series a-z, watch2d full list{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-10">
+  <h1 class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mb-2">Browse A–Z</h1>
+  <p class="text-gray-500 dark:text-gray-400 mb-8">Every movie and series on Watch2D, sorted alphabetically. Pick a letter to see all titles.</p>
+
+  <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-9 gap-3">
+    {% for L in letters %}
+    <a href="{% url 'movies:az_letter' L %}"
+       class="flex items-center justify-center h-14 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-primary-500 hover:text-white text-lg font-bold text-gray-800 dark:text-gray-200 transition-all">
+      {{ L }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="mt-10">
+    <a href="{% url 'movies:genres_index' %}" class="text-primary-600 dark:text-primary-400 font-semibold hover:underline">Or browse by genre →</a>
+  </div>
+</div>
+{% endblock %}

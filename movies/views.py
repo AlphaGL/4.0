@@ -1,7 +1,7 @@
 # movies/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
-from django.views.generic import ListView, DetailView, CreateView
+from django.views.generic import ListView, DetailView, CreateView, TemplateView
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import reverse_lazy
 from django.contrib.auth import login
@@ -1066,6 +1066,63 @@ class CategoryMoviesView(ListView):
         context['category'] = self.category
         context['categories'] = get_sidebar_categories()
         return context
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# A–Z BROWSE + GENRE HUB  —  long-tail SEO. An alphabetical index and one page
+# per letter make every title reachable through crawlable hub pages (mirrors the
+# structure competitor download sites use to rank on long-tail queries).
+# ══════════════════════════════════════════════════════════════════════════════
+AZ_LETTERS = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ') + ['0-9']
+
+
+class AZIndexView(TemplateView):
+    """/a-z/ hub — links out to every letter page."""
+    template_name = 'movies/az_index.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['letters'] = AZ_LETTERS
+        ctx['categories'] = get_sidebar_categories()
+        return ctx
+
+
+class AZLetterView(ListView):
+    """/a-z/<letter>/ — every title starting with that letter, paginated."""
+    template_name = 'movies/az_letter.html'
+    context_object_name = 'movies'
+    paginate_by = 48
+
+    def get(self, request, *args, **kwargs):
+        self.letter = kwargs['letter'].upper()
+        if self.letter not in AZ_LETTERS:
+            return redirect('movies:az_index', permanent=True)
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        base = Movie.objects.only('id', 'title', 'slug', 'image_url')
+        if self.letter == '0-9':
+            return base.exclude(title__iregex=r'^[A-Za-z]').order_by('title')
+        return base.filter(title__istartswith=self.letter).order_by('title')
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['letter'] = self.letter
+        ctx['letters'] = AZ_LETTERS
+        ctx['categories'] = get_sidebar_categories()
+        return ctx
+
+
+class GenresIndexView(TemplateView):
+    """/genres/ — a crawlable hub linking to every category (tag) page."""
+    template_name = 'movies/genres_index.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        cats = get_sidebar_categories()
+        ctx['all_categories'] = cats
+        ctx['categories'] = cats
+        return ctx
 
 
 def old_movie_redirect(request, pk):

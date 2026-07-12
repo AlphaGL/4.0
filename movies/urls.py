@@ -14,6 +14,7 @@ from .views import (
     StreamGateView,           # ← NEW: streaming player gate (moviebox / streamimdb)
     ActorView,                # ← NEW: cast member / actor page
     ComingSoonView,           # ← NEW: Coming Soon (TMDB upcoming)
+    AZIndexView, AZLetterView, GenresIndexView,   # ← A–Z browse + genre hub (SEO)
 )
 
 app_name = 'movies'
@@ -27,6 +28,11 @@ urlpatterns = [
 
     # ── Coming Soon (TMDB upcoming) ─────────────────────────────────────────
     path('coming-soon/', ComingSoonView.as_view(), name='coming_soon'),
+
+    # ── A–Z browse + genre hub (long-tail SEO) ──────────────────────────────
+    path('a-z/', AZIndexView.as_view(), name='az_index'),
+    path('a-z/<str:letter>/', AZLetterView.as_view(), name='az_letter'),
+    path('genres/', GenresIndexView.as_view(), name='genres_index'),
 
     # ── Actor / cast member page (SEO) ──────────────────────────────────────
     path('actor/<int:pk>/<slug:slug>/', ActorView.as_view(), name='actor'),
