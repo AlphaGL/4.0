@@ -85,16 +85,29 @@
       s.onerror = showAdOnce;
       document.head.appendChild(s);
 
-      // Downloads can't save inside the WebView → open them in Chrome.
+      // Download tap inside the Mini App: downloads can't save in the WebView, so
+      // we (1) play the rewarded ad — the download is the high-intent moment — then
+      // (2) open the download in Chrome, where the file actually saves.
       document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('a[href*="/download/"], a[data-external]').forEach(function (a) {
           a.addEventListener('click', function (ev) {
-            try {
-              if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) {
-                ev.preventDefault();
-                Telegram.WebApp.openLink(new URL(a.getAttribute('href'), location.origin).href);
-              }
-            } catch (e) {}
+            if (!(window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink)) return; // no SDK → navigate normally
+            ev.preventDefault();
+            var target = new URL(a.getAttribute('href'), location.origin).href;
+            var opened = false;
+            var go = function () {
+              if (opened) return; opened = true;
+              try { Telegram.WebApp.openLink(target); } catch (e) { location.href = target; }
+            };
+            {% if MONETAG_MINIAPP_ZONE %}
+            var show = window['show_{{ MONETAG_MINIAPP_ZONE }}'];
+            if (typeof show === 'function') {
+              show().then(go).catch(go);   // ad plays → then Chrome (on watch OR error)
+              setTimeout(go, 12000);        // safety: a hung ad never traps the user
+              return;
+            }
+            {% endif %}
+            go();                            // ad not ready → just open Chrome
           });
         });
       });
