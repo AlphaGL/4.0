@@ -1083,8 +1083,7 @@ class AZIndexView(TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['letters'] = AZ_LETTERS
-        ctx['categories'] = get_sidebar_categories()
-        return ctx
+        return ctx   # nav `categories` comes from the context processor (full list)
 
 
 class AZLetterView(ListView):
@@ -1109,19 +1108,17 @@ class AZLetterView(ListView):
         ctx = super().get_context_data(**kwargs)
         ctx['letter'] = self.letter
         ctx['letters'] = AZ_LETTERS
-        ctx['categories'] = get_sidebar_categories()
         return ctx
 
 
 class GenresIndexView(TemplateView):
-    """/genres/ — a crawlable hub linking to every category (tag) page."""
+    """/genres/ — a crawlable hub linking to EVERY category (tag) page."""
     template_name = 'movies/genres_index.html'
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        cats = get_sidebar_categories()
-        ctx['all_categories'] = cats
-        ctx['categories'] = cats
+        # ALL categories — not the 3-item sidebar set. This is the full genre hub.
+        ctx['all_categories'] = Category.objects.all().order_by('name')
         return ctx
 
 

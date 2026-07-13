@@ -50,8 +50,8 @@
 ══════════════════════════════════════════ #} -->
 
 {% block canonical_block %}
-  {# ONE clean canonical per movie — never the raw request URL (which varied by
-     query params / www, causing Google to pick a different canonical). #}
+  <!-- {# ONE clean canonical per movie — never the raw request URL (which varied by
+     query params / www, causing Google to pick a different canonical). #} -->
   <link rel="canonical" href="https://www.watch2d.org{{ movie.get_absolute_url }}" />
 {% endblock %}
 
