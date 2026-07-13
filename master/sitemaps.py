@@ -86,7 +86,8 @@ class MovieCategorySitemap(Sitemap):
     protocol    = 'https'
 
     def items(self):
-        return MovieCategory.objects.all()
+        # Adult/18+ excluded from the sitemap so Google doesn't index it.
+        return MovieCategory.objects.exclude(name__icontains='18+').order_by('pk')
 
     def location(self, obj):
         return reverse('movies:category_movies', args=[obj.pk, obj.slug])

@@ -91,7 +91,7 @@ def _build_movies_home_context():
     raw_cats = list(
         Category.objects.annotate(
             movie_count=django_models.Count('movies')
-        ).filter(movie_count__gt=0).order_by('-movie_count')
+        ).filter(movie_count__gt=0).exclude(name__icontains='18+').order_by('-movie_count')
     )
     seen_keys = {}
     deduped = []
@@ -1118,7 +1118,8 @@ class GenresIndexView(TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         # ALL categories — not the 3-item sidebar set. This is the full genre hub.
-        ctx['all_categories'] = Category.objects.all().order_by('name')
+        # Adult/18+ hidden from public browse (ad-network + SEO safety).
+        ctx['all_categories'] = Category.objects.exclude(name__icontains='18+').order_by('name')
         return ctx
 
 
