@@ -1145,7 +1145,22 @@ class MovieDetailView(DetailView):
     def get_object(self, queryset=None):
         if queryset is None:
             queryset = self.get_queryset()
-        obj = get_object_or_404(queryset, pk=self.kwargs['pk'])
+        obj = queryset.filter(pk=self.kwargs['pk']).first()
+        if obj is None:
+            # The ID may come from a divergent DB (e.g. a Telegram post generated
+            # by a scraper writing to a different DB). Recover the movie by SLUG so
+            # the post redirects to the real page instead of 404ing. Try the exact
+            # slug, then the slug with any trailing "-<n>" dedup suffix stripped.
+            slug = (self.kwargs.get('slug') or '').strip('/')
+            obj = Movie.objects.filter(slug=slug).first()
+            if obj is None and slug:
+                base = _re.sub(r'-\d+$', '', slug)
+                if base and base != slug:
+                    obj = (Movie.objects.filter(slug=base).first()
+                           or Movie.objects.filter(slug__startswith=base + '-').first())
+            if obj is None:
+                raise Http404('No movie matches the given query.')
+            # get() will redirect to obj.get_absolute_url() since the slug differs.
         Movie.objects.filter(pk=obj.pk).update(views=F('views') + 1)
         obj.views = (obj.views or 0) + 1   # reflect the bump without an extra round-trip
         return obj
