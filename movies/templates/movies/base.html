@@ -85,29 +85,38 @@
       s.onerror = showAdOnce;
       document.head.appendChild(s);
 
-      // Download tap inside the Mini App: downloads can't save in the WebView, so
-      // we (1) play the rewarded ad — the download is the high-intent moment — then
-      // (2) open the download in Chrome, where the file actually saves.
+      // Download / Watch tap inside the Mini App — both are high-intent moments,
+      // so we play the rewarded ad first, THEN go to the destination:
+      //   • Download → open in Chrome (WebView can't save files)
+      //   • Watch/Stream → navigate inline (streaming works in the WebView)
       document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('a[href*="/download/"], a[data-external]').forEach(function (a) {
+        document.querySelectorAll('a[href*="/download/"], a[href*="/stream/"], a[data-external]').forEach(function (a) {
           a.addEventListener('click', function (ev) {
-            if (!(window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink)) return; // no SDK → navigate normally
+            var href = a.getAttribute('href') || '';
+            var isDownload = href.indexOf('/download/') !== -1 || a.hasAttribute('data-external');
+            var canOpenExternal = window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink;
+            if (isDownload && !canOpenExternal) return; // no SDK → let the download navigate normally
             ev.preventDefault();
-            var target = new URL(a.getAttribute('href'), location.origin).href;
+            var target;
+            try { target = new URL(href, location.origin).href; } catch (e) { return; }
             var opened = false;
             var go = function () {
               if (opened) return; opened = true;
-              try { Telegram.WebApp.openLink(target); } catch (e) { location.href = target; }
+              if (isDownload) {
+                try { Telegram.WebApp.openLink(target); } catch (e) { location.href = target; }
+              } else {
+                location.href = target;   // stream stays inside the Mini App
+              }
             };
             {% if MONETAG_MINIAPP_ZONE %}
             var show = window['show_{{ MONETAG_MINIAPP_ZONE }}'];
             if (typeof show === 'function') {
-              show().then(go).catch(go);   // ad plays → then Chrome (on watch OR error)
+              show().then(go).catch(go);   // ad plays → then destination (on watch OR error)
               setTimeout(go, 12000);        // safety: a hung ad never traps the user
               return;
             }
             {% endif %}
-            go();                            // ad not ready → just open Chrome
+            go();                            // ad not ready → just go
           });
         });
       });

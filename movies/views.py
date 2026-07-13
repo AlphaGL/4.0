@@ -1211,6 +1211,10 @@ class MovieDetailView(DetailView):
 
         is_series = any(word in seo_type.lower() for word in ['drama', 'series', 'anime'])
         completion_label = ('(Complete)' if movie.completed else '(Ongoing)') if is_series else ''
+        # Don't duplicate — the scraped title often already includes the status
+        # (e.g. "Run Away S01 (Complete)"), which produced "(Complete) (Complete)".
+        if completion_label and completion_label.strip('()').lower() in movie.title.lower():
+            completion_label = ''
 
         context['seo_type'] = seo_type
         context['is_series'] = is_series

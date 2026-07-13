@@ -16,26 +16,26 @@
         <span class="text-[9px] font-semibold">Movies</span>
       </a>
 
-      {# Anime #}
-      <a href="/category/13/anime/"
+      {# A–Z #}
+      <a href="/a-z/"
          class="flex flex-col items-center justify-center py-3 transition-all relative group
-                {% if 'anime' in request.path %}text-purple-600 dark:text-purple-400{% else %}text-gray-500 dark:text-gray-400{% endif %}">
+                {% if '/a-z/' in request.path %}text-blue-600 dark:text-blue-400{% else %}text-gray-500 dark:text-gray-400{% endif %}">
         <div class="w-10 h-10 flex items-center justify-center rounded-xl mb-0.5 transition-all
-                    {% if 'anime' in request.path %}bg-purple-100 dark:bg-purple-900/30{% else %}group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50{% endif %}">
-          <i class="fas fa-play-circle text-base"></i>
+                    {% if '/a-z/' in request.path %}bg-blue-100 dark:bg-blue-900/30{% else %}group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50{% endif %}">
+          <i class="fas fa-sort-alpha-down text-base"></i>
         </div>
-        <span class="text-[9px] font-semibold">Anime</span>
+        <span class="text-[9px] font-semibold">A–Z</span>
       </a>
 
-      {# Manga #}
-      <a href="/"
+      {# Genres #}
+      <a href="/genres/"
          class="flex flex-col items-center justify-center py-3 transition-all relative group
-                {% if 'manga' in request.path %}text-pink-600 dark:text-pink-400{% else %}text-gray-500 dark:text-gray-400{% endif %}">
+                {% if '/genres/' in request.path %}text-blue-600 dark:text-blue-400{% else %}text-gray-500 dark:text-gray-400{% endif %}">
         <div class="w-10 h-10 flex items-center justify-center rounded-xl mb-0.5 transition-all
-                    {% if 'manga' in request.path %}bg-pink-100 dark:bg-pink-900/30{% else %}group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50{% endif %}">
-          <i class="fas fa-book text-base"></i>
+                    {% if '/genres/' in request.path %}bg-blue-100 dark:bg-blue-900/30{% else %}group-active:scale-90 group-active:bg-gray-100 dark:group-active:bg-gray-800/50{% endif %}">
+          <i class="fas fa-tags text-base"></i>
         </div>
-        <span class="text-[9px] font-semibold">Manga</span>
+        <span class="text-[9px] font-semibold">Genres</span>
       </a>
 
     </div>
@@ -56,23 +56,23 @@
       </span>
     </a>
 
-    {# Anime #}
-    <a href="/category/13/anime/"
+    {# A–Z #}
+    <a href="/a-z/"
        class="group relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all
-              {% if 'anime' in request.path %}bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105{% endif %}">
-      <i class="fas fa-play-circle text-xl"></i>
+              {% if '/a-z/' in request.path %}bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105{% endif %}">
+      <i class="fas fa-sort-alpha-down text-xl"></i>
       <span class="absolute left-full ml-4 px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap shadow-xl scale-90 group-hover:scale-100">
-        Anime
+        A–Z
       </span>
     </a>
 
-    {# Manga #}
-    <a href="/"
+    {# Genres #}
+    <a href="/genres/"
        class="group relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all
-              {% if 'manga' in request.path %}bg-gradient-to-br from-pink-500 to-pink-600 text-white shadow-lg shadow-pink-500/30{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105{% endif %}">
-      <i class="fas fa-book text-xl"></i>
+              {% if '/genres/' in request.path %}bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105{% endif %}">
+      <i class="fas fa-tags text-xl"></i>
       <span class="absolute left-full ml-4 px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap shadow-xl scale-90 group-hover:scale-100">
-        Manga
+        Genres
       </span>
     </a>
 

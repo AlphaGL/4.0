@@ -483,7 +483,7 @@ def _post_movie_to_telegram(movie, is_new: bool):
         if miniapp:
             url = f"{miniapp}?startapp=movie{movie.pk}"
         else:
-            url = f"{site_url}/movies/movie/{movie.pk}/"
+            url = f"{site_url}/movie/{movie.pk}/{movie.slug}/"
         tg_tags, _, _ = _detect_hashtags(movie)
 
         if is_new:
@@ -579,7 +579,7 @@ def _post_movie_to_twitter(movie, is_new: bool):
     try:
         from django.conf import settings
         site_url      = getattr(settings, 'SITE_URL', 'https://watch2d.org')
-        url           = f"{site_url}/movies/movie/{movie.pk}/"
+        url           = f"{site_url}/movie/{movie.pk}/{movie.slug}/"
         _, tw_tags, _ = _detect_hashtags(movie)
         access_token  = _twitter_token_mgr.get_valid_token()
         if not access_token:
@@ -624,7 +624,7 @@ def _post_movie_to_facebook(movie, is_new: bool):
         if not all([page_id, access_token]):
             return
         site_url      = getattr(settings, 'SITE_URL', 'https://watch2d.org')
-        url           = f"{site_url}/movies/movie/{movie.pk}/"
+        url           = f"{site_url}/movie/{movie.pk}/{movie.slug}/"
         _, _, fb_tags = _detect_hashtags(movie)
 
         if is_new:

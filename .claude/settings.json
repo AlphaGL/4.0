@@ -337,7 +337,9 @@
       "Bash(curl -s -o /dev/null -w \"  /anime/ : %{http_code} -> %{redirect_url}\\\\n\" --max-time 25 -A \"Mozilla/5.0\" https://www.watch2d.org/anime/)",
       "Bash(curl -s -o /dev/null -w \"  /manga/ : %{http_code} -> %{redirect_url}\\\\n\" --max-time 25 -A \"Mozilla/5.0\" https://www.watch2d.org/manga/)",
       "WebFetch(domain:9jarocks.net)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(grep -nA3 \"def get_absolute_url\" movies/models.py)",
+      "Bash(grep -nB1 -A3 \"canonical\" movies/templates/movies/base.html)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Ibeawuchi\\Desktop\\film\\watch2d_app",

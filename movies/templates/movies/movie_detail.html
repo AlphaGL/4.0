@@ -50,7 +50,9 @@
 ══════════════════════════════════════════ #} -->
 
 {% block canonical_block %}
-  <link rel="canonical" href="{{ request.build_absolute_uri }}" />
+  {# ONE clean canonical per movie — never the raw request URL (which varied by
+     query params / www, causing Google to pick a different canonical). #}
+  <link rel="canonical" href="https://www.watch2d.org{{ movie.get_absolute_url }}" />
 {% endblock %}
 
 <!-- {# ══════════════════════════════════════════
@@ -356,7 +358,7 @@
                         hover:from-green-400 hover:to-emerald-500 text-white rounded-full text-sm font-semibold
                         shadow-lg transition-all duration-300 hover:scale-105">
                 <i class="fas fa-play text-xs"></i>
-                <span>{% if movie.is_series %}Play Series{% else %}Play Now{% endif %}</span>
+                <span>Watch Now Free</span>
               </a>
             {% endif %}
             {% if movie.video_url %}
@@ -613,6 +615,36 @@
 
         {% if movie.download_links.exists or movie.download_url %}
         <div id="download" class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+
+          {# ── Unique, per-movie SEO content — built from THIS title's own
+               metadata, so every page differs from the duplicate TMDB text
+               that competitors reuse. Matches the "[Movie] Mp4 Mkv Download"
+               search pattern with filesize/quality/episodes like ranking sites. #}
+          <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-3">
+              Download {{ movie.title }}{% if completion_label %} {{ completion_label }}{% endif %} — {{ seo_type }} MP4 MKV
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+              {{ movie.title }}{% if movie.vi_year %} ({{ movie.vi_year }}){% endif %} is a{% if movie.vi_genre %} {{ movie.vi_genre }}{% endif %} {{ seo_type|lower }}{% if movie.vi_country %} from {{ movie.vi_country }}{% endif %}{% if movie.vi_language %}, in {{ movie.vi_language }}{% endif %}{% if movie.vi_subtitle %} with {{ movie.vi_subtitle }} subtitles{% endif %}.
+              Download {{ movie.title }} free in HD — available in 480p, 720p and 1080p MP4 &amp; MKV{% if movie.vi_filesize %} (file size {{ movie.vi_filesize }}){% endif %}{% if movie.vi_runtime %}, runtime {{ movie.vi_runtime }}{% endif %}{% if movie.is_series and movie.vi_episodes %}, {{ movie.vi_episodes }} episodes{% endif %}.
+              {% if movie.vi_cast %}Starring {{ movie.vi_cast|truncatewords:8 }}.{% endif %}
+              Tap a download link below to get {{ movie.title }} on Watch2D.
+            </p>
+            <dl class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 mt-4 text-xs">
+              {% if movie.vi_year %}<div><dt class="text-gray-400">Year</dt><dd class="font-semibold text-gray-700 dark:text-gray-200">{{ movie.vi_year }}</dd></div>{% endif %}
+              {% if movie.vi_genre %}<div><dt class="text-gray-400">Genre</dt><dd class="font-semibold text-gray-700 dark:text-gray-200">{{ movie.vi_genre }}</dd></div>{% endif %}
+              {% if movie.vi_country %}<div><dt class="text-gray-400">Country</dt><dd class="font-semibold text-gray-700 dark:text-gray-200">{{ movie.vi_country }}</dd></div>{% endif %}
+              {% if movie.vi_language %}<div><dt class="text-gray-400">Language</dt><dd class="font-semibold text-gray-700 dark:text-gray-200">{{ movie.vi_language }}</dd></div>{% endif %}
+              {% if movie.vi_subtitle %}<div><dt class="text-gray-400">Subtitle</dt><dd class="font-semibold text-gray-700 dark:text-gray-200">{{ movie.vi_subtitle }}</dd></div>{% endif %}
+              <div><dt class="text-gray-400">Quality</dt><dd class="font-semibold text-gray-700 dark:text-gray-200">480p · 720p · 1080p</dd></div>
+              {% if movie.vi_filesize %}<div><dt class="text-gray-400">File Size</dt><dd class="font-semibold text-gray-700 dark:text-gray-200">{{ movie.vi_filesize }}</dd></div>{% endif %}
+              {% if movie.vi_runtime %}<div><dt class="text-gray-400">Runtime</dt><dd class="font-semibold text-gray-700 dark:text-gray-200">{{ movie.vi_runtime }}</dd></div>{% endif %}
+              {% if movie.is_series and movie.vi_episodes %}<div><dt class="text-gray-400">Episodes</dt><dd class="font-semibold text-gray-700 dark:text-gray-200">{{ movie.vi_episodes }}</dd></div>{% endif %}
+              {% if movie.vi_status %}<div><dt class="text-gray-400">Status</dt><dd class="font-semibold text-gray-700 dark:text-gray-200">{{ movie.vi_status }}</dd></div>{% endif %}
+              <div><dt class="text-gray-400">Format</dt><dd class="font-semibold text-gray-700 dark:text-gray-200">MP4 / MKV</dd></div>
+            </dl>
+          </div>
+
           {% if movie.download_links.exists %}
             <div class="p-6">
               <div class="grid gap-3">
