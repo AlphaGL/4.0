@@ -616,10 +616,10 @@
         {% if movie.download_links.exists or movie.download_url %}
         <div id="download" class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
 
-          {# ── Unique, per-movie SEO content — built from THIS title's own
+          <!-- {# ── Unique, per-movie SEO content — built from THIS title's own
                metadata, so every page differs from the duplicate TMDB text
                that competitors reuse. Matches the "[Movie] Mp4 Mkv Download"
-               search pattern with filesize/quality/episodes like ranking sites. #}
+               search pattern with filesize/quality/episodes like ranking sites. #} -->
           <div class="p-6 border-b border-gray-100 dark:border-gray-700">
             <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-3">
               Download {{ movie.title }}{% if completion_label %} {{ completion_label }}{% endif %} — {{ seo_type }} MP4 MKV
