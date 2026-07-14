@@ -168,7 +168,13 @@ class Movie(models.Model):
         """
         base = slugify(self.title)
         if seo_suffix:
-            base = f"{base}-{seo_suffix}-download"
+            seo_suffix = seo_suffix.strip('-')
+            # Guard against "…-download-download": when the suffix is already the
+            # generic 'download' (or itself ends in it), don't append '-download'.
+            if seo_suffix == 'download' or seo_suffix.endswith('-download'):
+                base = f"{base}-{seo_suffix}"
+            else:
+                base = f"{base}-{seo_suffix}-download"
         slug = base
         n = 1
         qs = Movie.objects.exclude(pk=self.pk)

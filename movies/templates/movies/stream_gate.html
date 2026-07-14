@@ -165,8 +165,15 @@
       </button>
     </div>
 
-    {# Footer #}
-    <div class="px-5 py-3.5 border-t border-gray-100 dark:border-gray-700/50 flex justify-center">
+    {# Footer — offer the offline download as an alternative #}
+    <div class="px-5 py-3.5 border-t border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+      <a href="{% url 'movies:download_gate' movie.pk %}"
+         class="inline-flex items-center gap-2 text-xs font-semibold text-white
+                bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600
+                px-4 py-2 rounded-2xl shadow-lg shadow-primary-500/25 transition-all duration-300 hover:-translate-y-0.5">
+        <i class="fas fa-download text-sm"></i>
+        Prefer to keep it? Download in HD
+      </a>
       <a href="https://t.me/+wUlsP5Yv8h9iZDJk" target="_blank" rel="nofollow"
          class="inline-flex items-center gap-2 text-xs font-medium text-gray-400 dark:text-gray-500
                 hover:text-primary-600 dark:hover:text-primary-400
@@ -208,11 +215,13 @@
 <script>
 /*
  * Stream player loader.
- * Loads the source's embed in a SANDBOXED iframe — the sandbox (no allow-popups /
- * allow-top-navigation) blocks the popup/redirect ads some sources carry while
- * still letting the player run. For streamimdb embeds we append ?lang=<code>,
- * which makes its built-in player auto-load subtitles (wyzie / OpenSubtitles);
- * viewers can switch language from the player's CC/gear menu.
+ * NOTE: we no longer sandbox the player iframe. The sources (streamimdb etc.)
+ * now detect a `sandbox` attribute and refuse to play ("Please use iframe
+ * without sandbox attribute" / "Playback blocked"), so a sandbox breaks
+ * playback entirely. The browser's built-in popup blocker + absent user
+ * activation still stop most drive-by redirects. For streamimdb embeds we
+ * append ?lang=<code>, which makes its built-in player auto-load subtitles
+ * (wyzie / OpenSubtitles); viewers can switch language from the CC/gear menu.
  */
 (function () {
   'use strict';
@@ -270,7 +279,7 @@
     f.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture');
     f.setAttribute('allowfullscreen', 'true');
     f.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-    f.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-forms allow-pointer-lock');
+    // No `sandbox` attribute: the sources block playback when sandboxed.
     f.style.cssText = 'width:100%;height:100%;border:0;';
     wrap.innerHTML = '';
     wrap.appendChild(f);
