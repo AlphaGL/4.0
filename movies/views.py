@@ -154,7 +154,7 @@ def invalidate_sidebar_cache():
     Called from movies/admin.py on save/delete.
     """
     cache.delete(SIDEBAR_CATEGORIES_CACHE_KEY, version=CACHE_VERSION)
-    cache.delete('movies_home_ctx_v1')
+    cache.delete('movies_home_ctx_v2')
     cache.delete('movies_categories_v1')
 
 
@@ -967,14 +967,14 @@ class HomeView(ListView):
         context = super().get_context_data(**kwargs)
 
         # ── Cached heavy queries ──────────────────────────────────────────────
-        cached = cache.get('movies_home_ctx_v1')
+        cached = cache.get('movies_home_ctx_v2')
         if cached is None:
             cached = _build_movies_home_context()
-            cache.set('movies_home_ctx_v1', cached, MOVIES_HOME_CACHE_TTL)
+            cache.set('movies_home_ctx_v2', cached, MOVIES_HOME_CACHE_TTL)
         context.update(cached)
 
         # ── Series sections — cached separately (not user-specific) ──────────
-        ongoing_cached = cache.get('home_ongoing_series_v1')
+        ongoing_cached = cache.get('home_ongoing_series_v2')
         if ongoing_cached is None:
             ongoing_cached = list(
                 Movie.objects
@@ -986,9 +986,9 @@ class HomeView(ListView):
                 )
                 .order_by('-title_b_updated_at', '-created_at')[:27]  # 3 pages × 9
             )
-            cache.set('home_ongoing_series_v1', ongoing_cached, MOVIES_HOME_CACHE_TTL)
+            cache.set('home_ongoing_series_v2', ongoing_cached, MOVIES_HOME_CACHE_TTL)
 
-        comp_cached = cache.get('home_completed_series_v1')
+        comp_cached = cache.get('home_completed_series_v2')
         if comp_cached is None:
             comp_cached = list(
                 Movie.objects
@@ -1000,7 +1000,7 @@ class HomeView(ListView):
                 )
                 .order_by('-title_b_updated_at', '-created_at')[:27]
             )
-            cache.set('home_completed_series_v1', comp_cached, MOVIES_HOME_CACHE_TTL)
+            cache.set('home_completed_series_v2', comp_cached, MOVIES_HOME_CACHE_TTL)
 
         context['ongoing_series'] = Paginator(ongoing_cached, 9).get_page(
             self.request.GET.get('ongoing_page', 1)
@@ -1010,7 +1010,7 @@ class HomeView(ListView):
         )
 
         # ── Coming Soon teaser (cached) — first few un-released TMDB titles ───
-        upcoming_cached = cache.get('home_upcoming_v1')
+        upcoming_cached = cache.get('home_upcoming_v2')
         if upcoming_cached is None:
             from django.utils import timezone
             today = timezone.now().date().isoformat()
@@ -1019,7 +1019,7 @@ class HomeView(ListView):
                 .filter(release_date__gte=today)
                 .order_by('release_date')[:12]
             )
-            cache.set('home_upcoming_v1', upcoming_cached, MOVIES_HOME_CACHE_TTL)
+            cache.set('home_upcoming_v2', upcoming_cached, MOVIES_HOME_CACHE_TTL)
         context['upcoming'] = upcoming_cached
 
         return context

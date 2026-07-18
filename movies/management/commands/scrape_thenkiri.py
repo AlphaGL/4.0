@@ -144,6 +144,12 @@ CATEGORY_ALIASES = {
     'filipino':       ['philippine'],
     'k_variety':      ['k_variety'],
     'all':            [d['key'] for d in CATEGORY_DEFINITIONS],
+    # ── Gap-filler for the schedule: ONLY the categories 9jarocks (the main
+    #    source) doesn't cover. 9jarocks already does Hollywood, Series, Korean
+    #    drama, Chinese drama & Bollywood, so those are dropped here to avoid
+    #    duplicate scraping. Left: Korean movies, Chinese movies, Philippine
+    #    (proper Filipino drama), and Korean variety. ──
+    'gaps':           ['korean_movie', 'chinese', 'philippine', 'k_variety'],
 }
 
 # Build a lookup from slug → definition for easy access later

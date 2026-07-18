@@ -175,6 +175,12 @@ class Movie(models.Model):
                 base = f"{base}-{seo_suffix}"
             else:
                 base = f"{base}-{seo_suffix}-download"
+        base = base.strip('-')
+        if not base:
+            # Non-Latin titles (Chinese/Korean/Japanese/…) slugify to '' — an empty
+            # slug can't be reversed by the movie_detail URL (NoReverseMatch → the
+            # page 500s), so fall back to a generic, always-reversible base.
+            base = 'movie'
         slug = base
         n = 1
         qs = Movie.objects.exclude(pk=self.pk)
@@ -202,8 +208,9 @@ class Movie(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        # Canonical URL: /movie/<id>/<slug>/
-        return reverse('movies:movie_detail', args=[str(self.pk), self.slug])
+        # Canonical URL: /movie/<id>/<slug>/. Guard against a blank slug (which
+        # can't be reversed → NoReverseMatch) so a stray row can never 500 a page.
+        return reverse('movies:movie_detail', args=[str(self.pk), self.slug or 'movie'])
 
 
 class DownloadLink(models.Model):
