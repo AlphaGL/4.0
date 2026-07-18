@@ -4,7 +4,7 @@ Backfill download links for stream-only movies.
 Some titles arrive via the streaming source (streamimdb) and therefore have a
 ``stream_url`` but no download links at all. This command finds those movies and
 tries to attach downloads by doing a TARGETED search of the download sites, in
-order:  9jarocks.net  →  thenkiri.com
+order:  my9jarocks.bz  →  thenkiri.com
 
 For each stream-only movie we hit the site's ``?s=`` search, parse the best
 title match with the existing scraper functions, and copy its download links
@@ -32,7 +32,7 @@ from movies.models import Movie, DownloadLink
 CANDIDATES_PER_SITE = 6
 
 SITES = [
-    ('scrape_9jarocks', 'https://9jarocks.net'),
+    ('scrape_9jarocks', 'https://my9jarocks.bz'),
     ('scrape_thenkiri', 'https://thenkiri.com'),
 ]
 

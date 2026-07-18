@@ -33,12 +33,12 @@ Usage
 ─────
 # Single URL on the CLI
 python manage.py scrape_9jarocks_links \\
-    --url "https://9jarocks.net/videodownload/mrs-fazilet-and-her-daughters-season-1-2-complete-turkish-id394535.html"
+    --url "https://my9jarocks.bz/videodownload/mrs-fazilet-and-her-daughters-season-1-2-complete-turkish-id394535.html"
 
 # Multiple URLs on the CLI
 python manage.py scrape_9jarocks_links \\
-    --url "https://9jarocks.net/videodownload/xxx.html" \\
-    --url "https://9jarocks.net/videodownload/yyy.html"
+    --url "https://my9jarocks.bz/videodownload/xxx.html" \\
+    --url "https://my9jarocks.bz/videodownload/yyy.html"
 
 # From a file (default: links.txt in the current working directory)
 python manage.py scrape_9jarocks_links --file links.txt
@@ -56,8 +56,8 @@ links.txt format
 ─────────────────
   # Lines starting with # are comments and are ignored.
   # Blank lines are also ignored.
-  https://9jarocks.net/videodownload/movie-one-id123.html
-  https://9jarocks.net/videodownload/series-two-season-3-id456.html
+  https://my9jarocks.bz/videodownload/movie-one-id123.html
+  https://my9jarocks.bz/videodownload/series-two-season-3-id456.html
 """
 
 import os
@@ -168,7 +168,7 @@ def _infer_db_cats_from_scraped(scraped_cats: list[str]) -> list[str]:
 
 class Command(BaseCommand):
     help = (
-        'Scrape specific 9jarocks.net post URLs (from --url args or --file) '
+        'Scrape specific my9jarocks.bz post URLs (from --url args or --file) '
         'and upsert them into the DB.  Handles both movies and series episode updates.'
     )
 
@@ -180,8 +180,8 @@ class Command(BaseCommand):
             metavar='URL',
             help=(
                 'A 9jarocks post URL to scrape.  Can be repeated:\n'
-                '  --url "https://9jarocks.net/videodownload/abc.html" \\\n'
-                '  --url "https://9jarocks.net/videodownload/def.html"'
+                '  --url "https://my9jarocks.bz/videodownload/abc.html" \\\n'
+                '  --url "https://my9jarocks.bz/videodownload/def.html"'
             ),
         )
         parser.add_argument(
@@ -547,7 +547,7 @@ class Command(BaseCommand):
 
 # # Single URL
 # python manage.py scrape_9jarocks_links \
-#   --url "https://9jarocks.net/videodownload/mrs-fazilet-and-her-daughters-season-1-2-complete-turkish-id394535.html"
+#   --url "https://my9jarocks.bz/videodownload/mrs-fazilet-and-her-daughters-season-1-2-complete-turkish-id394535.html"
 
 # # From links.txt (default filename)
 # python manage.py scrape_9jarocks_links

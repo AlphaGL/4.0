@@ -57,49 +57,35 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # ── 9jarocks: MAIN SOURCE — most up-to-date on movies, so it leads
-          #    Hollywood + Series with a deeper crawl (--max-pages 5).
-          #    upload:false — scrape_9jarocks does NOT support --upload-files
-          #    (no Telegram file re-host); it still posts links to social. ──
-          - name: "🎬 Hollywood (9jarocks · main)"
-            cmd: "python manage.py scrape_9jarocks --category hollywood --max-pages 5"
+          # NOTE: every source now scrapes ALL its categories (--category all),
+          # not a hand-picked subset. Each scraper loops its own categories
+          # internally with per-page error isolation, so one bad category won't
+          # stop the rest.
+
+          # ── 9jarocks (my9jarocks.bz): MAIN SOURCE. ALL categories EXCEPT 18+
+          #    ('all_sfw' — Adult is hidden site-wide for ad-network + SEO safety).
+          #    Covers Nollywood, Hollywood, foreign, K/C/Thai/JP/Filipino drama,
+          #    Bollywood, anime, wrestling, ongoing. upload:false — scrape_9jarocks
+          #    has no Telegram file re-host; it still posts links to social. ──
+          - name: "🎬 9jarocks · ALL categories (my9jarocks.bz)"
+            cmd: "python manage.py scrape_9jarocks --category all_sfw --max-pages 3"
             upload: false
-          - name: "🇳🇬 Nollywood"
-            cmd: "python manage.py scrape_9jarocks --category nollywood --max-pages 3"
-            upload: false
-          - name: "📺 TV Series (9jarocks · main)"
-            cmd: "python manage.py scrape_9jarocks --category series --max-pages 5"
-            upload: false
-          - name: "⛩️ Anime"
-            cmd: "python manage.py scrape_9jarocks --category anime --max-pages 3"
-            upload: false
-          # ── thenkiri.com: Asian content only — Korean drama+movies, Bollywood,
-          #    Chinese (9jarocks doesn't cover these). Hollywood + Series were
-          #    handed to 9jarocks, the main source. ──
-          - name: "🇰🇷 Korean (drama + movies)"
-            cmd: "python manage.py scrape_thenkiri --category korean --max-pages 3"
+          # ── thenkiri.com: ALL categories (Korean drama+movies, Chinese, Bollywood,
+          #    Hollywood, Series, Philippine, K-variety). upload:true — re-hosts new
+          #    files to the private Telegram channel. ──
+          - name: "🌏 thenkiri · ALL categories"
+            cmd: "python manage.py scrape_thenkiri --category all --max-pages 3"
             upload: true
-          - name: "🎵 Bollywood"
-            cmd: "python manage.py scrape_thenkiri --category bollywood --max-pages 3"
-            upload: true
-          - name: "🇨🇳 Chinese (movies + drama)"
-            cmd: "python manage.py scrape_thenkiri --category chinese --max-pages 3"
-            upload: true
-          # ── StreamIMDB ──
+          # ── StreamIMDB — streaming links for movies + TV (already 'all' via both). ──
           - name: "▶️ StreamIMDB (movies + TV)"
             cmd: "python manage.py scrape_streamimdb --media both --max-pages 3"
             upload: false
           # ── naijaprey.tv: SUPPLEMENTARY / FALLBACK source (WordPress REST API).
-          #    Broad catalogue (Hollywood, anime, Korean, Chinese, …). Its links
-          #    point to np-downloader.com, so it ADDS a second download host to
-          #    movies already carried by 9jarocks/thenkiri — a working fallback
-          #    when one host's link is dead. It only prunes its OWN stale links,
-          #    never other sources'. upload:false — no --upload-files support. ──
-          - name: "🎯 naijaprey · Movies (fallback links)"
-            cmd: "python manage.py scrape_naijaprey --category movies --max-pages 3"
-            upload: false
-          - name: "🎯 naijaprey · Series (fallback links)"
-            cmd: "python manage.py scrape_naijaprey --category series --max-pages 3"
+          #    ALL categories. Its links add a second download host as a fallback
+          #    when another source's link is dead. It only prunes its OWN stale
+          #    links, never other sources'. upload:false — no --upload-files. ──
+          - name: "🎯 naijaprey · ALL categories (fallback links)"
+            cmd: "python manage.py scrape_naijaprey --category all --max-pages 3"
             upload: false
           # ── Disabled ──
           # - name: "🎞️ Nkiri"            # disabled — not useful

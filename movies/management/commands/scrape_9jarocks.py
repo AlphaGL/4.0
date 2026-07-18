@@ -1,6 +1,6 @@
 """
 Management command: scrape_9jarocks
-Scrapes 9jarocks.net by crawling category listing pages, then visiting
+Scrapes my9jarocks.bz by crawling category listing pages, then visiting
 each post page to extract title, image, description, and download links.
 
 WHY HTML scraping (not REST API):
@@ -52,7 +52,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # SITE CONSTANTS
 # ══════════════════════════════════════════════════════════════
 
-SITE_URL = 'https://9jarocks.net'
+SITE_URL = 'https://my9jarocks.bz'
 
 # ── Category definitions ──────────────────────────────────────
 # Each entry:
@@ -194,6 +194,9 @@ CATEGORY_ALIASES = {
     '18plus':     ['18plus'],
     '18':         ['18plus'],
     'all':        [d['key'] for d in CATEGORY_DEFINITIONS],  # auto-includes all keys
+    # Everything EXCEPT 18+ — Adult is hidden site-wide (ad-network + SEO safety),
+    # so the scheduled scrape uses this instead of 'all'.
+    'all_sfw':    [d['key'] for d in CATEGORY_DEFINITIONS if d['key'] != '18plus'],
 }
 
 # Build a lookup from slug → definition for easy access later
@@ -233,10 +236,10 @@ KNOWN_DOWNLOAD_DOMAINS = [
     'downloadwella.com',
     'netnaija.com',
     'fzmovies.net',
-    'files.9jarocks.net',
-    'cdn.9jarocks.net',
-    'download.9jarocks.net',
-    '9jarocks.net/download',
+    'files.my9jarocks.bz',
+    'cdn.my9jarocks.bz',
+    'download.my9jarocks.bz',
+    'my9jarocks.bz/download',
     'wildshare.net',
 ]
 
@@ -896,8 +899,8 @@ def parse_post_page(html: str, url: str) -> dict | None:
                 continue
             if any(skip in href_lower for skip in [
                 'facebook.com', 'twitter.com', 't.me', 'youtube.com/watch?',
-                'imdb.com', 'wp-admin', '#respond', 'mailto:', '9jarocks.net/category',
-                '9jarocks.net/tag',
+                'imdb.com', 'wp-admin', '#respond', 'mailto:', 'my9jarocks.bz/category',
+                'my9jarocks.bz/tag',
             ]):
                 continue
 
@@ -1152,7 +1155,7 @@ def assign_db_categories(movie, scraped_cats: list[str], forced_db_cats: list[st
 
 class Command(BaseCommand):
     help = (
-        'Scrape 9jarocks.net category pages → save to DB → '
+        'Scrape my9jarocks.bz category pages → save to DB → '
         'optionally post to Twitter + Facebook'
     )
 
@@ -1217,7 +1220,7 @@ class Command(BaseCommand):
             return
 
         print("=" * 60)
-        print("🚀  9jarocks.net scraper starting")
+        print("🚀  my9jarocks.bz scraper starting")
         print(f"    Method  : Category page HTML scraping")
         print(f"    Cats    : {', '.join(d['label'] for d in cats_to_crawl)}")
         print(f"    Pages   : {start_page} → {end_page or '∞'}"

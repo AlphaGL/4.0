@@ -725,7 +725,7 @@ def _resolve_loadedfiles(landing_url, parsed, debug=False):
             r"window\.location(?:\.href)?\s*=\s*['\"](https?://[^'\"]+\?pt=[^'\"]+)['\"]",
             r"['\"](https?://loadedfiles\.org/[^'\"]+\?pt=[^'\"]+)['\"]",
         )
-        referer = 'https://9jarocks.net/'
+        referer = 'https://my9jarocks.bz/'
         current = landing_url
         last_pt = None
 

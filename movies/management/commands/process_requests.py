@@ -5,7 +5,7 @@ For each pending request we:
   1. Check the catalogue for a match (the title may already be here, or have
      been added by the regular crawl) → fulfil + push the user. RELIABLE.
   2. If not found, attempt a TARGETED scrape, in the user-requested order:
-       9jarocks.net  →  thenkiri.com
+       my9jarocks.bz  →  thenkiri.com
      We hit the site's search, pick the best title match, parse the post with
      the existing scraper functions, and ingest it. Streaming (streamimdb) is
      then attached by the normal streamimdb pipeline / enrich step.
@@ -36,7 +36,7 @@ MAX_ATTEMPTS = 8          # ~4 days at 2 runs/day before giving up
 CANDIDATES_PER_SITE = 6   # how many search hits to inspect per source
 
 SITES = [
-    ('scrape_9jarocks', 'https://9jarocks.net'),
+    ('scrape_9jarocks', 'https://my9jarocks.bz'),
     ('scrape_thenkiri', 'https://thenkiri.com'),
 ]
 
