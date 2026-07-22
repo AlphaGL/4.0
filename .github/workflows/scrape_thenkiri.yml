@@ -57,19 +57,50 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # STRATEGY: 9jarocks is the MAIN source and scrapes all its categories.
+          # STRATEGY: 9jarocks is the MAIN source — each of its categories runs as
+          # its OWN parallel job (isolated + faster, not one combined serial run).
           # thenkiri only fills the GAPS 9jarocks doesn't cover (Korean/Chinese
           # movies, Philippine, K-variety). StreamIMDB stays as-is (streamable
-          # titles). Each scraper loops its own categories internally with
-          # per-page error isolation, so one bad category won't stop the rest.
+          # titles). 18+ is intentionally NOT listed (hidden site-wide).
 
-          # ── 9jarocks (my9jarocks.bz): MAIN SOURCE. ALL categories EXCEPT 18+
-          #    ('all_sfw' — Adult is hidden site-wide for ad-network + SEO safety).
-          #    Covers Nollywood, Hollywood, foreign, K/C/Thai/JP/Filipino drama,
-          #    Bollywood, anime, wrestling, ongoing. upload:false — scrape_9jarocks
-          #    has no Telegram file re-host; it still posts links to social. ──
-          - name: "🎬 9jarocks · ALL categories (main · my9jarocks.bz)"
-            cmd: "python manage.py scrape_9jarocks --category all_sfw --max-pages 3"
+          # ── 9jarocks (my9jarocks.bz) — MAIN SOURCE, one job per category.
+          #    upload:false — no Telegram file re-host; still posts links to social.
+          #    (Movie categories pair with their -series variant to avoid overlap.) ──
+          - name: "🎬 9jarocks · Hollywood (+ series)"
+            cmd: "python manage.py scrape_9jarocks --category hollywood --max-pages 3"
+            upload: false
+          - name: "🇳🇬 9jarocks · Nollywood (+ series)"
+            cmd: "python manage.py scrape_9jarocks --category nollywood --max-pages 3"
+            upload: false
+          - name: "🌍 9jarocks · Foreign (+ series)"
+            cmd: "python manage.py scrape_9jarocks --category foreign --max-pages 3"
+            upload: false
+          - name: "🇰🇷 9jarocks · Korean drama"
+            cmd: "python manage.py scrape_9jarocks --category kdrama --max-pages 3"
+            upload: false
+          - name: "🇨🇳 9jarocks · Chinese drama"
+            cmd: "python manage.py scrape_9jarocks --category chinese --max-pages 3"
+            upload: false
+          - name: "🇹🇭 9jarocks · Thai drama"
+            cmd: "python manage.py scrape_9jarocks --category thai --max-pages 3"
+            upload: false
+          - name: "🇯🇵 9jarocks · Japanese"
+            cmd: "python manage.py scrape_9jarocks --category japanese --max-pages 3"
+            upload: false
+          - name: "🇵🇭 9jarocks · Filipino"
+            cmd: "python manage.py scrape_9jarocks --category filipino --max-pages 3"
+            upload: false
+          - name: "🎵 9jarocks · Bollywood"
+            cmd: "python manage.py scrape_9jarocks --category bollywood --max-pages 3"
+            upload: false
+          - name: "⛩️ 9jarocks · Anime"
+            cmd: "python manage.py scrape_9jarocks --category anime --max-pages 3"
+            upload: false
+          - name: "🤼 9jarocks · Wrestling / Sports"
+            cmd: "python manage.py scrape_9jarocks --category wrestling --max-pages 3"
+            upload: false
+          - name: "🔁 9jarocks · Ongoing series"
+            cmd: "python manage.py scrape_9jarocks --category ongoing --max-pages 3"
             upload: false
           # ── thenkiri.com: GAP-FILLER only — the categories 9jarocks lacks:
           #    Korean movies, Chinese movies, Philippine, Korean variety.

@@ -52,7 +52,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # SITE CONSTANTS
 # ══════════════════════════════════════════════════════════════
 
-SITE_URL = 'https://my9jarocks.bz'
+SITE_URL = 'https://www.my9jarocks.bz'   # site 301-redirects the bare domain to www
 
 # ── Category definitions ──────────────────────────────────────
 # Each entry:
@@ -1098,6 +1098,12 @@ def find_existing_movie(title: str, max_retries: int = 3):
     for attempt in range(max_retries):
         try:
             movie = Movie.objects.filter(title__in=variants).first()
+            if movie is None:
+                # Fallback: match on normalized title so a source re-titling
+                # "Korea No.1" as "Korea No. 1" doesn't create a duplicate
+                # (which would get posted, then deleted by cleanse_db → 404).
+                from movies.scraper_utils import find_movie_by_normalized_title
+                movie = find_movie_by_normalized_title(title)
             if movie:
                 print(f"   ✅ Match: '{movie.title}'")
             return movie

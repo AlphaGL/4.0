@@ -1886,6 +1886,12 @@ def find_existing_movie(title: str, max_retries: int = 3):
     for attempt in range(max_retries):
         try:
             movie = Movie.objects.filter(title__in=variants).first()
+            if movie is None:
+                # Fallback: match on normalized title so punctuation/spacing
+                # differences don't create a duplicate (posted, then deleted
+                # by cleanse_db -> dead Telegram link + reposting).
+                from movies.scraper_utils import find_movie_by_normalized_title
+                movie = find_movie_by_normalized_title(title)
             if movie:
                 print(f"   ✅ Match: '{movie.title}'")
             return movie

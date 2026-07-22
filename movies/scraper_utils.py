@@ -69,6 +69,36 @@ def normalize_title(title):
     return t.strip()
 
 
+def find_movie_by_normalized_title(title):
+    """
+    Fallback de-dup for scrapers: return an existing Movie whose *normalized*
+    title matches this one's. Catches punctuation/spacing differences the
+    scrapers' exact `title__in` match misses — e.g. a source re-titling
+    "Korea No.1" as "Korea No. 1", or "It's Okay!" vs "It's Okay". Without this,
+    the scraper creates a duplicate, posts it to Telegram, and cleanse_db later
+    deletes the dup → dead Telegram link (404) + endless reposting.
+
+    Narrows the candidate set by the most distinctive token so the scan stays
+    small; returns the first candidate whose normalized title matches exactly.
+    """
+    from movies.models import Movie
+    norm = normalize_title(title)
+    if not norm:
+        return None
+    _STOP = {'season', 'complete', 'completed', 'episode', 'the', 'and',
+             'movie', 'series', 'part', 'added', 'ongoing', 'download'}
+    tokens = [t for t in norm.split() if len(t) >= 4 and t not in _STOP]
+    if not tokens:
+        tokens = [t for t in norm.split() if t not in _STOP] or norm.split()
+    if not tokens:
+        return None
+    token = max(tokens, key=len)
+    for m in Movie.objects.filter(title__icontains=token).only('id', 'title')[:500]:
+        if normalize_title(m.title) == norm:
+            return m
+    return None
+
+
 def parse_show(title):
     """
     Split a title into (show_key, season_number) so every season of a show can
