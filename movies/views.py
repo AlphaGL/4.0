@@ -555,7 +555,9 @@ def resolve_download_link(request):
     #   Skip this shortcut for hosts whose file PAGES end in .mkv/.html;
     #   those are handled by their own scrapers below.
     direct_exts = ('.mp4', '.mkv', '.webm', '.avi', '.mov', '.zip', '.rar')
-    gate_hosts  = ('loadedfiles.org', 'downloadwella.com')
+    # 'loadedfiles.' (no TLD) so both loadedfiles.org and the newer
+    # loadedfiles.net are treated as gate pages, not direct files.
+    gate_hosts  = ('loadedfiles.', 'downloadwella.com')
     if not any(g in host for g in gate_hosts) and (
             '?pt=' in lower or any(lower.endswith(ext) for ext in direct_exts)):
         return JsonResponse({'download_url': landing_url})
@@ -575,8 +577,8 @@ def resolve_download_link(request):
             return JsonResponse({'method': 'downloadwella_failed', 'fallback': landing_url, 'debug': dbg})
         return JsonResponse({'download_url': landing_url})
  
-    # ── loadedfiles.org  ← NEW ────────────────────────────────
-    if 'loadedfiles.org' in host:
+    # ── loadedfiles.org / loadedfiles.net ─────────────────────
+    if 'loadedfiles.' in host:
         result, dbg = _resolve_loadedfiles(landing_url, parsed, debug)
         if result:
             if debug:
@@ -723,9 +725,9 @@ def _resolve_loadedfiles(landing_url, parsed, debug=False):
         next_patterns = (
             r"var\s+downloadUrl\s*=\s*['\"](https?://[^'\"]+)['\"]",
             r"window\.location(?:\.href)?\s*=\s*['\"](https?://[^'\"]+\?pt=[^'\"]+)['\"]",
-            r"['\"](https?://loadedfiles\.org/[^'\"]+\?pt=[^'\"]+)['\"]",
+            r"['\"](https?://loadedfiles\.[a-z]{2,}/[^'\"]+\?pt=[^'\"]+)['\"]",
         )
-        referer = 'https://my9jarocks.bz/'
+        referer = 'https://www.my9jarocks.bz/'
         current = landing_url
         last_pt = None
 
@@ -741,7 +743,7 @@ def _resolve_loadedfiles(landing_url, parsed, debug=False):
                 if not loc:
                     break
                 target = urljoin(current, loc)
-                if 'loadedfiles.org' not in _urlparse(target).netloc.lower():
+                if 'loadedfiles.' not in _urlparse(target).netloc.lower():
                     dbg['pattern'] = 'cdn_redirect'
                     return target, dbg          # ← direct CDN download URL
                 referer, current = current, target

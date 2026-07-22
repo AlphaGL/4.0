@@ -218,6 +218,7 @@ AD_DOMAINS = [
 # Download domains and keywords for fallback link detection
 KNOWN_DOWNLOAD_DOMAINS = [
     'loadedfiles.org',
+    'loadedfiles.net',
     'mega.nz',
     'drive.google.com',
     'mediafire.com',

@@ -182,6 +182,7 @@ KNOWN_DOWNLOAD_DOMAINS = [
     'doodstream.com',
     'filemoon.sx',
     'loadedfiles.org',
+    'loadedfiles.net',
     'netnaijafiles.xyz',
     'sabishares.com',
     'meetdownload.com',

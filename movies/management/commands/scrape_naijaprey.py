@@ -126,6 +126,7 @@ KNOWN_DOWNLOAD_DOMAINS = [
     'doodstream.com',
     'filemoon.sx',
     'loadedfiles.org',
+    'loadedfiles.net',
     'sabishares.com',
     'downloadwella.com',
     'wildshare.net',
