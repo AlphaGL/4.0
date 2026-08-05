@@ -90,6 +90,34 @@
   .dark .rel-gc-ttl { color:#aaa; }
   .rel-gc:hover .rel-gc-ttl { color:#111827; }
   .dark .rel-gc:hover .rel-gc-ttl { color:#fff; }
+
+  /* Episode navigation */
+  .ep-nav-btn {
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    padding:10px; border-radius:14px; font-size:.74rem; font-weight:700;
+    background:#f3f4f6; color:#374151; border:1px solid #e5e7eb;
+    text-decoration:none; transition:all .18s;
+  }
+  .dark .ep-nav-btn { background:rgba(55,65,81,.35); color:#d1d5db; border-color:#4b5563; }
+  .ep-nav-btn:hover { background:#ede9fe; color:#6d28d9; border-color:#ddd6fe; }
+  .dark .ep-nav-btn:hover { background:#312e81; color:#c7d2fe; border-color:#4338ca; }
+  .dg-ep-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(44px,1fr));
+    gap:6px; max-height:172px; overflow-y:auto; padding:2px;
+  }
+  .dg-ep {
+    display:flex; align-items:center; justify-content:center;
+    padding:8px 4px; border-radius:10px; font-size:.72rem; font-weight:700;
+    background:#f3f4f6; color:#4b5563; border:1px solid #e5e7eb;
+    text-decoration:none; transition:all .15s;
+  }
+  .dark .dg-ep { background:#111827; color:#9ca3af; border-color:#374151; }
+  .dg-ep:hover { background:#ede9fe; color:#6d28d9; }
+  .dark .dg-ep:hover { background:#312e81; color:#c7d2fe; }
+  .dg-ep-active {
+    background:linear-gradient(90deg,#6366f1,#8b5cf6) !important;
+    color:#fff !important; border-color:transparent !important;
+  }
 </style>
 {% endblock %}
 
@@ -409,6 +437,56 @@
       </a>
     </div>
   </div>
+
+  {# ── Episode navigation (series only) — next/previous + jump to any episode ── #}
+  {% if episodes and episodes|length > 1 %}
+  <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm
+              border border-gray-200/60 dark:border-gray-700/60
+              rounded-3xl shadow-xl overflow-hidden mb-4">
+    <div class="card-top-bar"></div>
+    <div class="px-5 py-4">
+      {# Header #}
+      <div class="flex items-center gap-2 mb-3">
+        <i class="fas fa-list-ol text-primary-500 text-sm"></i>
+        <span class="text-sm font-bold text-gray-900 dark:text-gray-100">
+          {% if current_ep %}Episode {{ current_ep }}{% else %}Episodes{% endif %}
+        </span>
+        <span class="ml-auto text-[11px] font-medium text-gray-400 dark:text-gray-500">
+          {{ episodes|length }} episode{{ episodes|length|pluralize }}
+        </span>
+      </div>
+
+      {# Previous / Next #}
+      <div class="grid grid-cols-2 gap-2.5 mb-3">
+        {% if prev_ep %}
+        <a href="?link={{ prev_ep.link_pk }}" class="ep-nav-btn">
+          <i class="fas fa-chevron-left text-[10px]"></i>
+          <span>Prev · Ep {{ prev_ep.n }}</span>
+        </a>
+        {% else %}<span class="ep-nav-btn opacity-40 pointer-events-none">— Start —</span>{% endif %}
+        {% if next_ep %}
+        <a href="?link={{ next_ep.link_pk }}" class="ep-nav-btn">
+          <span>Next · Ep {{ next_ep.n }}</span>
+          <i class="fas fa-chevron-right text-[10px]"></i>
+        </a>
+        {% else %}<span class="ep-nav-btn opacity-40 pointer-events-none">— Latest —</span>{% endif %}
+      </div>
+
+      {# Jump to any episode #}
+      <p class="text-[11px] text-gray-400 dark:text-gray-500 mb-2">
+        <i class="fas fa-hand-pointer" style="font-size:10px;"></i>
+        Or pick any episode:
+      </p>
+      <div class="dg-ep-grid">
+        {% for ep in episodes %}
+          <a href="?link={{ ep.link_pk }}"
+             class="dg-ep{% if ep.n == current_ep %} dg-ep-active{% endif %}"
+             title="Episode {{ ep.n }}">{{ ep.n }}</a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   {# ── Related movies ── #}
   {% if related_movies %}

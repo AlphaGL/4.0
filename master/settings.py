@@ -302,6 +302,10 @@ STORAGES = {
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_MANIFEST_STRICT = False
 WHITENOISE_ALLOW_ALL_ORIGINS = True
+# Cache static assets for a day so Cloudflare + browsers stop re-fetching CSS/JS/
+# fonts on every hit (cuts Render egress). Filenames aren't hashed, so keep this
+# modest — a CSS change then propagates within ~1 day. In DEBUG, no caching.
+WHITENOISE_MAX_AGE = 0 if DEBUG else 86400
 # AUTOREFRESH re-scans static files from disk on EVERY request — fine for dev,
 # but in production it adds a filesystem stat to every static asset on every hit.
 # Tie it to DEBUG so production serves static files fast (from the manifest).

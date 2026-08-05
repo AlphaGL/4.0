@@ -1819,6 +1819,32 @@ class DownloadGateView(DetailView):
                 .order_by('-created_at')[:8]
             )
 
+        # ── 3.5. Episode navigation (series with per-episode links) ───────────
+        #   Build a distinct, ordered episode list (one best-priority link each)
+        #   from the already-prefetched links, so users can go to the next/prev
+        #   episode or jump straight to any episode from the gate page.
+        episodes = []
+        current_ep = prev_ep = next_ep = None
+        if link_obj is not None and link_obj.episode_number:
+            reps = {}
+            for dl in movie.download_links.all():   # prefetched — no extra query
+                n = dl.episode_number
+                if not n:
+                    continue
+                cur = reps.get(n)
+                if cur is None or (dl.priority, dl.pk) < (cur.priority, cur.pk):
+                    reps[n] = dl
+            ordered = sorted(reps.values(), key=lambda d: d.episode_number)
+            episodes = [{'n': d.episode_number, 'link_pk': d.pk} for d in ordered]
+            current_ep = link_obj.episode_number
+            nums = [e['n'] for e in episodes]
+            if current_ep in nums and len(episodes) > 1:
+                i = nums.index(current_ep)
+                if i > 0:
+                    prev_ep = episodes[i - 1]
+                if i < len(episodes) - 1:
+                    next_ep = episodes[i + 1]
+
         # ── 4. Pack context ───────────────────────────────────────────────────
         context.update({
             'movie':          movie,
@@ -1828,6 +1854,10 @@ class DownloadGateView(DetailView):
             'countdown':      self.COUNTDOWN_SECONDS,
             'seo_type':       seo_type,
             'related_movies': related_movies,
+            'episodes':       episodes,
+            'current_ep':     current_ep,
+            'prev_ep':        prev_ep,
+            'next_ep':        next_ep,
             'categories':     get_sidebar_categories(),
             # Tells base.html to skip the global click-popunder so the gate's
             # own ad script is the sole popunder on this page.

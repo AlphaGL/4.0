@@ -1,0 +1,46 @@
+# Render Blueprint for watch2d.org
+#
+# Deploy on a NEW account:  Render Dashboard → New → Blueprint → pick this repo.
+# Render reads this file, creates the web service, and prompts for the secret
+# env vars below (the ones marked `sync: false`). Fill them from your local .env.
+#
+# NOTE: the web DB is ALREADY migrated, and WhiteNoise serves static from source
+# (WHITENOISE_USE_FINDERS=True), so the build does NOT need migrate/collectstatic.
+services:
+  - type: web
+    name: watch2d
+    runtime: python
+    region: frankfurt            # co-located with the web DB (eu-west-1)
+    plan: free                   # bump to "starter" if you want no free-tier limits
+    branch: main
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn master.wsgi:application --workers 1 --threads 2 --timeout 120"
+    healthCheckPath: /wp_auth_encrypt_ping/
+    autoDeploy: true
+    envVars:
+      # ── non-secret ──
+      - key: DEBUG
+        value: "False"
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      # ── secrets: copy the VALUES from your local .env in the Render dashboard ──
+      - key: SECRET_KEY
+        sync: false
+      - key: DATABASE_URL          # the WEB DB: postgres.scsikofwbmcchkxvrvsw@aws-1-eu-west-1
+        sync: false
+      - key: REDIS_URL             # optional; without it the app uses a file cache
+        sync: false
+      - key: MONETAG_MINIAPP_ZONE
+        sync: false
+      - key: TELEGRAM_MINIAPP_URL
+        sync: false
+      - key: BREVO_API_KEY         # only if the contact form sends email
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: BREVO_SENDER_NAME
+        sync: false
+      - key: BREVO_ADMIN_EMAIL
+        sync: false
+    # The Telegram / Twitter / Facebook / Telethon vars are used by the GitHub
+    # Actions scrapers, NOT by this web service — no need to set them here.
