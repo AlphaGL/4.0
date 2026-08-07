@@ -97,6 +97,10 @@ LOGGING = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Strip cookies + mark anonymous content pages public so Cloudflare caches
+    # them (keeps Render egress down). Placed high so its response pass runs
+    # AFTER Session/CSRF have set their cookies, letting it remove them.
+    'main.middleware.EdgeCacheMiddleware',
     # Compress HTML/JSON responses (smaller payloads = faster loads, esp. mobile).
     'django.middleware.gzip.GZipMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',

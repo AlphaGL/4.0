@@ -159,7 +159,20 @@ def invalidate_sidebar_cache():
 
 
 def robots_txt(request):
-    lines = [
+    # Bandwidth-heavy SEO / AI crawlers that bring ~no real traffic — block them
+    # entirely. Compliant bots stop immediately (combine with Cloudflare's bot
+    # rules for the ones that ignore robots.txt). Googlebot/Bingbot/DuckDuckBot
+    # and the FB/Twitter link-preview bots are intentionally left free.
+    blocked_bots = [
+        "AhrefsBot", "SemrushBot", "MJ12bot", "DotBot", "PetalBot", "Bytespider",
+        "Amazonbot", "GPTBot", "CCBot", "ClaudeBot", "anthropic-ai",
+        "Google-Extended", "meta-externalagent", "ImagesiftBot", "DataForSeoBot",
+        "Barkrowler", "SeekportBot", "Diffbot", "magpie-crawler", "Timpibot",
+    ]
+    lines = []
+    for _bot in blocked_bots:
+        lines += [f"User-agent: {_bot}", "Disallow: /", ""]
+    lines += [
         "User-agent: *",
         "",
         "# Public pages",
