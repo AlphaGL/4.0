@@ -13,7 +13,7 @@ SECRET_KEY = config('SECRET_KEY', default='your-secret-key-here')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = [
-    'watch2d.vercel.app',
+    '.vercel.app',
     'watch2d.org',
     'watch2d.com',
     'localhost',
