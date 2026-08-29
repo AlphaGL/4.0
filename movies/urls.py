@@ -9,6 +9,7 @@ from .views import (
     toggle_like, toggle_watchlist, SearchResultsView, ping_view, add_comment, add_reply,
     delete_comment, resolve_download_link, check_streamable, stream_proxy,
     telegram_ad_gate,
+    telegram_ad_gate_deliver,
     old_movie_redirect,       # ← handles legacy /movie/<pk>/ URLs (301 → slug URL)
     old_category_redirect, report_broken_link,    # ← handles legacy /category/<pk>/ URLs (301 → slug URL)
     DownloadGateView,         # ← monetised download gate
@@ -87,6 +88,7 @@ urlpatterns = [
     # ── Telegram delivery bot: ad-gate Mini App page (Monetag SDK only runs
     #    in a webview, so the bot opens this as its "Continue" button) ──────
     path('tg/ad-gate/', telegram_ad_gate, name='telegram_ad_gate'),
+    path('tg/ad-gate/deliver/', telegram_ad_gate_deliver, name='telegram_ad_gate_deliver'),
 
     # Range-aware streaming proxy
     path('stream/', stream_proxy, name='stream_proxy'),

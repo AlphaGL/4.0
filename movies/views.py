@@ -27,6 +27,7 @@ from django.db.models import F
 
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST, require_GET
+from django.views.decorators.csrf import csrf_exempt
 import requests
 import re
 from django.db import models as django_models
@@ -460,6 +461,56 @@ def telegram_ad_gate(request):
     if not _TG_PAYLOAD_RE.match(payload):
         payload = ''
     return render(request, 'movies/telegram_ad_gate.html', {'payload': payload})
+
+
+@csrf_exempt
+@require_POST
+def telegram_ad_gate_deliver(request):
+    """
+    Called directly by telegram_ad_gate.html once the Monetag ad resolves —
+    NOT via the bot's /start flow. Telegram.WebApp.sendData() only works for
+    Mini Apps opened via a Keyboard button, not the inline "Continue to
+    Download" button we use, so the page talks to the site directly instead,
+    authenticated with Telegram's own signed initData rather than a session.
+    """
+    import json as _json
+
+    from movies.models import DownloadLink
+    from movies.telegram_bot_api import copy_message, send_message, validate_init_data
+    from movies.management.commands._telegram_upload import resolve_direct_link
+
+    try:
+        body = _json.loads(request.body or b'{}')
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': 'bad_json'}, status=400)
+
+    payload = (body.get('payload') or '').strip()
+    chat_id = validate_init_data(body.get('init_data') or '')
+
+    if not chat_id or not _TG_PAYLOAD_RE.match(payload) or not payload.startswith('dl'):
+        return JsonResponse({'ok': False, 'error': 'invalid_request'}, status=400)
+
+    try:
+        dl = DownloadLink.objects.select_related('movie').get(pk=int(payload[2:]))
+    except (DownloadLink.DoesNotExist, ValueError):
+        send_message(chat_id, "⚠️ That link isn't available anymore.")
+        return JsonResponse({'ok': True})
+
+    file_storage = getattr(settings, 'TELETHON_PRIVATE_CHANNEL', None)
+    if dl.telegram_message_id and file_storage:
+        if copy_message(chat_id, file_storage, dl.telegram_message_id):
+            return JsonResponse({'ok': True})
+        # Message was deleted/inaccessible — fall through to the live link.
+
+    send_message(chat_id, "⏳ Fetching your link…")
+    session = requests.Session()
+    direct = resolve_direct_link(dl.url, session)
+    target = direct or dl.url
+    send_message(
+        chat_id,
+        f"📥 Not yet on our fast servers — here's your direct link 👇\n{target}",
+    )
+    return JsonResponse({'ok': True})
 
 
 # ── Streamable host lists ─────────────────────────────────────────────────────

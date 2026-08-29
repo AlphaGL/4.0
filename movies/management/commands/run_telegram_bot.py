@@ -10,20 +10,21 @@ one-shot and would have to run forever to keep listening).
 Payload formats (from the 'start_param' after /start):
     movie<id>   — from channel posts / a plain movie page. Resolves the
                   movie's download link(s); a series with more than one
-                  gets an inline episode picker (tap → same delivery below).
+                  gets an inline episode picker (tap → dl<id> below).
     dl<id>      — from the website's per-episode "Download via Telegram"
-                  button. Resolves that exact DownloadLink directly.
+                  button, or an episode picked from the list above. Sends
+                  the ad-gate "Continue to Download" button for that exact
+                  DownloadLink.
 
-Delivery, once a DownloadLink is resolved:
-    1. telegram_message_id is set → copyMessage from the private
-       "Watch2D File Storage" channel straight into the user's chat.
-       Instant, no re-upload, works regardless of file size.
-    2. Not archived yet → resolve_direct_link() (the exact same resolver the
-       scrapers use) against the source landing page, and send that raw
-       direct URL as a message instead — tapping it starts the download
-       immediately, with a note explaining it's not from Telegram's CDN.
-    3. Movie has no download links at all (stream-only title) → send the
-       site's Watch Now / stream page link.
+This bot only ever gets someone as far as the ad-gate button — it does NOT
+deliver the file itself. Once tapped, that button opens telegram_ad_gate.html
+in a Telegram Web App webview, which plays the Monetag ad and then calls
+movies.views.telegram_ad_gate_deliver directly (a plain HTTPS POST,
+authenticated with Telegram's signed initData) to actually resolve/copy and
+send the file. That split exists because Telegram.WebApp.sendData() —
+the obvious way to hand control back to *this* bot — only works for Web
+Apps opened via a Keyboard button, not the inline button used here, so the
+ad-gate page talks to the website instead of back to this process.
 
 Run:  python manage.py run_telegram_bot
 """
@@ -35,46 +36,9 @@ import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-
-def _api(method: str) -> str:
-    token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '')
-    return f"https://api.telegram.org/bot{token}/{method}"
-
-
-def _send_message(chat_id, text: str, reply_markup: dict = None):
-    payload = {
-        'chat_id': chat_id,
-        'text': text,
-        'parse_mode': 'HTML',
-        'disable_web_page_preview': False,
-    }
-    if reply_markup:
-        payload['reply_markup'] = reply_markup
-    try:
-        requests.post(_api('sendMessage'), json=payload, timeout=15)
-    except Exception as e:
-        print(f"⚠️  sendMessage failed: {e}")
-
-
-def _copy_message(chat_id, from_chat_id, message_id) -> bool:
-    try:
-        resp = requests.post(_api('copyMessage'), json={
-            'chat_id': chat_id,
-            'from_chat_id': from_chat_id,
-            'message_id': message_id,
-        }, timeout=20)
-        return resp.ok and resp.json().get('ok', False)
-    except Exception as e:
-        print(f"⚠️  copyMessage failed: {e}")
-        return False
-
-
-def _answer_callback(callback_query_id):
-    try:
-        requests.post(_api('answerCallbackQuery'),
-                      json={'callback_query_id': callback_query_id}, timeout=10)
-    except Exception:
-        pass
+from movies.telegram_bot_api import api_url as _api
+from movies.telegram_bot_api import answer_callback as _answer_callback
+from movies.telegram_bot_api import send_message as _send_message
 
 
 class Command(BaseCommand):
@@ -120,16 +84,6 @@ class Command(BaseCommand):
 
     def _handle_message(self, message: dict):
         chat_id = message['chat']['id']
-
-        # Sent automatically when the ad-gate Mini App page calls
-        # Telegram.WebApp.sendData() after the Monetag ad resolves.
-        web_app_data = message.get('web_app_data')
-        if web_app_data:
-            payload = (web_app_data.get('data') or '').strip()
-            if payload:
-                self._deliver_after_ad(chat_id, payload)
-            return
-
         text = (message.get('text') or '').strip()
 
         if text.startswith('/start'):
@@ -240,10 +194,11 @@ class Command(BaseCommand):
     def _offer_ad_gate(self, chat_id, dl):
         """
         Send the 'Continue to Download' button — a Telegram Web App button,
-        NOT a plain link. This is what makes the Monetag ad actually play:
-        tapping it opens telegram_ad_gate.html in a webview, which shows the
-        ad, then calls Telegram.WebApp.sendData() to hand the payload back to
-        this bot as a web_app_data message (see _handle_message).
+        NOT a plain link. Tapping it opens telegram_ad_gate.html in a webview,
+        which shows the Monetag ad, then calls the site's own
+        /tg/ad-gate/deliver/ endpoint directly (NOT sendData() — that only
+        works for Mini Apps opened via a Keyboard button, not this inline
+        one) to actually deliver the file.
         """
         site = getattr(settings, 'SITE_URL', 'https://watch2d.org').rstrip('/')
         # dl.label is often just generic scraped button text ("DOWNLOAD") for
@@ -262,38 +217,4 @@ class Command(BaseCommand):
             reply_markup={'inline_keyboard': [[
                 {'text': '▶️ Continue to Download', 'web_app': {'url': gate_url}},
             ]]},
-        )
-
-    def _deliver_after_ad(self, chat_id, payload: str):
-        """Called once the ad-gate page confirms the ad resolved. payload is
-        always a dl<id> here — episode/movie ambiguity was already resolved
-        before the ad-gate button was ever shown."""
-        from movies.models import DownloadLink
-
-        if not payload.startswith('dl'):
-            return
-        try:
-            dl = DownloadLink.objects.select_related('movie').get(pk=int(payload[2:]))
-        except (DownloadLink.DoesNotExist, ValueError):
-            _send_message(chat_id, "⚠️ That link isn't available anymore.")
-            return
-
-        file_storage = getattr(settings, 'TELETHON_PRIVATE_CHANNEL', None)
-        self._deliver_link(chat_id, dl, file_storage)
-
-    def _deliver_link(self, chat_id, dl, file_storage):
-        from movies.management.commands._telegram_upload import resolve_direct_link
-
-        if dl.telegram_message_id and file_storage:
-            if _copy_message(chat_id, file_storage, dl.telegram_message_id):
-                return
-            # Message was deleted/inaccessible — fall through to the live link.
-
-        _send_message(chat_id, "⏳ Fetching your link…")
-        session = requests.Session()
-        direct = resolve_direct_link(dl.url, session)
-        target = direct or dl.url
-        _send_message(
-            chat_id,
-            f"📥 Not yet on our fast servers — here's your direct link 👇\n{target}",
         )

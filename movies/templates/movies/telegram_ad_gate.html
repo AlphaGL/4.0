@@ -42,8 +42,17 @@
     done = true;
     try {
       if (!payload) throw new Error('no payload');
-      Telegram.WebApp.sendData(payload);
-      Telegram.WebApp.close();
+      // sendData() only works for Mini Apps opened via a Keyboard button,
+      // not the inline "Continue to Download" button we use — so hand off
+      // to the site directly instead, authenticated with Telegram's own
+      // signed initData rather than sendData()/a session.
+      fetch('/tg/ad-gate/deliver/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload: payload, init_data: Telegram.WebApp.initData }),
+      }).catch(function () {}).then(function () {
+        Telegram.WebApp.close();
+      });
     } catch (e) {
       document.querySelector('.wrap p').textContent =
         'This link has expired — go back and tap the button again.';
