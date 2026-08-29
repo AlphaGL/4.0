@@ -649,20 +649,28 @@
             <div class="p-6">
               <div class="grid gap-3">
                 {% for link in movie.download_links.all %}
-                  {# ── Each episode → gate page ── #}
-                  <a href="{% url 'movies:download_gate' movie.pk %}?link={{ link.pk }}"
-                     class="group flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-xl hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-600 dark:hover:to-gray-500 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
-                    <div class="flex items-center gap-3">
+                  {# ── Each episode: site gate + Telegram, side by side.
+                       The Telegram link works whether or not this file is
+                       archived yet — the bot resolves a live link on the
+                       fly otherwise — so it's always shown. ── #}
+                  <div class="p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-xl">
+                    <div class="flex items-center gap-3 mb-3">
                       <div class="w-9 h-9 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shrink-0">
                         <i class="fas fa-download text-white text-xs"></i>
                       </div>
-                      <div>
-                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm">{{ link.label|default:"Download" }}</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Click to download</p>
-                      </div>
+                      <h3 class="font-semibold text-gray-900 dark:text-white text-sm">{{ link.label|default:"Download" }}</h3>
                     </div>
-                    <i class="fas fa-arrow-right text-gray-400 group-hover:text-blue-500 transition-colors text-sm"></i>
-                  </a>
+                    <div class="flex gap-2">
+                      <a href="{% url 'movies:download_gate' movie.pk %}?link={{ link.pk }}"
+                         class="group flex-1 flex items-center justify-center gap-2 py-2.5 px-3 bg-white dark:bg-gray-800 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors text-sm font-medium text-gray-700 dark:text-gray-200">
+                        <i class="fas fa-globe text-blue-500 text-xs"></i> Download on Site
+                      </a>
+                      <a href="https://t.me/watch2d_bot?start=dl{{ link.pk }}" data-external="true"
+                         class="group flex-1 flex items-center justify-center gap-2 py-2.5 px-3 bg-white dark:bg-gray-800 rounded-lg hover:bg-sky-50 dark:hover:bg-gray-600 transition-colors text-sm font-medium text-gray-700 dark:text-gray-200">
+                        <i class="fab fa-telegram text-sky-500 text-xs"></i> Download on Telegram
+                      </a>
+                    </div>
+                  </div>
                 {% endfor %}
 
                 {# ── Alternate mirror (direct ad link, unchanged) ── #}
@@ -683,13 +691,22 @@
             </div>
 
           {% elif movie.download_url %}
-            {# ── Single download URL → gate page ── #}
+            {# ── Single download URL → gate page (or Telegram) ── #}
             <div class="p-8 text-center space-y-4">
-              <a href="{% url 'movies:download_gate' movie.pk %}?url={{ movie.download_url|urlencode }}"
-                 class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full font-semibold transition-all duration-300 hover:scale-105 shadow-lg">
-                <i class="fas fa-download mr-3"></i>
-                <span>Download {{ movie.title }}</span>
-              </a>
+              <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="{% url 'movies:download_gate' movie.pk %}?url={{ movie.download_url|urlencode }}"
+                   class="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full font-semibold transition-all duration-300 hover:scale-105 shadow-lg">
+                  <i class="fas fa-globe mr-3"></i>
+                  <span>Download on Site</span>
+                </a>
+                {# Works even before this file is archived to Telegram — the
+                   bot resolves a live direct link on the fly otherwise. #}
+                <a href="https://t.me/watch2d_bot?start=movie{{ movie.pk }}" data-external="true"
+                   class="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-sky-500 to-blue-500 hover:from-sky-600 hover:to-blue-600 text-white rounded-full font-semibold transition-all duration-300 hover:scale-105 shadow-lg">
+                  <i class="fab fa-telegram mr-3"></i>
+                  <span>Download on Telegram</span>
+                </a>
+              </div>
               <div>
                 <a href="https://otieu.com/4/9893460" target="_blank" rel="nofollow"
                    class="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-full font-semibold transition-all duration-300 hover:scale-105 shadow-lg text-sm">

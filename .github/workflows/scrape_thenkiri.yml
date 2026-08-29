@@ -115,6 +115,14 @@ jobs:
           - name: "▶️ StreamIMDB (movies + TV)"
             cmd: "python manage.py scrape_streamimdb --media both --max-pages 3"
             upload: false
+          # ── Backfill: archive existing (pre-pipeline) DownloadLinks to the
+          #    private Telegram channel, most-viewed first. Deliberately slow
+          #    (small --limit) — runs every cycle automatically, no manual
+          #    trigger ever needed; see the command's own docstring for why
+          #    it isn't a one-shot "upload everything" job. ──
+          - name: "📦 Backfill Telegram archive (existing catalog)"
+            cmd: "python manage.py backfill_telegram_uploads --limit 20 --delay 8"
+            upload: true
           # ── naijaprey.tv: DISABLED. It only has movies + series, both fully
           #    covered by 9jarocks (the main source) — no gap categories to fill.
           #    It previously added a second download-host as a fallback; re-enable

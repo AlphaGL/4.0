@@ -189,8 +189,18 @@ class Command(BaseCommand):
                 return
 
             links = list(movie.download_links.all())
+            if not links and movie.download_url:
+                # Legacy titles stored a single flat download_url before
+                # DownloadLink existed — backfill a real row on first request
+                # so this behaves identically to newer titles (ad-gate,
+                # follow-gate, Telegram-archive eligibility, etc.) instead of
+                # being mistaken for a stream-only title below.
+                links = [DownloadLink.objects.create(
+                    movie=movie, url=movie.download_url, label='Download')]
+
             if not links:
-                # Stream-only title — no file to hand over, send the watch page.
+                # Genuinely stream-only title — no file to hand over, send
+                # the watch page.
                 site = getattr(settings, 'SITE_URL', 'https://watch2d.org').rstrip('/')
                 slug = getattr(movie, 'slug', '') or ''
                 url = f"{site}/movie/{movie.pk}/{slug}/" if slug else f"{site}/movie/{movie.pk}/"

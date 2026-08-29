@@ -458,11 +458,16 @@ def upload_movie_file(movie, landing_url: str, http_session: requests.Session) -
         else:
             print(f"      📏  File size unknown — will attempt download")
 
-        # Step 3: Build a safe filename from the URL
+        # Step 3: Build a safe filename from the URL, rebranding the source
+        # site's own watermark tag (e.g. "[9jaRocks.Com]", ".THENKIRI.COM.")
+        # to ours instead of just stripping it.
         raw_name = direct_url.split('/')[-1].split('?')[0]
-        # Strip any THENKIRI.COM / naijadeleyss watermarks from filename
-        safe_name = re.sub(r'\.(THENKIRI\.COM|DOWNLOADED\.FROM\.[^.]+)\b', '',
-                           raw_name, flags=re.IGNORECASE)
+        safe_name = re.sub(
+            r'\[\s*(?:9jarocks|thenkiri|naijaprey|streamimdb)(?:\.com)?\s*\]',
+            '[WATCH2D.ORG]', raw_name, flags=re.IGNORECASE)
+        safe_name = re.sub(
+            r'\.(?:THENKIRI\.COM|9JAROCKS\.COM|DOWNLOADED\.FROM\.[^.]+)\b',
+            '.WATCH2D.ORG', safe_name, flags=re.IGNORECASE)
         safe_name = safe_name.strip('.') or f"movie_{movie.pk}.mkv"
 
         # Step 4: Download to server temp folder
