@@ -36,24 +36,13 @@ import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
+from movies.telegram_bot_api import SOCIAL_LINKS, TELEGRAM_FOLLOW_CHANNELS
 from movies.telegram_bot_api import api_url as _api
 from movies.telegram_bot_api import answer_callback as _answer_callback
 from movies.telegram_bot_api import is_channel_member as _is_channel_member
 from movies.telegram_bot_api import send_message as _send_message
 from movies.telegram_bot_api import send_photo as _send_photo
-
-# Channels the bot can actually verify membership of (getChatMember) — the
-# bot must be an admin of both. Anything else (WhatsApp/X/Facebook) has no
-# API for a Telegram bot to confirm a follow, so those are a soft ask only.
-TELEGRAM_FOLLOW_CHANNELS = [
-    ('📢 Telegram Channel', 'https://t.me/+wUlsP5Yv8h9iZDJk', -1003266960032),
-    ('📢 Telegram Channel 2', 'https://t.me/+Lve6_XzFxCwxNDdk', -1002231007764),
-]
-SOCIAL_LINKS = [
-    ('💬 WhatsApp Channel', 'https://whatsapp.com/channel/0029VavDAbsEFeXpbo2lEg3f'),
-    ('🐦 X (Twitter)', 'https://x.com/watch2download'),
-    ('📘 Facebook', 'https://web.facebook.com/WATCH2D'),
-]
+from movies.telegram_bot_api import social_footer as _social_footer
 
 
 def _has_followed_required_channels(user_id) -> bool:
@@ -285,7 +274,8 @@ class Command(BaseCommand):
         gate_url = f"{site}/tg/ad-gate/?p=dl{dl.pk}"
         caption = (self._movie_caption(dl.movie, self._episode_suffix(dl))
                    + "\n\nTap below to continue — a short ad plays first, "
-                     "then your download starts.")
+                     "then your download starts."
+                   + f"\n\n{_social_footer()}")
         markup = {'inline_keyboard': [[
             {'text': '▶️ Continue to Download', 'web_app': {'url': gate_url}},
         ]]}

@@ -473,10 +473,12 @@ def telegram_ad_gate_deliver(request):
     Download" button we use, so the page talks to the site directly instead,
     authenticated with Telegram's own signed initData rather than a session.
     """
+    import html as _html
     import json as _json
 
     from movies.models import DownloadLink
-    from movies.telegram_bot_api import copy_message, send_message, validate_init_data
+    from movies.telegram_bot_api import (copy_message, send_message,
+                                          social_footer, validate_init_data)
     from movies.management.commands._telegram_upload import resolve_direct_link
 
     try:
@@ -499,6 +501,7 @@ def telegram_ad_gate_deliver(request):
     file_storage = getattr(settings, 'TELETHON_PRIVATE_CHANNEL', None)
     if dl.telegram_message_id and file_storage:
         if copy_message(chat_id, file_storage, dl.telegram_message_id):
+            send_message(chat_id, social_footer())
             return JsonResponse({'ok': True})
         # Message was deleted/inaccessible — fall through to the live link.
 
@@ -508,7 +511,10 @@ def telegram_ad_gate_deliver(request):
     target = direct or dl.url
     send_message(
         chat_id,
-        f"📥 Not yet on our fast servers — here's your direct link 👇\n{target}",
+        "📥 Not yet on our fast servers — here's your direct link 👇\n"
+        f'<a href="{_html.escape(target, quote=True)}">▶️ CLICK TO START DOWNLOAD</a>'
+        f"\n\n{social_footer()}",
+        disable_preview=True,
     )
     return JsonResponse({'ok': True})
 

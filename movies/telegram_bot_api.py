@@ -4,8 +4,34 @@ persistent delivery bot (management/commands/run_telegram_bot.py) and the
 ad-gate view (views.py::telegram_ad_gate_deliver). Kept in one place so
 both call sites send messages/copy files identically.
 """
+import html
+
 import requests
 from django.conf import settings
+
+# Channels the bot can actually verify membership of (getChatMember) — the
+# bot must be an admin of both. Anything else (WhatsApp/X/Facebook) has no
+# API for a Telegram bot to confirm a follow, so those are a soft ask only.
+# Shared between run_telegram_bot.py (the follow-gate) and views.py (the
+# ad-gate delivery endpoint), so every message stays consistent.
+TELEGRAM_FOLLOW_CHANNELS = [
+    ('📢 Telegram Channel', 'https://t.me/+wUlsP5Yv8h9iZDJk', -1003266960032),
+    ('📢 Telegram Channel 2', 'https://t.me/+Lve6_XzFxCwxNDdk', -1002231007764),
+]
+SOCIAL_LINKS = [
+    ('💬 WhatsApp Channel', 'https://whatsapp.com/channel/0029VavDAbsEFeXpbo2lEg3f'),
+    ('🐦 X (Twitter)', 'https://x.com/watch2download'),
+    ('📘 Facebook', 'https://web.facebook.com/WATCH2D'),
+]
+
+
+def social_footer() -> str:
+    """One compact line of all 5 platform handles, HTML-linked — appended to
+    the key bot messages (ad-gate offer, delivery) so the socials stay
+    visible on every interaction, not just the one-time follow-gate."""
+    all_links = [(label, url) for label, url, *_ in TELEGRAM_FOLLOW_CHANNELS] + SOCIAL_LINKS
+    parts = [f'<a href="{url}">{html.escape(label)}</a>' for label, url in all_links]
+    return "  •  ".join(parts)
 
 
 def api_url(method: str) -> str:
@@ -13,12 +39,13 @@ def api_url(method: str) -> str:
     return f"https://api.telegram.org/bot{token}/{method}"
 
 
-def send_message(chat_id, text: str, reply_markup: dict = None):
+def send_message(chat_id, text: str, reply_markup: dict = None,
+                  disable_preview: bool = False):
     payload = {
         'chat_id': chat_id,
         'text': text,
         'parse_mode': 'HTML',
-        'disable_web_page_preview': False,
+        'disable_web_page_preview': disable_preview,
     }
     if reply_markup:
         payload['reply_markup'] = reply_markup
