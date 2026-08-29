@@ -193,24 +193,23 @@ def telegram_download_buttons(movie) -> dict:
     navigation, so there's no benefit routing this one through it.
 
     '⚡ Download on Telegram' — a deep link into the bot's ad-gated delivery
-    flow (run_telegram_bot.py) — is added ONLY when TELEGRAM_BOT_DELIVERY_ENABLED
-    is on, so channel posts never show a button that currently opens onto
-    silence if the bot isn't deployed yet.
+    flow (run_telegram_bot.py) — is always shown alongside it now that the
+    bot is deployed and verified working.
     """
     from django.conf import settings
 
     site_url = getattr(settings, 'SITE_URL', 'https://watch2d.org').rstrip('/')
     slug = getattr(movie, 'slug', '') or ''
     view_url = f"{site_url}/movie/{movie.pk}/{slug}/" if slug else f"{site_url}/movie/{movie.pk}/"
+    bot_username = getattr(settings, 'TELEGRAM_BOT_USERNAME', 'watch2d_bot')
 
-    rows = [[{'text': '⬇️ Download on Website', 'url': view_url}]]
-
-    if getattr(settings, 'TELEGRAM_BOT_DELIVERY_ENABLED', False):
-        bot_username = getattr(settings, 'TELEGRAM_BOT_USERNAME', 'watch2d_bot')
-        rows.append([{
+    rows = [
+        [{'text': '⬇️ Download on Website', 'url': view_url}],
+        [{
             'text': '⚡ Download on Telegram',
             'url': f"https://t.me/{bot_username}?start=movie{movie.pk}",
-        }])
+        }],
+    ]
 
     rows.append([{
         'text': '📲 Get the Watch2D App',
