@@ -38,7 +38,30 @@ from django.core.management.base import BaseCommand
 
 from movies.telegram_bot_api import api_url as _api
 from movies.telegram_bot_api import answer_callback as _answer_callback
+from movies.telegram_bot_api import is_channel_member as _is_channel_member
 from movies.telegram_bot_api import send_message as _send_message
+from movies.telegram_bot_api import send_photo as _send_photo
+
+# Channels the bot can actually verify membership of (getChatMember) — the
+# bot must be an admin of both. Anything else (WhatsApp/X/Facebook) has no
+# API for a Telegram bot to confirm a follow, so those are a soft ask only.
+TELEGRAM_FOLLOW_CHANNELS = [
+    ('📢 Telegram Channel', 'https://t.me/+wUlsP5Yv8h9iZDJk', -1003266960032),
+    ('📢 Telegram Channel 2', 'https://t.me/+Lve6_XzFxCwxNDdk', -1002231007764),
+]
+SOCIAL_LINKS = [
+    ('💬 WhatsApp Channel', 'https://whatsapp.com/channel/0029VavDAbsEFeXpbo2lEg3f'),
+    ('🐦 X (Twitter)', 'https://x.com/watch2download'),
+    ('📘 Facebook', 'https://web.facebook.com/WATCH2D'),
+]
+
+
+def _has_followed_required_channels(user_id) -> bool:
+    """True only if user_id is currently a member of every Telegram channel
+    we can actually verify. WhatsApp/X/Facebook aren't checked — no API for
+    that — they're shown as a request, not enforced."""
+    return all(_is_channel_member(user_id, chat_id)
+               for _, _, chat_id in TELEGRAM_FOLLOW_CHANNELS)
 
 
 class Command(BaseCommand):
@@ -191,6 +214,50 @@ class Command(BaseCommand):
 
         _send_message(chat_id, "⚠️ Unrecognized link.")
 
+    def _movie_caption(self, movie, title_suffix: str = '') -> str:
+        """Poster caption: title (+ episode, if any), rating, year, genre."""
+        lines = [f"🎬 <b>{html.escape(movie.title)}{title_suffix}</b>", ""]
+        if getattr(movie, 'rating', None):
+            lines.append(f"⭐ Rating: {movie.rating:.1f}/10")
+        if getattr(movie, 'vi_year', ''):
+            lines.append(f"📅 Year: {movie.vi_year}")
+        try:
+            cats = movie.categories.all()
+            if cats:
+                lines.append(f"🏷 Genre: {', '.join(c.name for c in cats[:3])}")
+        except Exception:
+            pass
+        return "\n".join(lines)
+
+    def _episode_suffix(self, dl) -> str:
+        # dl.label is often just generic scraped button text ("DOWNLOAD") for
+        # a plain movie — only worth showing alongside the title when it
+        # actually names an episode.
+        label = (dl.label or '').strip()
+        if re.search(r'episode|s\d+e\d+', label, re.IGNORECASE):
+            return f" — {html.escape(label)}"
+        return ''
+
+    def _send_follow_gate(self, chat_id, dl):
+        """
+        Shown instead of the ad-gate button when the user hasn't (verifiably)
+        followed everywhere yet. Only the two Telegram channels are actually
+        checked (getChatMember) — WhatsApp/X/Facebook have no equivalent API,
+        so those are a request, not an enforced gate.
+        """
+        caption = (self._movie_caption(dl.movie, self._episode_suffix(dl))
+                   + "\n\n🔒 Follow us everywhere, then tap Continue:")
+        buttons = [[{'text': label, 'url': url}]
+                   for label, url, _chat_id in TELEGRAM_FOLLOW_CHANNELS]
+        buttons += [[{'text': label, 'url': url}] for label, url in SOCIAL_LINKS]
+        buttons.append([{'text': "✅ I've Followed — Continue", 'callback_data': f'dl{dl.pk}'}])
+        markup = {'inline_keyboard': buttons}
+
+        if dl.movie.image_url:
+            _send_photo(chat_id, dl.movie.image_url, caption, reply_markup=markup)
+        else:
+            _send_message(chat_id, caption, reply_markup=markup)
+
     def _offer_ad_gate(self, chat_id, dl):
         """
         Send the 'Continue to Download' button — a Telegram Web App button,
@@ -200,21 +267,20 @@ class Command(BaseCommand):
         works for Mini Apps opened via a Keyboard button, not this inline
         one) to actually deliver the file.
         """
+        if not _has_followed_required_channels(chat_id):
+            self._send_follow_gate(chat_id, dl)
+            return
+
         site = getattr(settings, 'SITE_URL', 'https://watch2d.org').rstrip('/')
-        # dl.label is often just generic scraped button text ("DOWNLOAD") for
-        # a plain movie — only worth showing alongside the title when it
-        # actually names an episode.
-        label = (dl.label or '').strip()
-        title = html.escape(dl.movie.title)
-        if re.search(r'episode|s\d+e\d+', label, re.IGNORECASE):
-            title += f" — {html.escape(label)}"
         gate_url = f"{site}/tg/ad-gate/?p=dl{dl.pk}"
-        _send_message(
-            chat_id,
-            f"🎬 <b>{title}</b>\n\n"
-            "Tap below to continue — a short ad plays first, then your "
-            "download starts.",
-            reply_markup={'inline_keyboard': [[
-                {'text': '▶️ Continue to Download', 'web_app': {'url': gate_url}},
-            ]]},
-        )
+        caption = (self._movie_caption(dl.movie, self._episode_suffix(dl))
+                   + "\n\nTap below to continue — a short ad plays first, "
+                     "then your download starts.")
+        markup = {'inline_keyboard': [[
+            {'text': '▶️ Continue to Download', 'web_app': {'url': gate_url}},
+        ]]}
+
+        if dl.movie.image_url:
+            _send_photo(chat_id, dl.movie.image_url, caption, reply_markup=markup)
+        else:
+            _send_message(chat_id, caption, reply_markup=markup)

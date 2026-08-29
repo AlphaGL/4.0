@@ -188,14 +188,14 @@ def telegram_download_buttons(movie) -> dict:
     automation/tasks.py and every scraper's own _post_movie_to_telegram, so
     the button behavior stays identical everywhere it's built.
 
-    Always includes '⬇️ View & Download' straight to the plain website —
+    '⬇️ Download on Website' always goes straight to the plain website —
     Telegram's Mini App WebView can't handle file downloads or free page
     navigation, so there's no benefit routing this one through it.
 
-    Adds '⚡ Fast Download' — a deep link straight into the bot's ad-gated
-    delivery flow — ONLY when TELEGRAM_BOT_DELIVERY_ENABLED is on. That flag
-    stays off until the bot's /start handler actually exists, so channel
-    posts never show a button that currently opens onto silence.
+    '⚡ Download on Telegram' — a deep link into the bot's ad-gated delivery
+    flow (run_telegram_bot.py) — is added ONLY when TELEGRAM_BOT_DELIVERY_ENABLED
+    is on, so channel posts never show a button that currently opens onto
+    silence if the bot isn't deployed yet.
     """
     from django.conf import settings
 
@@ -203,16 +203,21 @@ def telegram_download_buttons(movie) -> dict:
     slug = getattr(movie, 'slug', '') or ''
     view_url = f"{site_url}/movie/{movie.pk}/{slug}/" if slug else f"{site_url}/movie/{movie.pk}/"
 
-    row = [{'text': '⬇️ View & Download', 'url': view_url}]
+    rows = [[{'text': '⬇️ Download on Website', 'url': view_url}]]
 
     if getattr(settings, 'TELEGRAM_BOT_DELIVERY_ENABLED', False):
         bot_username = getattr(settings, 'TELEGRAM_BOT_USERNAME', 'watch2d_bot')
-        row.append({
-            'text': '⚡ Fast Download',
+        rows.append([{
+            'text': '⚡ Download on Telegram',
             'url': f"https://t.me/{bot_username}?start=movie{movie.pk}",
-        })
+        }])
 
-    return {'inline_keyboard': [row]}
+    rows.append([{
+        'text': '📲 Get the Watch2D App',
+        'url': 'https://dl.watch2d.org/watch2d-latest.apk',
+    }])
+
+    return {'inline_keyboard': rows}
 
 
 def find_duplicate_movie(title, model=None):

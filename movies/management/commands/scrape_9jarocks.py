@@ -555,9 +555,6 @@ def _post_movie_to_telegram(movie, is_new: bool):
         caption = "\n".join(lines)
         from movies.scraper_utils import telegram_download_buttons
         markup = telegram_download_buttons(movie)
-        markup['inline_keyboard'].append(
-            [{'text': '📲 Get the Watch2D App', 'url': PLATFORM_LINKS['app']}]
-        )
         if movie.image_url:
             send_photo(channel, movie.image_url, caption, reply_markup=markup)
         else:

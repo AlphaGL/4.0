@@ -28,6 +28,41 @@ def send_message(chat_id, text: str, reply_markup: dict = None):
         print(f"⚠️  sendMessage failed: {e}")
 
 
+def send_photo(chat_id, photo_url: str, caption: str, reply_markup: dict = None):
+    """Send a photo with caption + buttons. Falls back to text-only (keeping
+    the buttons) if the photo fails to send — e.g. a dead/missing poster URL."""
+    payload = {
+        'chat_id': chat_id,
+        'photo': photo_url,
+        'caption': caption,
+        'parse_mode': 'HTML',
+    }
+    if reply_markup:
+        payload['reply_markup'] = reply_markup
+    try:
+        resp = requests.post(api_url('sendPhoto'), json=payload, timeout=15)
+        if resp.ok and resp.json().get('ok'):
+            return
+    except Exception:
+        pass
+    send_message(chat_id, caption, reply_markup=reply_markup)
+
+
+def is_channel_member(user_id, chat_id) -> bool:
+    """True only if user_id is a current member/admin/creator of chat_id.
+    Requires the bot to be an admin of that channel."""
+    try:
+        resp = requests.get(api_url('getChatMember'), params={
+            'chat_id': chat_id, 'user_id': user_id,
+        }, timeout=10)
+        data = resp.json()
+        if not data.get('ok'):
+            return False
+        return data['result'].get('status') in ('member', 'administrator', 'creator')
+    except Exception:
+        return False
+
+
 def copy_message(chat_id, from_chat_id, message_id) -> bool:
     try:
         resp = requests.post(api_url('copyMessage'), json={
