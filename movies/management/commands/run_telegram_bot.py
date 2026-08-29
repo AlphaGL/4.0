@@ -189,11 +189,16 @@ class Command(BaseCommand):
 
             if not links:
                 # Genuinely stream-only title — no file to hand over, send
-                # the watch page.
+                # the watch page as a button.
                 site = getattr(settings, 'SITE_URL', 'https://watch2d.org').rstrip('/')
                 slug = getattr(movie, 'slug', '') or ''
                 url = f"{site}/movie/{movie.pk}/{slug}/" if slug else f"{site}/movie/{movie.pk}/"
-                _send_message(chat_id, f"▶️ Watch it here: {url}")
+                caption = self._movie_caption(movie) + "\n\nTap below to watch:"
+                markup = {'inline_keyboard': [[{'text': '▶️ Watch Now', 'url': url}]]}
+                if movie.image_url:
+                    _send_photo(chat_id, movie.image_url, caption, reply_markup=markup)
+                else:
+                    _send_message(chat_id, caption, reply_markup=markup)
                 return
 
             if len(links) == 1:

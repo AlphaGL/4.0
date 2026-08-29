@@ -473,7 +473,6 @@ def telegram_ad_gate_deliver(request):
     Download" button we use, so the page talks to the site directly instead,
     authenticated with Telegram's own signed initData rather than a session.
     """
-    import html as _html
     import json as _json
 
     from movies.models import DownloadLink
@@ -511,10 +510,10 @@ def telegram_ad_gate_deliver(request):
     target = direct or dl.url
     send_message(
         chat_id,
-        "✅ Your download is ready 👇\n"
-        f'<a href="{_html.escape(target, quote=True)}">▶️ CLICK TO START DOWNLOAD</a>'
-        f"\n\n{social_footer()}",
-        disable_preview=True,
+        f"✅ Your download is ready — tap the button below 👇\n\n{social_footer()}",
+        reply_markup={'inline_keyboard': [[
+            {'text': '▶️ CLICK TO DOWNLOAD', 'url': target},
+        ]]},
     )
     return JsonResponse({'ok': True})
 
