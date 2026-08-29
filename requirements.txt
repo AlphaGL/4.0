@@ -42,7 +42,7 @@ python-dateutil==2.9.0.post0
 reportlab==4.0.9
 
 # Telegram file uploader (supports up to 2 GB uploads)
-telethon==1.36.0
+telethon==1.43.2
 
 django-redis
 

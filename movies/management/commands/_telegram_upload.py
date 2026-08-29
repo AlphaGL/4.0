@@ -328,37 +328,39 @@ def download_to_temp(direct_url: str, filename: str, session: requests.Session) 
 
 def _build_upload_caption(movie) -> str:
     """
-    Build the caption that appears with the uploaded file
-    in the private Telegram channel.
+    Build the caption that appears with the uploaded file in the private
+    channel. Plain text, no parse_mode — this channel is an internal
+    archive, not user-facing polish, so formatting isn't worth the extra
+    surface area. Telegram still auto-links the plain URL.
     """
     from django.conf import settings as _s
     site_url  = getattr(_s, 'SITE_URL', 'https://watch2d.org').rstrip('/')
     movie_url = f"{site_url}/movie/{movie.pk}/{movie.slug}/"
 
     lines = [
-        f"🎬  <b>{movie.title}</b>",
+        f"🎬  {movie.title}",
         "",
     ]
 
     if getattr(movie, 'vi_year', ''):
-        lines.append(f"📅  <b>Year:</b> {movie.vi_year}")
+        lines.append(f"📅  Year: {movie.vi_year}")
     if getattr(movie, 'vi_language', ''):
-        lines.append(f"🗣  <b>Language:</b> {movie.vi_language}")
+        lines.append(f"🗣  Language: {movie.vi_language}")
     if getattr(movie, 'vi_runtime', ''):
-        lines.append(f"⏱  <b>Runtime:</b> {movie.vi_runtime}")
+        lines.append(f"⏱  Runtime: {movie.vi_runtime}")
     if getattr(movie, 'vi_filesize', ''):
-        lines.append(f"💾  <b>Size:</b> {movie.vi_filesize}")
+        lines.append(f"💾  Size: {movie.vi_filesize}")
 
     try:
         cats = movie.categories.all()
         if cats:
-            lines.append(f"🏷  <b>Genre:</b> {', '.join(c.name for c in cats[:3])}")
+            lines.append(f"🏷  Genre: {', '.join(c.name for c in cats[:3])}")
     except Exception:
         pass
 
     lines += [
         "",
-        f"🌍  <a href='{movie_url}'>Watch2D.org</a>",
+        f"🌍  {movie_url}",
     ]
 
     return "\n".join(lines)
@@ -409,7 +411,6 @@ def upload_file_to_private_channel(movie, file_path: str) -> int | None:
                 channel,
                 file_path,
                 caption          = caption,
-                parse_mode       = 'html',
                 progress_callback= _progress,
                 attributes       = [DocumentAttributeFilename(file_name=filename)],
                 # Force sending as a document (not compressed video)
