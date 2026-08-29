@@ -44,6 +44,12 @@ import cloudscraper
 from urllib.parse import urlparse, urljoin, unquote
 import urllib3
 import time
+from ._telegram_upload import (
+    _cleanup_stale_temp_files,
+    _ensure_temp_dir,
+    upload_movie_file,
+    run_telethon_login,
+)
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -474,20 +480,9 @@ def _post_movie_to_telegram(movie, is_new: bool):
         from automation.telegram import send_photo, send_message
 
         channel  = getattr(settings, 'TELEGRAM_MOVIES_CHANNEL', '')
-        site_url = getattr(settings, 'SITE_URL', 'https://watch2d.org')
         if not channel:
             return
 
-        # 'Download Link': route through the Telegram Mini App ONLY when
-        # TELEGRAM_MINIAPP_URL is set (do that on the account whose DB the Mini
-        # App/site serves — the web DB). Otherwise use the normal site link, so
-        # the other account's posts (different DB, different ids) don't 404.
-        # Twitter/Facebook below always keep the plain site URL.
-        miniapp = getattr(settings, 'TELEGRAM_MINIAPP_URL', '')
-        if miniapp:
-            url = f"{miniapp}?startapp=movie{movie.pk}"
-        else:
-            url = f"{site_url}/movie/{movie.pk}/{movie.slug}/"
         tg_tags, _, _ = _detect_hashtags(movie)
 
         if is_new:
@@ -558,10 +553,11 @@ def _post_movie_to_telegram(movie, is_new: bool):
             return
 
         caption = "\n".join(lines)
-        markup = {'inline_keyboard': [
-            [{'text': '⬇️ Download Link', 'url': url}],
-            [{'text': '📲 Get the Watch2D App', 'url': PLATFORM_LINKS['app']}],
-        ]}
+        from movies.scraper_utils import telegram_download_buttons
+        markup = telegram_download_buttons(movie)
+        markup['inline_keyboard'].append(
+            [{'text': '📲 Get the Watch2D App', 'url': PLATFORM_LINKS['app']}]
+        )
         if movie.image_url:
             send_photo(channel, movie.image_url, caption, reply_markup=markup)
         else:
@@ -1201,21 +1197,46 @@ class Command(BaseCommand):
             '--list-categories', action='store_true', default=False,
             help='Print all available category aliases and exit',
         )
+        parser.add_argument(
+            '--upload-files', action='store_true', default=False,
+            help=(
+                'After saving a NEW movie, resolve the download link, '
+                'download the file to the server, and upload it to the '
+                'private Telegram channel configured in TELETHON_PRIVATE_CHANNEL.'
+            ),
+        )
+        parser.add_argument(
+            '--telethon-login', action='store_true', default=False,
+            help=(
+                'Run the one-time interactive Telethon login (phone number + code). '
+                'Saves a .session file so all future --upload-files runs are automatic.'
+            ),
+        )
 
     def handle(self, *args, **options):
         from django.db import connection
+
+        # ── --telethon-login (one-time setup) ──────────────────
+        if options.get('telethon_login'):
+            run_telethon_login()
+            return
 
         # ── --list-categories ──────────────────────────────────
         if options['list_categories']:
             self._print_category_list()
             return
 
-        start_page = options['startpage']
-        end_page   = options['endpage']
-        max_pages  = options['max_pages']
-        no_social  = options['no_social']
-        delay      = options['delay']
-        cat_arg    = (options.get('category') or 'all').strip().lower()
+        start_page   = options['startpage']
+        end_page     = options['endpage']
+        max_pages    = options['max_pages']
+        no_social    = options['no_social']
+        delay        = options['delay']
+        cat_arg      = (options.get('category') or 'all').strip().lower()
+        upload_files = options.get('upload_files', False)
+
+        if upload_files:
+            _cleanup_stale_temp_files()
+            _ensure_temp_dir()
 
         # ── Resolve --category to a list of CATEGORY_DEFINITIONS ─
         cats_to_crawl = self._resolve_category_arg(cat_arg)
@@ -1236,6 +1257,10 @@ class Command(BaseCommand):
             print("    Social  : DISABLED (--no-social)")
         else:
             print("    Social  : Twitter + Facebook  (Telegram is OFF)")
+        if upload_files:
+            print("    Upload  : ✅ ENABLED — new movies will be uploaded to private TG channel")
+        else:
+            print("    Upload  : DISABLED (use --upload-files to enable)")
         print("=" * 60)
 
         scraper = _make_scraper()
@@ -1337,6 +1362,8 @@ class Command(BaseCommand):
                         movie   = find_existing_movie(title)
                         created = False
                         updated = False
+                        uploaded_message_id = None
+                        uploaded_landing_url = None
 
                         if not movie:
                             movie = Movie.objects.create(
@@ -1368,6 +1395,13 @@ class Command(BaseCommand):
 
                             if not no_social:
                                 _post_to_all_platforms(movie, is_new=True)
+
+                            # ── Upload file to private TG channel ──────
+                            if upload_files and parsed['download_links']:
+                                uploaded_landing_url = parsed['download_links'][0]['url']
+                                print(f"      📦 Starting file upload pipeline…")
+                                uploaded_message_id = upload_movie_file(
+                                    movie, uploaded_landing_url, scraper)
 
                         else:
                             if movie.title != title:
@@ -1440,8 +1474,12 @@ class Command(BaseCommand):
 
                         for norm, dl in current.items():
                             if norm not in existing:
-                                DownloadLink.objects.create(movie=movie, label=dl['label'], url=dl['url'])
+                                new_link = DownloadLink.objects.create(
+                                    movie=movie, label=dl['label'], url=dl['url'])
                                 added += 1
+                                if uploaded_message_id and norm == normalize_url(uploaded_landing_url):
+                                    new_link.telegram_message_id = uploaded_message_id
+                                    new_link.save(update_fields=['telegram_message_id'])
                             else:
                                 if existing[norm].label != dl['label']:
                                     existing[norm].label = dl['label']

@@ -229,6 +229,11 @@ class DownloadLink(models.Model):
     season_number  = models.PositiveSmallIntegerField(null=True, blank=True)
     episode_number = models.PositiveSmallIntegerField(null=True, blank=True)
 
+    # Set when this exact file has been archived to the private Telegram
+    # "Watch2D File Storage" channel — the message id the bot copyMessage()s
+    # from when a user requests it. Null until the upload pipeline succeeds.
+    telegram_message_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+
     class Meta:
         # Within a movie, order by episode then by priority — so each episode's
         # links come out main-first, fallbacks after.

@@ -64,44 +64,45 @@ jobs:
           # titles). 18+ is intentionally NOT listed (hidden site-wide).
 
           # ── 9jarocks (my9jarocks.bz) — MAIN SOURCE, one job per category.
-          #    upload:false — no Telegram file re-host; still posts links to social.
+          #    upload:true — new movies are re-hosted to the private TG channel
+          #    (same Telethon session as thenkiri, shared via _telegram_upload.py).
           #    (Movie categories pair with their -series variant to avoid overlap.) ──
           - name: "🎬 9jarocks · Hollywood (+ series)"
             cmd: "python manage.py scrape_9jarocks --category hollywood --max-pages 3"
-            upload: false
+            upload: true
           - name: "🇳🇬 9jarocks · Nollywood (+ series)"
             cmd: "python manage.py scrape_9jarocks --category nollywood --max-pages 3"
-            upload: false
+            upload: true
           - name: "🌍 9jarocks · Foreign (+ series)"
             cmd: "python manage.py scrape_9jarocks --category foreign --max-pages 3"
-            upload: false
+            upload: true
           - name: "🇰🇷 9jarocks · Korean drama"
             cmd: "python manage.py scrape_9jarocks --category kdrama --max-pages 3"
-            upload: false
+            upload: true
           - name: "🇨🇳 9jarocks · Chinese drama"
             cmd: "python manage.py scrape_9jarocks --category chinese --max-pages 3"
-            upload: false
+            upload: true
           - name: "🇹🇭 9jarocks · Thai drama"
             cmd: "python manage.py scrape_9jarocks --category thai --max-pages 3"
-            upload: false
+            upload: true
           - name: "🇯🇵 9jarocks · Japanese"
             cmd: "python manage.py scrape_9jarocks --category japanese --max-pages 3"
-            upload: false
+            upload: true
           - name: "🇵🇭 9jarocks · Filipino"
             cmd: "python manage.py scrape_9jarocks --category filipino --max-pages 3"
-            upload: false
+            upload: true
           - name: "🎵 9jarocks · Bollywood"
             cmd: "python manage.py scrape_9jarocks --category bollywood --max-pages 3"
-            upload: false
+            upload: true
           - name: "⛩️ 9jarocks · Anime"
             cmd: "python manage.py scrape_9jarocks --category anime --max-pages 3"
-            upload: false
+            upload: true
           - name: "🤼 9jarocks · Wrestling / Sports"
             cmd: "python manage.py scrape_9jarocks --category wrestling --max-pages 3"
-            upload: false
+            upload: true
           - name: "🔁 9jarocks · Ongoing series"
             cmd: "python manage.py scrape_9jarocks --category ongoing --max-pages 3"
-            upload: false
+            upload: true
           # ── thenkiri.com: GAP-FILLER only — the categories 9jarocks lacks:
           #    Korean movies, Chinese movies, Philippine, Korean variety.
           #    (Hollywood/Series/Korean-drama/Chinese-drama/Bollywood are left to

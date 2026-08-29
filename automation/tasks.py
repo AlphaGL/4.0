@@ -17,20 +17,6 @@ from .models import TelegramPost, TelegramUpdate
 logger = logging.getLogger(__name__)
 
 SITE_URL = lambda: getattr(settings, 'SITE_URL', 'https://watch2d.org')
-MINIAPP_URL = lambda: getattr(settings, 'TELEGRAM_MINIAPP_URL', '')
-
-
-def _movie_button_url(movie) -> str:
-    """URL for the 'Download Link' button under a movie/episode post.
-
-    Routes through the Telegram Mini App (t.me/watch2d_bot/watch?startapp=…) so
-    tapping it opens the movie INSIDE Telegram → Monetag ad → movie page (stream
-    inline, or download bounces to Chrome). Falls back to the plain site link if
-    the Mini App URL isn't configured."""
-    base = MINIAPP_URL()
-    if base:
-        return f"{base}?startapp=movie{movie.pk}"
-    return f"{SITE_URL()}/movie/{movie.pk}/"
 
 
 # ============================================================
@@ -84,7 +70,8 @@ def _post_new_movies() -> int:
 
 
 def _post_movie(movie, channel: str) -> bool:
-    url = _movie_button_url(movie)
+    from movies.scraper_utils import telegram_download_buttons
+    markup = telegram_download_buttons(movie)
     emoji = "🎬" if not movie.is_series else "📺"
 
     lines = [f"{emoji} <b>{movie.title}</b>", ""]
@@ -107,7 +94,7 @@ def _post_movie(movie, channel: str) -> bool:
     return _send_and_record_new(
         'movie', movie.id, movie.title,
         movie.image_url or '', "\n".join(lines), channel,
-        button_url=url,
+        reply_markup=markup,
     )
 
 
@@ -160,7 +147,8 @@ def _post_movie_updates() -> int:
 
 def _post_movie_episode_update(movie, episode_label: str, channel: str) -> bool:
     """Post a 'new episode available' notification for a series."""
-    url = _movie_button_url(movie)
+    from movies.scraper_utils import telegram_download_buttons
+    markup = telegram_download_buttons(movie)
 
     lines = [
         f"🆕 <b>New Episode Available!</b>",
@@ -184,7 +172,7 @@ def _post_movie_episode_update(movie, episode_label: str, channel: str) -> bool:
     return _send_and_record_update(
         'movie', movie.id, movie.title, episode_label,
         movie.image_url or '', "\n".join(lines), channel,
-        button_url=url,
+        reply_markup=markup,
     )
 
 
@@ -487,10 +475,10 @@ def _download_button(url: str) -> dict:
 def _send_and_record_new(
     content_type: str, content_id: int, title: str,
     image_url: str, caption: str, channel: str,
-    button_url: str = None,
+    button_url: str = None, reply_markup: dict = None,
 ) -> bool:
     """Send new-content post and record in TelegramPost."""
-    markup = _download_button(button_url) if button_url else None
+    markup = reply_markup or (_download_button(button_url) if button_url else None)
     try:
         result = (send_photo(channel, image_url, caption, reply_markup=markup)
                   if image_url
@@ -518,10 +506,10 @@ def _send_and_record_new(
 def _send_and_record_update(
     content_type: str, content_id: int, title: str,
     update_key: str, image_url: str, caption: str, channel: str,
-    button_url: str = None,
+    button_url: str = None, reply_markup: dict = None,
 ) -> bool:
     """Send update post and record in TelegramUpdate."""
-    markup = _download_button(button_url) if button_url else None
+    markup = reply_markup or (_download_button(button_url) if button_url else None)
     try:
         result = (send_photo(channel, image_url, caption, reply_markup=markup)
                   if image_url

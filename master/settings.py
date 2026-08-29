@@ -176,6 +176,15 @@ TELEGRAM_MINIAPP_URL    = config('TELEGRAM_MINIAPP_URL', default='')
 # source), so it defaults to the live zone; override via env if it ever changes.
 MONETAG_MINIAPP_ZONE    = config('MONETAG_MINIAPP_ZONE', default='11267431')
 
+# watch2d_bot's username, for building t.me/<username>?start=... deep links.
+TELEGRAM_BOT_USERNAME = config('TELEGRAM_BOT_USERNAME', default='watch2d_bot')
+# Off until the bot's /start handler (ad-gate → copyMessage/resolve fallback)
+# is actually built and deployed — keeps the "⚡ Fast Download" button out of
+# channel posts so it never opens onto a bot with nothing to respond.
+TELEGRAM_BOT_DELIVERY_ENABLED = config(
+    'TELEGRAM_BOT_DELIVERY_ENABLED', default=False, cast=bool,
+)
+
 # ============================================================
 # TELETHON — Private file upload channel
 # Same Telegram account as above, but uploads files directly

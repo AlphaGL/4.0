@@ -182,6 +182,39 @@ def get_or_create_category(name, model=None):
     return model.objects.create(name=canonical)
 
 
+def telegram_download_buttons(movie) -> dict:
+    """
+    Inline keyboard for a movie/episode Telegram channel post. Shared by
+    automation/tasks.py and every scraper's own _post_movie_to_telegram, so
+    the button behavior stays identical everywhere it's built.
+
+    Always includes '⬇️ View & Download' straight to the plain website —
+    Telegram's Mini App WebView can't handle file downloads or free page
+    navigation, so there's no benefit routing this one through it.
+
+    Adds '⚡ Fast Download' — a deep link straight into the bot's ad-gated
+    delivery flow — ONLY when TELEGRAM_BOT_DELIVERY_ENABLED is on. That flag
+    stays off until the bot's /start handler actually exists, so channel
+    posts never show a button that currently opens onto silence.
+    """
+    from django.conf import settings
+
+    site_url = getattr(settings, 'SITE_URL', 'https://watch2d.org').rstrip('/')
+    slug = getattr(movie, 'slug', '') or ''
+    view_url = f"{site_url}/movie/{movie.pk}/{slug}/" if slug else f"{site_url}/movie/{movie.pk}/"
+
+    row = [{'text': '⬇️ View & Download', 'url': view_url}]
+
+    if getattr(settings, 'TELEGRAM_BOT_DELIVERY_ENABLED', False):
+        bot_username = getattr(settings, 'TELEGRAM_BOT_USERNAME', 'watch2d_bot')
+        row.append({
+            'text': '⚡ Fast Download',
+            'url': f"https://t.me/{bot_username}?start=movie{movie.pk}",
+        })
+
+    return {'inline_keyboard': [row]}
+
+
 def find_duplicate_movie(title, model=None):
     """
     Return an existing Movie whose normalized title matches `title`, or None.

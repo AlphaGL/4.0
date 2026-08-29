@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Watch2D</title>
+<style>
+  html, body {
+    margin: 0; height: 100%; background: #0e0e12; color: #eee;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .wrap {
+    height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; padding: 24px;
+  }
+  .spinner {
+    width: 36px; height: 36px; border: 4px solid #333; border-top-color: #4da3ff;
+    border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  p { opacity: 0.8; margin: 0; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="spinner"></div>
+    <p>Preparing your download&hellip;</p>
+  </div>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+{% if MONETAG_MINIAPP_ZONE %}
+<script src="https://libtl.com/sdk.js" data-zone="{{ MONETAG_MINIAPP_ZONE }}" data-sdk="show_{{ MONETAG_MINIAPP_ZONE }}"></script>
+{% endif %}
+<script>
+(function () {
+  var payload = "{{ payload|escapejs }}";
+  var hasZone = {% if MONETAG_MINIAPP_ZONE %}true{% else %}false{% endif %};
+  var done = false;
+
+  function finish() {
+    if (done) return;
+    done = true;
+    try {
+      if (!payload) throw new Error('no payload');
+      Telegram.WebApp.sendData(payload);
+      Telegram.WebApp.close();
+    } catch (e) {
+      document.querySelector('.wrap p').textContent =
+        'This link has expired — go back and tap the button again.';
+    }
+  }
+
+  try {
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
+  } catch (e) {}
+
+  if (!hasZone) { finish(); return; }
+
+  var tries = 0;
+  (function poll() {
+    var show = window['show_{{ MONETAG_MINIAPP_ZONE }}'];
+    if (typeof show === 'function') {
+      show().then(finish).catch(finish);
+      setTimeout(finish, 12000);  // safety: a hung/unfilled ad never traps the user
+      return;
+    }
+    if (tries++ < 40) { setTimeout(poll, 300); } else { finish(); }
+  })();
+})();
+</script>
+</body>
+</html>

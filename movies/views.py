@@ -444,6 +444,24 @@ def ping_view(request):
     return JsonResponse({"status": "OK"})
 
 
+# Telegram start_param constraint: only these characters, 64 bytes max.
+_TG_PAYLOAD_RE = re.compile(r'^[A-Za-z0-9_-]{1,64}$')
+
+
+def telegram_ad_gate(request):
+    """
+    Minimal Mini App page opened by the delivery bot's 'Continue to Download'
+    button (movies.management.commands.run_telegram_bot). Plays the Monetag
+    rewarded ad — the same zone the site's own Mini App uses — then hands the
+    payload back to the bot via Telegram.WebApp.sendData(), which is the only
+    place Monetag's webview-only SDK can run in the bot's flow at all.
+    """
+    payload = request.GET.get('p', '').strip()
+    if not _TG_PAYLOAD_RE.match(payload):
+        payload = ''
+    return render(request, 'movies/telegram_ad_gate.html', {'payload': payload})
+
+
 # ── Streamable host lists ─────────────────────────────────────────────────────
 STREAMABLE_HOSTS = [
     'mylulutv.com',
