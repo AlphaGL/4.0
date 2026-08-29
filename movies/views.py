@@ -511,7 +511,7 @@ def telegram_ad_gate_deliver(request):
     target = direct or dl.url
     send_message(
         chat_id,
-        "📥 Not yet on our fast servers — here's your direct link 👇\n"
+        "✅ Your download is ready 👇\n"
         f'<a href="{_html.escape(target, quote=True)}">▶️ CLICK TO START DOWNLOAD</a>'
         f"\n\n{social_footer()}",
         disable_preview=True,
