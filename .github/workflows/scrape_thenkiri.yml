@@ -53,6 +53,17 @@ jobs:
     needs: migrate
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    # Telethon uses ONE session (one auth_key) shared across every
+    # upload:true job. Telegram's anti-hijacking protection permanently
+    # kills a session the moment it sees that same auth_key used from two
+    # different IPs at once — which is exactly what happens if these run in
+    # parallel (each GitHub-hosted runner has its own IP). This group forces
+    # every upload:true job onto a single queue (one at a time, in whichever
+    # order they're scheduled) while jobs with upload:false keep running in
+    # parallel as before, since each gets its own unique group.
+    concurrency:
+      group: ${{ matrix.upload && 'telethon-session-lock' || format('scrape-{0}', matrix.name) }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
