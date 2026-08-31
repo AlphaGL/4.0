@@ -1222,6 +1222,107 @@ def old_category_redirect(request, cat_id):
     return redirect(category.get_absolute_url(), permanent=True)
 
 
+def _build_movie_seo_paragraph(movie, seo_type, completion_label, is_series):
+    """
+    Per-movie description paragraph shown on the download page.
+
+    Rotates between 4 differently-structured templates (keyed off movie.pk,
+    so a given title always gets the same one) instead of a single fill-in-
+    the-blank sentence repeated across ~25k pages. Google's "scaled content
+    abuse" detection targets exactly that pattern — identical sentence
+    skeletons with only nouns swapped are read as auto-generated regardless
+    of how unique the underlying facts are.
+    """
+    from django.template.defaultfilters import truncatewords
+
+    title    = movie.title
+    # Scraped titles very often already bake the year in ("Buddy (2026)") —
+    # ~68% of titles with vi_year set already contain it, so appending it
+    # again produced "Buddy (2026) (2026)" on roughly 13,000 pages.
+    year     = (f" ({movie.vi_year})"
+                if movie.vi_year and movie.vi_year not in title else "")
+    genre    = movie.vi_genre or ""
+    country  = movie.vi_country or ""
+    language = movie.vi_language or ""
+    subtitle = movie.vi_subtitle or ""
+    filesize = movie.vi_filesize or ""
+    runtime  = movie.vi_runtime or ""
+    episodes = (movie.vi_episodes or "") if is_series else ""
+    cast     = truncatewords(movie.vi_cast, 8) if movie.vi_cast else ""
+    type_lc  = seo_type.lower()
+
+    variant = movie.pk % 4
+
+    if variant == 0:
+        parts = [
+            f"{title}{year} is a{f' {genre}' if genre else ''} {type_lc}"
+            f"{f' from {country}' if country else ''}{f', in {language}' if language else ''}"
+            f"{f' with {subtitle} subtitles' if subtitle else ''}.",
+            f"Download {title} free in HD — available in 480p, 720p and 1080p MP4 & MKV"
+            f"{f' (file size {filesize})' if filesize else ''}{f', runtime {runtime}' if runtime else ''}"
+            f"{f', {episodes} episodes' if episodes else ''}.",
+        ]
+        if cast:
+            parts.append(f"Starring {cast}.")
+        parts.append(f"Tap a download link below to get {title} on Watch2D.")
+
+    elif variant == 1:
+        parts = [
+            f"Looking to download {title}{year}? This{f' {country}' if country else ''} {type_lc}"
+            f"{f' ({genre})' if genre else ''} is ready in HD on Watch2D.",
+            f"Choose 480p, 720p or 1080p in MP4 or MKV"
+            f"{f' (file size {filesize})' if filesize else ''}{f' — runtime {runtime}' if runtime else ''}.",
+        ]
+        audio_bits = []
+        if language:
+            audio_bits.append(f"{language} audio")
+        if subtitle:
+            audio_bits.append(f"{subtitle} subtitles")
+        if audio_bits:
+            parts.append(f"Comes with {' and '.join(audio_bits)}.")
+        if cast:
+            parts.append(f"Starring {cast}.")
+        if episodes:
+            parts.append(f"{episodes} episodes ready to download.")
+        parts.append("Scroll down for the direct links.")
+
+    elif variant == 2:
+        parts = [
+            f"{title}{year} is available to download on Watch2D in 480p, 720p and 1080p (MP4/MKV)"
+            f"{f', file size {filesize}' if filesize else ''}.",
+        ]
+        descriptor = f"{genre + ' ' if genre else ''}{type_lc}"
+        tail_bits = []
+        if country:
+            tail_bits.append(f"from {country}")
+        if language:
+            tail_bits.append(f"in {language}")
+        if subtitle:
+            tail_bits.append(f"with {subtitle} subs")
+        if runtime:
+            tail_bits.append(f"runtime {runtime}")
+        parts.append(f"It's a {descriptor}{(' ' + ', '.join(tail_bits)) if tail_bits else ''}.")
+        if cast:
+            parts.append(f"Cast includes {cast}.")
+        if episodes:
+            parts.append(f"{episodes} episodes included.")
+
+    else:
+        parts = [
+            f"{title}{year}: {genre + ' ' if genre else ''}{type_lc}{f' from {country}' if country else ''}.",
+            f"Free HD download — 480p, 720p, 1080p, MP4/MKV{f' ({filesize})' if filesize else ''}.",
+        ]
+        if cast:
+            parts.append(f"Featuring {cast}.")
+        if runtime:
+            parts.append(f"Runtime: {runtime}.")
+        if episodes:
+            parts.append(f"{episodes} episodes.")
+        parts.append(f"Get {title} on Watch2D below.")
+
+    return " ".join(parts)
+
+
 class MovieDetailView(DetailView):
     model = Movie
     template_name = 'movies/movie_detail.html'
@@ -1321,6 +1422,11 @@ class MovieDetailView(DetailView):
         context['seo_type'] = seo_type
         context['is_series'] = is_series
         context['completion_label'] = completion_label
+        context['seo_paragraph'] = _build_movie_seo_paragraph(
+            movie, seo_type, completion_label, is_series)
+        # Breadcrumb nav + BreadcrumbList schema — first of the already-
+        # prefetched categories, so no extra query.
+        context['primary_category'] = movie_categories[0] if movie_categories else None
 
         # ── Like / watchlist — use prefetched sets, no extra queries ──────────
         if user.is_authenticated:

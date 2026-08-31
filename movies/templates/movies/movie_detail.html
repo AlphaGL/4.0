@@ -71,44 +71,6 @@
 
 {# JSON-LD is rendered inside {% block content %} at the top — see below #}
 
-<!-- {# ══════════════════════════════════════════
-   HIDDEN SEO KEYWORD BLOCK (sr-only)
-   Invisible to users, readable by crawlers.
-   Matches the exact keyword patterns that
-   9jarocks, Fzmovies, and Nkiri rank for.
-══════════════════════════════════════════ #} -->
-<div class="sr-only" aria-hidden="true">
-  {% if is_series %}
-  Download {{ movie.title }} {{ completion_label }} {{ seo_type }},
-  {{ movie.title }} {{ seo_type }} mp4 download,
-  {{ movie.title }} mkv download,
-  {{ movie.title }} 480p download,
-  {{ movie.title }} 720p download,
-  {{ movie.title }} 1080p download,
-  {{ movie.title }} x264 x265,
-  {{ movie.title }} english sub,
-  {% if movie.vi_subtitle %}{{ movie.title }} {{ movie.vi_subtitle }},{% endif %}
-  DOWNLOAD {{ movie.title }} {{ completion_label }} | Free DOWNLOAD Mp4,
-  {{ movie.title }} {{ completion_label }} | Mp4 Mkv DOWNLOAD,
-  DOWNLOAD {{ movie.title }} {{ seo_type }} For FREE In 480p 720p 1080p x264 x265,
-  Mp4 Download {{ movie.title }} {{ completion_label }} ({{ seo_type }}) 720p 480p,
-  {{ movie.title }} ({{ seo_type }}) x265 x264 torrent HD bluray,
-  {{ movie.title }} {{ completion_label }} ({{ seo_type }}) mkv Download.
-  {% else %}
-  Download {{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %} {{ seo_type }},
-  {{ movie.title }} movie download mp4,
-  {{ movie.title }} mkv download,
-  {{ movie.title }} 480p 720p 1080p,
-  {{ movie.title }} x264 x265,
-  Download {{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %} {{ seo_type }} For FREE In 480p 720p 1080p,
-  DOWNLOAD {{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %} {{ seo_type }} | Free DOWNLOAD Mp4,
-  {{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %} {{ seo_type }} | Mp4 Mkv DOWNLOAD,
-  Download {{ movie.title }} mp4 mkv, latest {{ seo_type }} {{ movie.title }}{% if movie.year %} {{ movie.year }}{% endif %} 720p 480p.
-  {% endif %}
-</div>
-
-
-
 {% block content %}
 <!-- {# ── JSON-LD Structured Data ─────────────────────────────────────────────────
    Placed inside block content (not extra_ld_json) to avoid duplicate-block
@@ -120,7 +82,7 @@
   "@context": "https://schema.org",
   "@type": "{% if is_series %}TVSeries{% else %}Movie{% endif %}",
   "name": "{{ movie.title|escapejs }}",
-  {% if movie.year %}"datePublished": "{{ movie.year }}",{% endif %}
+  {% if movie.vi_year %}"datePublished": "{{ movie.vi_year }}",{% endif %}
   {% if movie.description %}"description": "{{ movie.description|truncatechars:200|escapejs }}",{% endif %}
   {% if movie.image_url %}"image": "{{ movie.image_url }}",{% endif %}
   "url": "{{ request.build_absolute_uri }}",
@@ -136,7 +98,70 @@
 }
 </script>
 
+<!-- {# ── BreadcrumbList schema — mirrors the visible breadcrumb bar below.
+     Gives Google an explicit site-hierarchy signal (Home > Category > Title)
+     and makes the page eligible for the breadcrumb rich-snippet in results. #} -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.watch2d.org/"
+    }{% if primary_category %},
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "{{ primary_category.name|escapejs }}",
+      "item": "https://www.watch2d.org{{ primary_category.get_absolute_url }}"
+    }{% endif %},
+    {
+      "@type": "ListItem",
+      "position": {% if primary_category %}3{% else %}2{% endif %},
+      "name": "{{ movie.title|escapejs }}",
+      "item": "https://www.watch2d.org{{ movie.get_absolute_url }}"
+    }
+  ]
+}
+</script>
+
+{% if movie.stream_url and movie.image_url %}
+<!-- {# ── VideoObject schema — separate from the Movie/TVSeries object above.
+     Required properties per Google's video docs: name, thumbnailUrl,
+     uploadDate. Only rendered when there's an actual playable stream and a
+     thumbnail, since both are required for eligibility. #} -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": "{{ movie.title|escapejs }}{% if seo_type %} {{ seo_type|escapejs }}{% endif %}",
+  "description": "{% if movie.description %}{{ movie.description|truncatechars:200|escapejs }}{% else %}Watch {{ movie.title|escapejs }} online in HD on Watch2D.{% endif %}",
+  "thumbnailUrl": "{{ movie.image_url }}",
+  "uploadDate": "{{ movie.created_at|date:'c' }}",
+  "embedUrl": "{{ movie.stream_url }}"
+}
+</script>
+{% endif %}
+
 <div class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+
+  <!-- ═══════════════════════════════════════════════
+     BREADCRUMB — visible nav, mirrors the schema above
+  ════════════════════════════════════════════════ -->
+  <nav aria-label="Breadcrumb" class="container mx-auto px-4 pt-3 pb-1">
+    <ol class="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+      <li><a href="{% url 'movies:home' %}" class="hover:text-blue-500 transition-colors">Home</a></li>
+      {% if primary_category %}
+        <li aria-hidden="true">/</li>
+        <li><a href="{{ primary_category.get_absolute_url }}" class="hover:text-blue-500 transition-colors">{{ primary_category.name }}</a></li>
+      {% endif %}
+      <li aria-hidden="true">/</li>
+      <li class="text-gray-700 dark:text-gray-300 font-medium truncate max-w-[60vw]" aria-current="page">{{ movie.title }}</li>
+    </ol>
+  </nav>
 
   <!-- ═══════════════════════════════════════════════
      HERO — poster + movie info only (no player swap)
@@ -625,10 +650,7 @@
               Download {{ movie.title }}{% if completion_label %} {{ completion_label }}{% endif %} — {{ seo_type }} MP4 MKV
             </h2>
             <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-              {{ movie.title }}{% if movie.vi_year %} ({{ movie.vi_year }}){% endif %} is a{% if movie.vi_genre %} {{ movie.vi_genre }}{% endif %} {{ seo_type|lower }}{% if movie.vi_country %} from {{ movie.vi_country }}{% endif %}{% if movie.vi_language %}, in {{ movie.vi_language }}{% endif %}{% if movie.vi_subtitle %} with {{ movie.vi_subtitle }} subtitles{% endif %}.
-              Download {{ movie.title }} free in HD — available in 480p, 720p and 1080p MP4 &amp; MKV{% if movie.vi_filesize %} (file size {{ movie.vi_filesize }}){% endif %}{% if movie.vi_runtime %}, runtime {{ movie.vi_runtime }}{% endif %}{% if movie.is_series and movie.vi_episodes %}, {{ movie.vi_episodes }} episodes{% endif %}.
-              {% if movie.vi_cast %}Starring {{ movie.vi_cast|truncatewords:8 }}.{% endif %}
-              Tap a download link below to get {{ movie.title }} on Watch2D.
+              {{ seo_paragraph }}
             </p>
             <dl class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 mt-4 text-xs">
               {% if movie.vi_year %}<div><dt class="text-gray-400">Year</dt><dd class="font-semibold text-gray-700 dark:text-gray-200">{{ movie.vi_year }}</dd></div>{% endif %}

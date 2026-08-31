@@ -21,7 +21,26 @@ def strip_main_prefix(request, rest=''):
     """
     /main/          →  /
     /main/<path>/   →  /<path>/
-    Only used for the main/ prefix — movies/ sub-paths are kept as-is.
+    """
+    destination = '/' + rest if rest else '/'
+    return HttpResponsePermanentRedirect(destination)
+
+
+def strip_movies_prefix(request, rest=''):
+    """
+    /movies/<path>/  →  /<path>/
+
+    Old /movies/movie/<id>/<slug>/ and /movies/category/<id>/<slug>/ links
+    used to be dual-served: the *same* movies.urls include was mounted at
+    both '' and 'movies/' under the identical 'movies' namespace, so every
+    page existed live at two separate URLs at once (confirmed: both
+    returned 200 for the same content) — a sitewide duplicate-content
+    problem across the whole catalog, and the likely cause of Search
+    Console flagging thousands of pages as unindexed/duplicate. 301'ing
+    the old prefix here instead still honors old backlinks/bookmarks
+    (nothing 404s) while consolidating all link equity and indexing onto
+    the single canonical bare URL. Also removes the duplicate 'movies'
+    namespace registration Django's `check` was warning about.
     """
     destination = '/' + rest if rest else '/'
     return HttpResponsePermanentRedirect(destination)
@@ -51,17 +70,19 @@ urlpatterns = [
     path('main/',          RedirectView.as_view(url='/', permanent=True)),
     re_path(r'^main/(?P<rest>.+)$', strip_main_prefix),
 
-    # ── Permanent 301: /movies/ homepage → / ─────────────────────────────────
-    # Only the bare /movies/ homepage redirects to /.
-    # All sub-paths (/movies/movie/123/slug/, /movies/category/..., etc.)
-    # are kept intact — they have SEO history and are served normally below.
+    # ── Permanent 301: /movies/* → /* ────────────────────────────────────────
+    # /movies/ used to be dual-mounted (see strip_movies_prefix docstring) so
+    # every movie/category page was fully live at two URLs simultaneously.
+    # Now every /movies/<path> redirects to the canonical bare /<path> —
+    # old backlinks/bookmarks still resolve, they just consolidate onto one
+    # indexable URL instead of forking the site's crawl budget in two.
     path('movies/',        RedirectView.as_view(url='/', permanent=True)),
+    re_path(r'^movies/(?P<rest>.+)$', strip_movies_prefix),
 
     # ── Canonical apps ────────────────────────────────────────────────────────
 
-    # 🎬 Movies — root "/" is the movies homepage; /movies/* sub-paths also work
+    # 🎬 Movies — root "/" is the movies homepage
     path('',        include(('movies.urls', 'movies'), namespace='movies')),
-    path('movies/', include(('movies.urls', 'movies'), namespace='movies')),
 
     # 🎭 Anime / 📚 Manga — sections retired. 301-redirect every old URL so any
     # indexed links pass their SEO value on instead of 404ing. Anime → the
