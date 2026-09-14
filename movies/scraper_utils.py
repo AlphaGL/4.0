@@ -241,4 +241,58 @@ def find_duplicate_movie(title, model=None):
     for m in model.objects.filter(title__icontains=first_word).only('id', 'title')[:200]:
         if normalize_title(m.title) == key:
             return m
+
+
+def sync_download_links(movie, parsed_download_links, uploaded_message_id=None, uploaded_landing_url=None):
+    """
+    Sync a movie's DownloadLink rows to match a freshly scraped list, and
+    detect the "stream-only movie just got its first download link" moment.
+
+    Every scraper (9jarocks, thenkiri, ...) had its own copy of this exact
+    sync loop — pulled into one place so the resurface behavior below only
+    needs to exist once.
+
+    Resurfacing: if this movie had a stream_url but zero download links
+    before this call, and now has at least one, it's treated as newsworthy
+    again — created_at is bumped so it reappears at the top of "latest"
+    listings, and the caller is told (via the returned `resurfaced` flag)
+    to re-post it to Telegram/social exactly like a brand-new movie.
+    """
+    from movies.models import DownloadLink
+    from django.utils import timezone
+
+    had_links_before = movie.download_links.exists()
+
+    existing = {normalize_url(dl.url): dl for dl in movie.download_links.all()}
+    current  = {normalize_url(dl['url']): dl for dl in parsed_download_links if is_valid_download_url(dl['url'])}
+    added = 0
+
+    for norm, dl in current.items():
+        if norm not in existing:
+            new_link = DownloadLink.objects.create(movie=movie, label=dl['label'], url=dl['url'])
+            added += 1
+            if uploaded_message_id and uploaded_landing_url and norm == normalize_url(uploaded_landing_url):
+                new_link.telegram_message_id = uploaded_message_id
+                new_link.save(update_fields=['telegram_message_id'])
+        else:
+            if existing[norm].label != dl['label']:
+                existing[norm].label = dl['label']
+                existing[norm].save()
+
+    for norm in set(existing) - set(current):
+        existing[norm].delete()
+
+    resurfaced = False
+    if not had_links_before and current and movie.stream_url:
+        movie.created_at = timezone.now()
+        movie.save(update_fields=['created_at'])
+        resurfaced = True
+
+    return added, resurfaced
+
+
+def normalize_url(url: str) -> str:
+    from urllib.parse import unquote
+    parsed = urlparse(url)
+    return unquote(f"{parsed.scheme}://{parsed.netloc}{parsed.path}").lower()
     return None

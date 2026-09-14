@@ -40,6 +40,7 @@ from movies.scraper_utils import is_valid_download_url, get_or_create_category
 import requests
 from bs4 import BeautifulSoup
 import re
+import sys
 import cloudscraper
 from urllib.parse import urlparse, urljoin, unquote
 import urllib3
@@ -1213,6 +1214,18 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from django.db import connection
 
+        # This command prints emoji (🚫, 🔗, ✅, …) throughout. On Windows the
+        # console's default codepage (cp1252) can't encode them, which crashes
+        # the whole run with UnicodeEncodeError the first time an emoji print
+        # fires — e.g. on the very first skipped ad-link. Force UTF-8 on
+        # stdout/stderr so a run started from a plain Windows terminal doesn't
+        # die partway through and look like "the scraper isn't working".
+        for stream in (sys.stdout, sys.stderr):
+            try:
+                stream.reconfigure(encoding='utf-8', errors='replace')
+            except Exception:
+                pass
+
         # ── --telethon-login (one-time setup) ──────────────────
         if options.get('telethon_login'):
             run_telethon_login()
@@ -1465,25 +1478,16 @@ class Command(BaseCommand):
                         )
 
                         # ── Download link sync ─────────────────────────
-                        existing = {normalize_url(dl.url): dl for dl in movie.download_links.all()}
-                        current  = {normalize_url(dl['url']): dl for dl in parsed['download_links'] if is_valid_download_url(dl['url'])}
-                        added    = 0
-
-                        for norm, dl in current.items():
-                            if norm not in existing:
-                                new_link = DownloadLink.objects.create(
-                                    movie=movie, label=dl['label'], url=dl['url'])
-                                added += 1
-                                if uploaded_message_id and norm == normalize_url(uploaded_landing_url):
-                                    new_link.telegram_message_id = uploaded_message_id
-                                    new_link.save(update_fields=['telegram_message_id'])
-                            else:
-                                if existing[norm].label != dl['label']:
-                                    existing[norm].label = dl['label']
-                                    existing[norm].save()
-
-                        for norm in set(existing) - set(current):
-                            existing[norm].delete()
+                        from movies.scraper_utils import sync_download_links
+                        added, resurfaced = sync_download_links(
+                            movie, parsed['download_links'],
+                            uploaded_message_id=uploaded_message_id,
+                            uploaded_landing_url=uploaded_landing_url,
+                        )
+                        if resurfaced:
+                            print(f"      🌟 Was stream-only — now has a download link, resurfacing as NEW")
+                            if not no_social:
+                                _post_to_all_platforms(movie, is_new=True)
 
                         total_posts_scraped += 1
                         status = "created" if created else ("updated" if updated else "unchanged")

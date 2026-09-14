@@ -1821,25 +1821,16 @@ class Command(BaseCommand):
                         )
 
                         # ── Download link sync ─────────────────────────
-                        existing = {normalize_url(dl.url): dl for dl in movie.download_links.all()}
-                        current  = {normalize_url(dl['url']): dl for dl in parsed['download_links'] if is_valid_download_url(dl['url'])}
-                        added    = 0
-
-                        for norm, dl in current.items():
-                            if norm not in existing:
-                                new_link = DownloadLink.objects.create(
-                                    movie=movie, label=dl['label'], url=dl['url'])
-                                added += 1
-                                if uploaded_message_id and norm == normalize_url(uploaded_landing_url):
-                                    new_link.telegram_message_id = uploaded_message_id
-                                    new_link.save(update_fields=['telegram_message_id'])
-                            else:
-                                if existing[norm].label != dl['label']:
-                                    existing[norm].label = dl['label']
-                                    existing[norm].save()
-
-                        for norm in set(existing) - set(current):
-                            existing[norm].delete()
+                        from movies.scraper_utils import sync_download_links
+                        added, resurfaced = sync_download_links(
+                            movie, parsed['download_links'],
+                            uploaded_message_id=uploaded_message_id,
+                            uploaded_landing_url=uploaded_landing_url,
+                        )
+                        if resurfaced:
+                            print(f"      🌟 Was stream-only — now has a download link, resurfacing as NEW")
+                            if not no_social:
+                                _post_to_all_platforms(movie, is_new=True)
 
                         total_posts_scraped += 1
                         status = "created" if created else ("updated" if updated else "unchanged")

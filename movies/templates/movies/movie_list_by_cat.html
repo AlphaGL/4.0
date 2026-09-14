@@ -13,6 +13,8 @@
     {% else %}
       {{ category.name }} Movies – Free HD Download & Stream | Watch2D
     {% endif %}
+  {% elif stream_only %}
+    Streaming Only – Watch Online Free | Watch2D
   {% else %}
     All Movies – Free HD Download & Stream | Watch2D
   {% endif %}
@@ -25,13 +27,15 @@
     {% else %}
       Watch and download {{ category.name }} movies free in HD on Watch2D. {{ page_obj.paginator.count }} titles available. No registration needed.
     {% endif %}
+  {% elif stream_only %}
+    Watch these {{ page_obj.paginator.count }} titles online free on Watch2D — streaming only for now, download links are added as soon as they're available.
   {% else %}
     Browse all free HD movies on Watch2D. {{ page_obj.paginator.count }} titles available to stream and download. Hollywood, Nollywood, K-Drama, Anime and more.
   {% endif %}
 {% endblock %}
 
 {% block meta_keywords %}
-  {% if category %}{{ category.name }}, {{ category.name }} movies, download {{ category.name }}, free {{ category.name }}, HD {{ category.name }}, Watch2D{% else %}free movies, download movies, HD movies, Watch2D{% endif %}
+  {% if category %}{{ category.name }}, {{ category.name }} movies, download {{ category.name }}, free {{ category.name }}, HD {{ category.name }}, Watch2D{% elif stream_only %}watch online, stream free, streaming movies, Watch2D{% else %}free movies, download movies, HD movies, Watch2D{% endif %}
 {% endblock %}
 
 {% block canonical_block %}
@@ -50,8 +54,8 @@
 {% endblock %}
 
 {% block og_type %}website{% endblock %}
-{% block og_title %}{% if category %}{{ category.name }} Movies – Watch2D{% else %}All Movies – Watch2D{% endif %}{% endblock %}
-{% block og_description %}{% if category %}Download & stream {{ category.name }} movies free in HD on Watch2D. {{ page_obj.paginator.count }} titles.{% else %}Browse all free HD movies on Watch2D. {{ page_obj.paginator.count }} titles.{% endif %}{% endblock %}
+{% block og_title %}{% if category %}{{ category.name }} Movies – Watch2D{% elif stream_only %}Streaming Only – Watch2D{% else %}All Movies – Watch2D{% endif %}{% endblock %}
+{% block og_description %}{% if category %}Download & stream {{ category.name }} movies free in HD on Watch2D. {{ page_obj.paginator.count }} titles.{% elif stream_only %}Watch {{ page_obj.paginator.count }} titles online free — streaming only for now.{% else %}Browse all free HD movies on Watch2D. {{ page_obj.paginator.count }} titles.{% endif %}{% endblock %}
 {% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
 
 {% block extra_ld_json %}
@@ -358,7 +362,7 @@
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="{% url 'movies:home' %}"><i class="fas fa-home" aria-hidden="true"></i> Home</a>
       <i class="fas fa-chevron-right breadcrumb-sep" aria-hidden="true"></i>
-      <span class="breadcrumb-current">{% if category %}{{ category.name }}{% else %}All Movies{% endif %}</span>
+      <span class="breadcrumb-current">{% if category %}{{ category.name }}{% elif stream_only %}Streaming Only{% else %}All Movies{% endif %}</span>
     </nav>
 
     <div class="cat-heading-row">
@@ -380,6 +384,8 @@
           {% else %}🎬
           {% endif %}
           {{ category.name }}
+        {% elif stream_only %}
+          ▶️ Streaming Only
         {% else %}
           🎬 All Movies
         {% endif %}
@@ -400,7 +406,7 @@
   <section class="grid-s" aria-label="{% if category %}{{ category.name }} movies{% else %}All movies{% endif %}">
     <div class="row-hd">
       <span class="row-ttl">
-        {% if category %}{{ category.name }}{% else %}All Movies{% endif %}
+        {% if category %}{{ category.name }}{% elif stream_only %}Streaming Only{% else %}All Movies{% endif %}
       </span>
       {% if page_obj.number == 1 %}
       <span class="badge-label bl-red">Latest First</span>
@@ -509,6 +515,8 @@
     <p>
       {% if category %}
         There are no movies in the <strong>{{ category.name }}</strong> category yet.
+      {% elif stream_only %}
+        Nothing is streaming-only right now — every title currently has a download link too.
       {% else %}
         No movies available at the moment.
       {% endif %}

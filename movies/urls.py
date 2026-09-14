@@ -17,6 +17,7 @@ from .views import (
     ActorView,                # ← NEW: cast member / actor page
     ComingSoonView,           # ← NEW: Coming Soon (TMDB upcoming)
     AZIndexView, AZLetterView, GenresIndexView,   # ← A–Z browse + genre hub (SEO)
+    StreamOnlyView,           # ← NEW: movies with a stream but no download link yet
 )
 
 app_name = 'movies'
@@ -30,6 +31,9 @@ urlpatterns = [
 
     # ── Coming Soon (TMDB upcoming) ─────────────────────────────────────────
     path('coming-soon/', ComingSoonView.as_view(), name='coming_soon'),
+
+    # ── Streaming Only (has a stream, no download link yet) ────────────────
+    path('streaming-only/', StreamOnlyView.as_view(), name='stream_only'),
 
     # ── A–Z browse + genre hub (long-tail SEO) ──────────────────────────────
     path('a-z/', AZIndexView.as_view(), name='az_index'),

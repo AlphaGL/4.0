@@ -2222,3 +2222,33 @@ class ComingSoonView(ListView):
         context = super().get_context_data(**kwargs)
         context['categories'] = get_sidebar_categories()
         return context
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  STREAMING ONLY  —  /streaming-only/
+#  Movies/series that have a working stream but no download link yet (either
+#  never had one, or it's still being resolved after a fresh scrape).
+# ══════════════════════════════════════════════════════════════════════════════
+class StreamOnlyView(ListView):
+    model = Movie
+    template_name = 'movies/movie_list_by_cat.html'
+    context_object_name = 'movies'
+    paginate_by = 24
+
+    def get_queryset(self):
+        from django.db.models import Count
+        return (
+            Movie.objects
+            .exclude(stream_url='')
+            .filter(download_url='')
+            .annotate(num_links=Count('download_links'))
+            .filter(num_links=0)
+            .order_by('-created_at')
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = get_sidebar_categories()
+        context['category'] = None
+        context['stream_only'] = True
+        return context
