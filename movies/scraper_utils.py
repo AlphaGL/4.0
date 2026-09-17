@@ -291,6 +291,131 @@ def sync_download_links(movie, parsed_download_links, uploaded_message_id=None, 
     return added, resurfaced
 
 
+# Captures season + episode straight from a scraped filename/label, e.g.
+# "Attack.On.Titan.S02E01.540p..." — independent of which Movie record the
+# link happens to be attached to. This is what split_merged_seasons used to
+# find ~7,000 episodes that had been dumped onto the wrong season; the same
+# check now runs at scrape time so it doesn't happen again going forward.
+_SXE_RE = re.compile(r'[Ss](\d{1,2})[Ee](\d{1,3})')
+
+# Matches the season token in a human title so a new season's title can be
+# built from a sibling's by swapping just the number, e.g.
+#   "Attack on Titan Season 1 (Complete)" -> "...Season 2 (Complete)"
+#   "The Bear S01 (Complete)"             -> "...S02 (Complete)"
+_TITLE_SEASON_RE = re.compile(r'\b(Season\s*|S)(\d{1,2})\b', re.IGNORECASE)
+
+
+def build_season_title(template_title: str, new_season: int) -> str:
+    """Swap the season number in an existing title to build a sibling season's title."""
+    def repl(m):
+        prefix, digits = m.group(1), m.group(2)
+        if prefix.strip().lower().startswith('season'):
+            return f'Season {new_season}'
+        return f'S{new_season:0{len(digits)}d}'
+
+    new_title, n = _TITLE_SEASON_RE.subn(repl, template_title, count=1)
+    if n == 0:
+        new_title = f'{template_title} Season {new_season}'
+    return new_title
+
+
+def get_or_create_sibling_season(template_movie, new_season: int):
+    """
+    Find the Movie for (template_movie.show_key, new_season), or create one
+    by cloning template_movie's metadata (image, description, genre, cast,
+    country, language, categories) and swapping the season number/title.
+    """
+    from movies.models import Movie
+
+    target = Movie.objects.filter(
+        show_key=template_movie.show_key, season_number=new_season,
+    ).first()
+    if target:
+        return target, False
+
+    new_title = build_season_title(template_movie.title, new_season)
+    if Movie.objects.filter(title=new_title).exists():
+        # Rare exact-title collision with an unrelated movie — disambiguate
+        # rather than crash on the unique constraint.
+        new_title = f"{new_title} ({template_movie.show_key})"
+
+    new_movie = Movie.objects.create(
+        title=new_title,
+        is_series=True,
+        completed=template_movie.completed,
+        show_key=template_movie.show_key,
+        season_number=new_season,
+        description=template_movie.description,
+        video_url='',
+        image_url=template_movie.image_url,
+        scraped=True,
+        vi_country=template_movie.vi_country,
+        vi_language=template_movie.vi_language,
+        vi_cast=template_movie.vi_cast,
+        vi_genre=template_movie.vi_genre,
+        vi_year=template_movie.vi_year,
+        vi_subtitle=template_movie.vi_subtitle,
+    )
+    new_movie.categories.set(template_movie.categories.all())
+    return new_movie, True
+
+
+def route_and_sync_download_links(movie, parsed_download_links, uploaded_message_id=None, uploaded_landing_url=None):
+    """
+    Like sync_download_links(), but first splits the scraped links by the
+    season each one's own url/label actually indicates — so a source page
+    that bundles multiple seasons' episodes into one post (a real pattern
+    seen on 9jarocks/thenkiri) doesn't dump them all onto whichever season
+    the page's own title happened to match.
+
+    Links matching `movie`'s own season sync onto `movie` as normal. Links
+    for a different season of the same show are routed to that season's
+    Movie record instead (found by show_key + season_number, or created by
+    cloning `movie`'s metadata if it doesn't exist yet).
+
+    Only applies when `movie` is an actual season record (is_series, a known
+    season_number, and a show_key) — plain movies and unseasoned series are
+    untouched and behave exactly like sync_download_links().
+
+    Returns a list of (target_movie, added, resurfaced, is_new_movie) —
+    normally just one entry for `movie` itself, with extra entries for any
+    sibling-season movie that received routed links this call. Callers
+    should post to social/Telegram for every entry where resurfaced or
+    is_new_movie is True, not just check the first one.
+    """
+    if not (movie.is_series and movie.season_number is not None and movie.show_key):
+        added, resurfaced = sync_download_links(
+            movie, parsed_download_links, uploaded_message_id, uploaded_landing_url)
+        return [(movie, added, resurfaced, False)]
+
+    own_links = []
+    by_season = {}
+    for dl in parsed_download_links:
+        text = dl.get('url') or dl.get('label') or ''
+        m = _SXE_RE.search(text)
+        if not m:
+            own_links.append(dl)
+            continue
+        found_season = int(m.group(1))
+        if found_season == movie.season_number:
+            own_links.append(dl)
+        else:
+            by_season.setdefault(found_season, []).append(dl)
+
+    results = []
+    added, resurfaced = sync_download_links(
+        movie, own_links, uploaded_message_id, uploaded_landing_url)
+    results.append((movie, added, resurfaced, False))
+
+    for season, links in by_season.items():
+        target, is_new_movie = get_or_create_sibling_season(movie, season)
+        t_added, t_resurfaced = sync_download_links(
+            target, links, uploaded_message_id, uploaded_landing_url)
+        results.append((target, t_added, t_resurfaced or is_new_movie, is_new_movie))
+
+    return results
+
+
 def normalize_url(url: str) -> str:
     from urllib.parse import unquote
     parsed = urlparse(url)

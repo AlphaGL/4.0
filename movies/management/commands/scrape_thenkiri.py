@@ -1821,16 +1821,29 @@ class Command(BaseCommand):
                         )
 
                         # ── Download link sync ─────────────────────────
-                        from movies.scraper_utils import sync_download_links
-                        added, resurfaced = sync_download_links(
+                        # route_and_sync_download_links splits the scraped
+                        # links by the season each one's own filename/label
+                        # actually indicates, so a page bundling multiple
+                        # seasons together doesn't dump every episode onto
+                        # whichever season this post's title matched.
+                        from movies.scraper_utils import route_and_sync_download_links
+                        results = route_and_sync_download_links(
                             movie, parsed['download_links'],
                             uploaded_message_id=uploaded_message_id,
                             uploaded_landing_url=uploaded_landing_url,
                         )
-                        if resurfaced:
-                            print(f"      🌟 Was stream-only — now has a download link, resurfacing as NEW")
-                            if not no_social:
-                                _post_to_all_platforms(movie, is_new=True)
+                        added = 0
+                        for target_movie, t_added, t_resurfaced, is_new_movie in results:
+                            added += t_added
+                            if target_movie.pk != movie.pk:
+                                tag = "NEW season record" if is_new_movie else "existing sibling season"
+                                print(f"      🔀 Routed {t_added} link(s) to Season {target_movie.season_number} "
+                                      f"({tag}, pk={target_movie.pk}) — different season than this page")
+                            if t_resurfaced:
+                                reason = "just created" if is_new_movie else "was stream-only, now has a download link"
+                                print(f"      🌟 {target_movie.title} — {reason} — posting as NEW")
+                                if not no_social:
+                                    _post_to_all_platforms(target_movie, is_new=True)
 
                         total_posts_scraped += 1
                         status = "created" if created else ("updated" if updated else "unchanged")
