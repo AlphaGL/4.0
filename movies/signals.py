@@ -6,11 +6,25 @@ Opt-in: only runs when REHOST_IMAGES=true (env) AND R2 is configured. Leave it
 off for big bulk scrapes (faster) and run `manage.py rehost_images` afterwards;
 turn it on for ongoing scrapes so new images are hosted automatically.
 """
+from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from decouple import config
 
-from .models import Movie
+from .models import Movie, Profile
+
+
+@receiver(post_save, sender=User)
+def create_profile_for_new_user(sender, instance, created, **kwargs):
+    """Every new account (password signup OR Google OAuth) gets an anonymous
+    nickname + generated avatar immediately — nobody ever sees the raw
+    account username/email publicly."""
+    if not created:
+        return
+    from .nicknames import generate_nickname
+    Profile.objects.get_or_create(user=instance, defaults={
+        'display_name': generate_nickname(),
+    })
 
 
 @receiver(post_save, sender=Movie)

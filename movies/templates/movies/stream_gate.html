@@ -6,20 +6,20 @@
 {% block canonical_block %}{% endblock %}
 
 {% block head_extra %}
-<!-- Gate-specific ads on the verified watch2d.org zones (same as the download gate) -->
-<script>(function(s){s.dataset.zone='11272472',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-<script src="https://5gvci.com/act/files/tag.min.js?z=11272474" data-cfasync="false" async></script>
-
 <style>
-  .card-top-bar {
-    height: 3px;
-    background: linear-gradient(90deg, #0ea5e9, #ec4899, #8b5cf6, #0ea5e9);
-    background-size: 200% auto;
-    animation: grad-move 3s linear infinite;
+  /* ── Theatre ambiance — a blurred, dimmed backdrop of the poster behind
+     the whole page, like walking up to a cinema screen. ── */
+  .sg-theatre-bg {
+    position: fixed; inset: 0; z-index: -1;
+    background-size: cover; background-position: center;
+    filter: blur(70px) brightness(.35) saturate(1.3);
+    transform: scale(1.15);
   }
-  @keyframes grad-move { to { background-position: 200% center; } }
+  .sg-theatre-scrim { position: fixed; inset: 0; z-index: -1; background: rgba(0,0,0,.35); }
+  .dark .sg-theatre-scrim { background: rgba(0,0,0,.55); }
 
-  /* Player */
+  /* Player — full-bleed, edge to edge, like Netflix/Hulu's watch page rather
+     than a bordered dashboard card. */
   .sg-player-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
   .sg-player-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
   .sg-poster {
@@ -27,22 +27,113 @@
     background-size: cover; background-position: center;
     display: flex; align-items: center; justify-content: center;
   }
-  .sg-poster::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,.45); }
+  .sg-poster::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.15) 20%, rgba(0,0,0,.15) 65%, rgba(0,0,0,.7) 100%); }
+
+  /* Minimal overlaid chrome — back button + title, nothing else, fades in
+     from the top like a real player's controls. */
+  .sg-overlay-top {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    padding: 14px 16px;
+  }
+  .sg-back-btn {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; text-decoration: none; backdrop-filter: blur(4px); transition: background .15s;
+  }
+  .sg-back-btn:hover { background: rgba(0,0,0,.7); }
+  .sg-overlay-info { text-align: right; min-width: 0; }
+  .sg-overlay-title {
+    color: #fff; font-weight: 800; font-size: clamp(.95rem, 2.2vw, 1.35rem); line-height: 1.25;
+    text-shadow: 0 2px 10px rgba(0,0,0,.85); max-width: 70vw; margin-left: auto;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .sg-overlay-sub { color: rgba(255,255,255,.8); font-size: .76rem; margin-top: 2px; text-shadow: 0 1px 6px rgba(0,0,0,.85); }
+  .sg-live-pill {
+    display: inline-flex; align-items: center; gap: 5px; margin-top: 5px;
+    padding: 3px 9px; border-radius: 999px; background: rgba(34,197,94,.18);
+    border: 1px solid rgba(34,197,94,.4); color: #4ade80; font-size: .68rem; font-weight: 700;
+  }
+  .sg-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: sg-pulse-dot 2s infinite; }
+  @keyframes sg-pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
   .sg-play-btn {
     position: relative; z-index: 1;
-    width: 70px; height: 70px; border-radius: 50%;
+    width: 80px; height: 80px; border-radius: 50%;
     background: rgba(229,9,20,.92); color: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem; padding-left: 5px;
-    box-shadow: 0 6px 24px rgba(229,9,20,.5);
+    font-size: 1.8rem; padding-left: 6px;
+    box-shadow: 0 8px 32px rgba(229,9,20,.55), 0 0 0 0 rgba(229,9,20,.5);
     transition: transform .18s, background .18s;
+    animation: sg-pulse 2.4s ease-out infinite;
+  }
+  @keyframes sg-pulse {
+    0%   { box-shadow: 0 8px 32px rgba(229,9,20,.55), 0 0 0 0 rgba(229,9,20,.45); }
+    70%  { box-shadow: 0 8px 32px rgba(229,9,20,.55), 0 0 0 22px rgba(229,9,20,0); }
+    100% { box-shadow: 0 8px 32px rgba(229,9,20,.55), 0 0 0 0 rgba(229,9,20,0); }
   }
   .sg-poster:hover .sg-play-btn { transform: scale(1.08); background: #e50914; }
   .sg-play-label {
-    position: absolute; z-index: 1; bottom: 18px; left: 0; right: 0;
-    text-align: center; color: #fff; font-size: .72rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .08em; text-shadow: 0 1px 4px rgba(0,0,0,.8);
+    position: absolute; z-index: 1; bottom: 20px; left: 0; right: 0;
+    text-align: center; color: #fff; font-size: .74rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em; text-shadow: 0 1px 4px rgba(0,0,0,.8);
   }
+
+  /* ── Floating mini-player — draggable + resizable, stays playing while
+     you scroll/browse the rest of the page. Same iframe element the whole
+     time (only CSS position changes), so playback is never interrupted. ── */
+  .sg-drag-bar {
+    display: none; position: absolute; top: 0; left: 0; right: 0; height: 32px;
+    background: rgba(0,0,0,.6); z-index: 6; align-items: center; gap: 8px;
+    padding: 0 6px 0 10px; cursor: grab; touch-action: none; color: rgba(255,255,255,.55);
+  }
+  .sg-drag-bar:active { cursor: grabbing; }
+  #sg-float-close {
+    margin-left: auto; width: 24px; height: 24px; border-radius: 50%; border: none;
+    background: rgba(255,255,255,.12); color: #fff; cursor: pointer; flex-shrink: 0;
+  }
+  #sg-float-close:hover { background: rgba(255,255,255,.22); }
+  .sg-resize-handle {
+    display: none; position: absolute; right: 0; bottom: 0; width: 26px; height: 26px; z-index: 6;
+    align-items: flex-end; justify-content: flex-end; padding: 4px;
+    cursor: nwse-resize; touch-action: none; color: rgba(255,255,255,.55);
+    font-size: .7rem; transform: rotate(45deg); transform-origin: center;
+  }
+  .sg-player-wrap.sg-floating {
+    position: fixed; z-index: 250; width: min(360px, calc(100vw - 32px));
+    right: 16px; bottom: 16px; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.55); min-width: 220px; max-width: calc(100vw - 16px);
+  }
+  @media (min-width: 768px) { .sg-player-wrap.sg-floating { width: min(480px, 90vw); } }
+  .sg-player-wrap.sg-floating .sg-drag-bar,
+  .sg-player-wrap.sg-floating .sg-resize-handle { display: flex; }
+  .sg-placeholder {
+    aspect-ratio: 16/9; width: 100%; background: #0f0f0f; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    color: rgba(255,255,255,.7); font-size: .82rem; font-weight: 600;
+  }
+  .sg-placeholder.hidden { display: none; }
+  .sg-placeholder i { font-size: 1.3rem; color: rgba(255,255,255,.4); }
+  #sg-restore-btn {
+    margin-top: 4px; padding: 6px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.08); color: #fff; font-size: .74rem; font-weight: 700; cursor: pointer;
+  }
+  #sg-restore-btn:hover { background: rgba(255,255,255,.16); }
+
+  /* Server switcher — real numbered tabs, not a blind cycle button */
+  .sg-servers { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 0 16px 14px; }
+  .sg-server-btn {
+    padding: 7px 16px; border-radius: 999px; font-size: .74rem; font-weight: 700;
+    background: rgba(0,0,0,.04); color: var(--modal-text-muted, #6b7280);
+    border: 1px solid rgba(0,0,0,.1); cursor: pointer; transition: all .15s;
+  }
+  .dark .sg-server-btn { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); }
+  .sg-server-btn:hover { border-color: #6366f1; color: #6366f1; }
+  .sg-server-btn.active {
+    background: linear-gradient(90deg,#6366f1,#8b5cf6); border-color: transparent; color: #fff;
+  }
+  .sg-server-btn .sg-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #22c55e; margin-right: 6px; vertical-align: middle; }
 
   /* Episode selector (series) */
   .sg-ep-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:6px; }
@@ -65,125 +156,118 @@
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; padding:0 1px;
   }
   .dark .rel-gc-ttl { color:#aaa; }
+
+  /* ── Ad gate — "tap anywhere" overlay shown once, on the first Play tap ── */
+  .w2d-ad-gate {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.75); backdrop-filter: blur(3px);
+    opacity: 0; visibility: hidden; transition: opacity .25s ease;
+    cursor: pointer; padding: 16px;
+  }
+  .w2d-ad-gate.w2d-ad-visible { opacity: 1; visibility: visible; }
+  .w2d-ad-card {
+    position: relative; width: min(300px, 90vw); background: #111827;
+    border-radius: 16px; padding: 28px 20px 22px; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.55);
+  }
+  .w2d-ad-gate.w2d-ad-visible .w2d-ad-card { animation: w2d-pop .35s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes w2d-pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .w2d-ad-tag {
+    position: absolute; top: 10px; left: 10px; font-size: .62rem; font-weight: 700;
+    letter-spacing: .05em; color: rgba(255,255,255,.55); background: rgba(255,255,255,.08);
+    padding: 2px 7px; border-radius: 5px;
+  }
+  .w2d-ad-tap { position: relative; width: 64px; height: 64px; margin: 6px auto 14px; display: flex; align-items: center; justify-content: center; }
+  .w2d-ad-tap i { position: relative; z-index: 2; font-size: 1.6rem; color: #38bdf8; animation: w2d-tap .9s ease-in-out infinite; }
+  .w2d-ad-ring { position: absolute; inset: 0; border: 2px solid #38bdf8; border-radius: 50%; opacity: 0; animation: w2d-ring 1.8s ease-out infinite; }
+  .w2d-ad-ring2 { animation-delay: .6s; }
+  @keyframes w2d-ring { 0% { transform: scale(.4); opacity: .7; } 100% { transform: scale(1.4); opacity: 0; } }
+  @keyframes w2d-tap { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+  .w2d-ad-title { color: #fff; font-size: .95rem; font-weight: 700; margin: 0 0 4px; }
+  .w2d-ad-sub { color: rgba(255,255,255,.55); font-size: .75rem; margin: 0; }
+  .w2d-ad-status { color: #38bdf8; font-size: .72rem; font-weight: 600; min-height: 1em; margin: 8px 0 0; }
+  .w2d-ad-card.w2d-ad-ok { outline: 2px solid #22c55e; }
+  @media (prefers-reduced-motion: reduce) { .w2d-ad-tap i, .w2d-ad-ring { animation: none; } }
 </style>
 {% endblock %}
 
 {% block content %}
 
-{# Data island — the embed URL is loaded into the iframe on user click #}
-<div id="sg" data-stream="{{ stream_url }}" data-fallback="{{ stream_fallback }}"
-     data-title="{{ movie.title }}"
-     data-sublang="{{ subtitle_lang|default:'en' }}" class="hidden"></div>
+{# Theatre ambiance — blurred poster backdrop behind the whole page #}
+{% if movie.image_url %}
+<div class="sg-theatre-bg" style="background-image:url('{{ movie.image_url }}');"></div>
+<div class="sg-theatre-scrim"></div>
+{% endif %}
 
-<div class="container mx-auto px-4 lg:px-6 py-3 max-w-3xl">
+{# Data island — the embed URLs are loaded into the iframe on user click #}
+<div id="sg" data-title="{{ movie.title }}" data-sublang="{{ subtitle_lang|default:'en' }}" class="hidden"></div>
+{{ stream_sources|json_script:"sg-sources-data" }}
 
-  {# ── Breadcrumb ── #}
-  <div class="mb-3">
-    <a href="{{ movie.get_absolute_url }}"
-       class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400
-              hover:text-primary-600 dark:hover:text-primary-400
-              bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm
-              border border-gray-200/60 dark:border-gray-700/60
-              px-3 py-1.5 rounded-2xl shadow-sm transition-all duration-300
-              hover:border-primary-300 dark:hover:border-primary-700 hover:-translate-x-0.5">
-      <i class="fas fa-arrow-left text-xs"></i>
-      Back to
-      <span class="font-medium text-gray-700 dark:text-gray-300 truncate max-w-[160px]">{{ movie.title }}</span>
+{# ── FULL-BLEED PLAYER — edge to edge, minimal overlaid chrome, like a real streaming service's watch page instead of a bordered dashboard card. ── #}
+
+{# Sentinel — used to detect when the player scrolls out of view #}
+<div id="sg-sentinel"></div>
+
+{# Placeholder shown in this spot once the player is floating (mini-player mode) #}
+<div class="sg-placeholder hidden" id="sg-placeholder">
+  <i class="fas fa-arrow-up-right-from-square"></i>
+  <span>Playing in mini player</span>
+  <button type="button" id="sg-restore-btn">Bring back</button>
+</div>
+
+<div class="sg-player-wrap" id="sg-player">
+  <div class="sg-drag-bar" id="sg-drag-bar">
+    <i class="fas fa-arrows-alt"></i>
+    <button type="button" id="sg-float-close" aria-label="Close mini player"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="sg-poster" id="sg-poster" style="background-image:url('{{ movie.image_url }}');">
+    <div class="sg-overlay-top">
+      <a href="{{ movie.get_absolute_url }}" class="sg-back-btn" aria-label="Back to {{ movie.title }}">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      <div class="sg-overlay-info">
+        <h1 class="sg-overlay-title">{{ movie.title }}</h1>
+        {% if seo_type %}<p class="sg-overlay-sub">{{ seo_type }}</p>{% endif %}
+        <span class="sg-live-pill"><span class="sg-live-dot"></span>Live</span>
+      </div>
+    </div>
+    <div class="sg-play-btn"><i class="fas fa-play"></i></div>
+    <div class="sg-play-label">Tap to play</div>
+  </div>
+  <div class="sg-resize-handle" id="sg-resize-handle"><i class="fas fa-grip-lines-vertical"></i></div>
+</div>
+
+{# ── Everything else lives below the fold, out of the way of the viewing experience ── #}
+<div class="container mx-auto px-4 lg:px-6 py-4 max-w-3xl">
+
+  {# Hint #}
+  <p class="text-center text-[11px] text-gray-400 dark:text-gray-500 flex items-center justify-center gap-1.5 pt-1 pb-1">
+    <i class="fas fa-closed-captioning flex-shrink-0" style="font-size:11px;"></i>
+    Subtitles load automatically — change the language from the <strong>CC</strong> / gear menu in the player.
+  </p>
+
+  {# Server switcher — filled in by JS once the sources are known #}
+  <div id="sg-servers" class="sg-servers hidden"></div>
+
+  {# Download / Telegram alternative #}
+  <div class="py-3.5 flex flex-col sm:flex-row items-center justify-center gap-2.5 mb-2">
+    <a href="{% url 'movies:download_gate' movie.pk %}"
+       class="inline-flex items-center gap-2 text-xs font-semibold text-white
+              bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600
+              px-4 py-2 rounded-2xl shadow-lg shadow-primary-500/25 transition-all duration-300 hover:-translate-y-0.5">
+      <i class="fas fa-download text-sm"></i>
+      Prefer to keep it? Download in HD
     </a>
-  </div>
-
-  {# ── Movie identity strip ── #}
-  <div class="flex items-center gap-4 p-3 mb-3
-              bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm
-              border border-gray-200/60 dark:border-gray-700/60
-              rounded-3xl shadow-lg">
-    {% if movie.image_url %}
-      <img src="{{ movie.image_url }}" alt="{{ movie.title }}"
-           class="w-14 h-[84px] object-cover rounded-2xl flex-shrink-0 shadow-md ring-2 ring-primary-500/20">
-    {% else %}
-      <div class="w-14 h-[84px] rounded-2xl flex-shrink-0 bg-gradient-to-br from-primary-100 to-accent-100 dark:from-primary-900/40 dark:to-accent-900/40 flex items-center justify-center shadow-md">
-        <i class="fas fa-film text-primary-400 dark:text-primary-500 text-xl"></i>
-      </div>
-    {% endif %}
-    <div class="min-w-0 flex-1">
-      <p class="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">
-        Now Streaming
-      </p>
-      <h1 class="font-bold text-gray-900 dark:text-gray-100 text-base leading-snug line-clamp-2">
-        {{ movie.title }}
-      </h1>
-      {% if seo_type %}
-        <p class="mt-1.5 text-xs text-gray-400 dark:text-gray-500">{{ seo_type }}</p>
-      {% endif %}
-    </div>
-  </div>
-
-  {# ── Player card ── #}
-  <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm
-              border border-gray-200/60 dark:border-gray-700/60
-              rounded-3xl shadow-xl overflow-hidden mb-4">
-    <div class="card-top-bar"></div>
-
-    {# Header #}
-    <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-gray-700/50">
-      <div class="w-10 h-10 rounded-2xl bg-gradient-to-r from-primary-500 to-accent-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary-500/25">
-        <i class="fas fa-play text-white text-sm"></i>
-      </div>
-      <div>
-        <p class="text-sm font-bold text-gray-900 dark:text-gray-100 leading-tight">Stream Online — Free HD</p>
-        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Watch2D · No download needed</p>
-      </div>
-      <div class="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full
-                  bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/40">
-        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-        <span class="text-xs font-semibold text-green-600 dark:text-green-400">Live</span>
-      </div>
-    </div>
-
-    {# Player (click poster to load the embed) #}
-    <div class="sg-player-wrap" id="sg-player">
-      <div class="sg-poster" id="sg-poster"
-           style="background-image:url('{{ movie.image_url }}');">
-        <div class="sg-play-btn"><i class="fas fa-play"></i></div>
-        <div class="sg-play-label">Tap to play</div>
-      </div>
-    </div>
-
-
-    {# Hint + source switch #}
-    <p class="text-center text-[11px] text-gray-400 dark:text-gray-500 flex items-center justify-center gap-1.5 px-4 pt-3 pb-1">
-      <i class="fas fa-closed-captioning flex-shrink-0" style="font-size:11px;"></i>
-      Subtitles load automatically — change the language from the <strong>CC</strong> / gear menu in the player.
-    </p>
-    <div class="text-center pb-3">
-      <button id="sg-switch" type="button" class="hidden inline-flex items-center gap-1.5 text-[11px] font-semibold
-              text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400
+    <a href="https://t.me/+wUlsP5Yv8h9iZDJk" target="_blank" rel="nofollow"
+       class="inline-flex items-center gap-2 text-xs font-medium text-gray-400 dark:text-gray-500
+              hover:text-primary-600 dark:hover:text-primary-400
               bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-700/50
-              px-3 py-1.5 rounded-full transition-all">
-        <i class="fas fa-rotate text-[10px]"></i>
-        Not playing? <span id="sg-switch-label">Switch source</span>
-      </button>
-    </div>
-
-    {# Footer — offer the offline download as an alternative #}
-    <div class="px-5 py-3.5 border-t border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row items-center justify-center gap-2.5">
-      <a href="{% url 'movies:download_gate' movie.pk %}"
-         class="inline-flex items-center gap-2 text-xs font-semibold text-white
-                bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600
-                px-4 py-2 rounded-2xl shadow-lg shadow-primary-500/25 transition-all duration-300 hover:-translate-y-0.5">
-        <i class="fas fa-download text-sm"></i>
-        Prefer to keep it? Download in HD
-      </a>
-      <a href="https://t.me/+wUlsP5Yv8h9iZDJk" target="_blank" rel="nofollow"
-         class="inline-flex items-center gap-2 text-xs font-medium text-gray-400 dark:text-gray-500
-                hover:text-primary-600 dark:hover:text-primary-400
-                bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-700/50
-                px-4 py-2 rounded-2xl transition-all duration-300
-                hover:border-primary-300 dark:hover:border-primary-700">
-        <i class="fab fa-telegram text-sm"></i>
-        More movies on our Telegram
-      </a>
-    </div>
+              px-4 py-2 rounded-2xl transition-all duration-300
+              hover:border-primary-300 dark:hover:border-primary-700">
+      <i class="fab fa-telegram text-sm"></i>
+      More movies on our Telegram
+    </a>
   </div>
 
   {# ── Related movies ── #}
@@ -193,17 +277,14 @@
       <i class="fas fa-fire text-sm" style="color:#f59e0b;"></i>
       <span class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">You may also like</span>
     </div>
-    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(6px,1.2vw,10px);">
-      {% for rel in related_movies|slice:":8" %}
-        <a href="{{ rel.get_absolute_url }}" class="rel-gc">
-          <div class="rel-gc-img">
-            {% if rel.image_url %}
-              <img src="{{ rel.image_url }}" alt="{{ rel.title }}" loading="lazy">
-            {% endif %}
-          </div>
-          <p class="rel-gc-ttl">{{ rel.title }}</p>
-        </a>
-      {% endfor %}
+    <div class="srow-wrap">
+      <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="srow">
+        {% for rel in related_movies|slice:":8" %}
+          {% include 'movies/components/movie_card.html' with movie=rel %}
+        {% endfor %}
+      </div>
+      <button class="sarr sarr-r" onclick="doScroll(this,1)"><i class="fas fa-chevron-right"></i></button>
     </div>
   </div>
   {% endif %}
@@ -226,20 +307,17 @@
 (function () {
   'use strict';
   var sg = document.getElementById('sg');
-  if (!sg) return;
+  var sourcesEl = document.getElementById('sg-sources-data');
+  if (!sg || !sourcesEl) return;
   var TITLE   = sg.dataset.title || 'Player';
   var SUBLANG = sg.dataset.sublang || 'en';
   var wrap    = document.getElementById('sg-player');
   var poster  = document.getElementById('sg-poster');
-  var switchBtn   = document.getElementById('sg-switch');
-  var switchLabel = document.getElementById('sg-switch-label');
+  var serversBar = document.getElementById('sg-servers');
   if (!wrap || !poster) return;
 
-  // streamimdb only — the stored embed (+ rare fallback), de-duped. streamimdb's
-  // TV embed has its own in-player season/episode selector.
-  var SOURCES = [sg.dataset.stream, sg.dataset.fallback]
-    .map(function (s) { return (s || '').trim(); })
-    .filter(function (s, i, a) { return s && a.indexOf(s) === i; });
+  var SOURCES;
+  try { SOURCES = JSON.parse(sourcesEl.textContent) || []; } catch (e) { SOURCES = []; }
   if (!SOURCES.length) return;
   var idx = 0, watchdog = null, alive = false;
 
@@ -254,7 +332,7 @@
   function clearWatchdog(){ if (watchdog){ clearTimeout(watchdog); watchdog = null; } }
 
   // If the player loads but never signals it's alive, advance to the next
-  // source (only relevant when a fallback exists).
+  // server automatically.
   function armWatchdog(){
     clearWatchdog();
     alive = false;
@@ -264,11 +342,27 @@
   }
   window.addEventListener('message', function (e){
     var o = (e.origin || '').toLowerCase();
-    if (o.indexOf('streamimdb') >= 0 || o.indexOf('vidlink') >= 0){
+    if (o.indexOf('streamimdb') >= 0 || o.indexOf('vidlink') >= 0 || o.indexOf('vidsrc') >= 0 || o.indexOf('2embed') >= 0){
       alive = true;
       clearWatchdog();
     }
   });
+
+  function renderServerTabs(){
+    if (!serversBar || SOURCES.length < 2) return;
+    var label = serversBar.querySelector('span');
+    serversBar.innerHTML = '';
+    if (label) serversBar.appendChild(label);
+    SOURCES.forEach(function (url, i) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sg-server-btn' + (i === idx ? ' active' : '');
+      btn.innerHTML = (i === idx ? '<span class="sg-dot"></span>' : '') + 'Server ' + (i + 1);
+      btn.addEventListener('click', function () { load(i); });
+      serversBar.appendChild(btn);
+    });
+    serversBar.classList.remove('hidden');
+  }
 
   function load(i){
     if (!SOURCES.length) return;
@@ -281,23 +375,166 @@
     f.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
     // No `sandbox` attribute: the sources block playback when sandboxed.
     f.style.cssText = 'width:100%;height:100%;border:0;';
-    wrap.innerHTML = '';
+    // Remove only the poster/previous iframe — never wrap.innerHTML, which
+    // would also wipe the drag bar + resize handle used for the mini player.
+    var old = wrap.querySelector('iframe, .sg-poster');
+    while (old) { old.remove(); old = wrap.querySelector('iframe, .sg-poster'); }
     wrap.appendChild(f);
     armWatchdog();
-    if (switchBtn && SOURCES.length > 1) {
-      switchBtn.classList.remove('hidden');
-      if (switchLabel) {
-        switchLabel.textContent = 'Switch source (' + (idx + 1) + '/' + SOURCES.length + ')';
-      }
-    }
+    renderServerTabs();
   }
 
-  poster.addEventListener('click', function(){ load(0); });
-  if (switchBtn) {
-    switchBtn.addEventListener('click', function () {
-      if (SOURCES.length) load((idx + 1) % SOURCES.length);
+  // ── Ad gate: first Play tap shows a "tap anywhere" overlay; tapping it
+  // opens the ad AND starts the stream together (both fire inside that same
+  // tap so browsers don't block the popup) — the stream only actually starts
+  // once the visitor has engaged with the ad. Server-switch taps afterward
+  // skip straight to load(i), no repeat gate. ─────────────────────────────────
+  (function () {
+    var AD_URL = 'https://omg10.com/4/9160518';
+    var AD_LOAD_WAIT_MS = 6000; // cosmetic hold so they don't rush back and kill the ad tab
+    var gateEl = null, resolved = false;
+
+    function buildGate() {
+      if (gateEl) return gateEl;
+      gateEl = document.createElement('div');
+      gateEl.id = 'w2d-ad-gate';
+      gateEl.className = 'w2d-ad-gate';
+      gateEl.innerHTML =
+        '<div class="w2d-ad-card">' +
+          '<span class="w2d-ad-tag">Ad</span>' +
+          '<div class="w2d-ad-tap"><span class="w2d-ad-ring"></span><span class="w2d-ad-ring w2d-ad-ring2"></span><i class="fas fa-hand-pointer"></i></div>' +
+          '<p class="w2d-ad-title">Tap anywhere to start streaming</p>' +
+          '<p class="w2d-ad-sub">Quick ad &mdash; won&rsquo;t take long</p>' +
+          '<p class="w2d-ad-status" aria-live="polite"></p>' +
+        '</div>';
+      document.body.appendChild(gateEl);
+      gateEl.addEventListener('click', onTap);
+      return gateEl;
+    }
+
+    function onTap() {
+      if (resolved) return;
+      resolved = true;
+      var statusEl = gateEl.querySelector('.w2d-ad-status');
+      gateEl.querySelector('.w2d-ad-card').classList.add('w2d-ad-ok');
+      window.open(AD_URL, '_blank'); // ad — best effort, ignore result
+      load(0);                       // start the stream immediately
+      var remaining = Math.ceil(AD_LOAD_WAIT_MS / 1000);
+      if (statusEl) statusEl.textContent = 'Loading your stream… ' + remaining + 's';
+      var tick = setInterval(function () {
+        remaining--;
+        if (statusEl && remaining > 0) statusEl.textContent = 'Loading your stream… ' + remaining + 's';
+      }, 1000);
+      setTimeout(function () { clearInterval(tick); gateEl.classList.remove('w2d-ad-visible'); }, AD_LOAD_WAIT_MS);
+    }
+
+    poster.addEventListener('click', function () {
+      var gate = buildGate();
+      requestAnimationFrame(function () { gate.classList.add('w2d-ad-visible'); });
     });
-  }
+  })();
+
+  // ── Floating mini player — draggable + resizable, keeps playing while you
+  // scroll the rest of the page (same iframe, only its CSS position changes). ──
+  (function () {
+    var dragBar   = document.getElementById('sg-drag-bar');
+    var resizeHnd = document.getElementById('sg-resize-handle');
+    var closeBtn  = document.getElementById('sg-float-close');
+    var restoreBtn= document.getElementById('sg-restore-btn');
+    var placeholder = document.getElementById('sg-placeholder');
+    var sentinel  = document.getElementById('sg-sentinel');
+    if (!dragBar || !resizeHnd || !sentinel) return;
+
+    var floatClosed = false; // user explicitly closed the mini player
+
+    function isActive() { return !!wrap.querySelector('iframe'); }
+
+    function setFloating(on) {
+      if (on) {
+        wrap.classList.add('sg-floating');
+        placeholder.classList.remove('hidden');
+      } else {
+        wrap.classList.remove('sg-floating');
+        placeholder.classList.add('hidden');
+        wrap.style.left = wrap.style.top = wrap.style.width = '';
+        wrap.style.right = wrap.style.bottom = '';
+      }
+    }
+
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries) {
+        var e = entries[0];
+        if (!isActive() || floatClosed) return;
+        // Sentinel sits just above the player — once it's scrolled past
+        // (out of view, above the viewport), float the player.
+        setFloating(!e.isIntersecting && e.boundingClientRect.top < 0);
+      }, { threshold: 0 }).observe(sentinel);
+    }
+
+    if (closeBtn) closeBtn.addEventListener('click', function () {
+      floatClosed = true;
+      setFloating(false);
+    });
+    if (restoreBtn) restoreBtn.addEventListener('click', function () {
+      setFloating(false);
+      sentinel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(v, max)); }
+    function currentGeom() {
+      var r = wrap.getBoundingClientRect();
+      return { width: r.width, left: r.left, top: r.top };
+    }
+    function pin(g) {
+      wrap.style.right = wrap.style.bottom = 'auto';
+      wrap.style.left = g.left + 'px';
+      wrap.style.top = g.top + 'px';
+      wrap.style.width = g.width + 'px';
+    }
+
+    function track(handle, onMove, onEnd) {
+      handle.addEventListener('pointerdown', function (e) {
+        if (e.button !== undefined && e.button !== 0) return;
+        if (e.target.closest('button')) return;
+        if (!wrap.classList.contains('sg-floating')) return;
+        e.preventDefault();
+        try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+        var startX = e.clientX, startY = e.clientY;
+        var base = currentGeom();
+        function move(ev) { onMove(base, ev.clientX - startX, ev.clientY - startY); }
+        function up() {
+          handle.removeEventListener('pointermove', move);
+          handle.removeEventListener('pointerup', up);
+          handle.removeEventListener('pointercancel', up);
+          onEnd();
+        }
+        handle.addEventListener('pointermove', move);
+        handle.addEventListener('pointerup', up);
+        handle.addEventListener('pointercancel', up);
+      });
+    }
+
+    track(dragBar, function (base, dx, dy) {
+      var left = clamp(base.left + dx, 4, window.innerWidth - base.width - 4);
+      var top  = clamp(base.top + dy, 4, window.innerHeight - 60);
+      pin({ width: base.width, left: left, top: top });
+    }, function () {});
+
+    track(resizeHnd, function (base, dx) {
+      var maxW = window.innerWidth - base.left - 4;
+      var width = clamp(base.width + dx, 220, maxW);
+      wrap.style.width = width + 'px';
+    }, function () {});
+
+    window.addEventListener('resize', function () {
+      if (!wrap.classList.contains('sg-floating')) return;
+      var r = wrap.getBoundingClientRect();
+      var width = clamp(r.width, 220, window.innerWidth - 16);
+      var left = clamp(r.left, 4, Math.max(4, window.innerWidth - width - 4));
+      var top = clamp(r.top, 4, Math.max(4, window.innerHeight - 60));
+      pin({ width: width, left: left, top: top });
+    });
+  })();
 })();
 </script>
 {% endblock %}

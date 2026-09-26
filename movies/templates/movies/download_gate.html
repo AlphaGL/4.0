@@ -6,10 +6,6 @@
 {% block canonical_block %}{% endblock %}
 
 {% block head_extra %}
-<!-- Gate-specific ads on the verified watch2d.org zones -->
-<script>(function(s){s.dataset.zone='11272472',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-<script src="https://5gvci.com/act/files/tag.min.js?z=11272474" data-cfasync="false" async></script>
-
 <style>
   @keyframes ring-fill   { from { stroke-dashoffset: 169.6; } }
   @keyframes glow-green  { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.5); } 50% { box-shadow: 0 0 0 10px rgba(34,197,94,0); } }
@@ -43,54 +39,6 @@
   .step-done  { background: #0ea5e9; box-shadow: 0 0 8px rgba(14,165,233,.5); }
   .step-ready { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,.5); }
 
-  /* related card — mirrors home.html .gc */
-  .rel-gc { cursor:pointer; text-decoration:none; display:block; }
-  .rel-gc-img {
-    position:relative; aspect-ratio:2/3; border-radius:4px;
-    overflow:hidden; background:#e5e7eb; transition:transform .22s ease;
-  }
-  .dark .rel-gc-img { background:#242424; }
-  .rel-gc:hover .rel-gc-img { transform:scale(1.05); }
-  .rel-gc-img img { width:100%; height:100%; object-fit:cover; display:block; opacity:0; transition:opacity .3s; }
-  .rel-gc-img img.ld { opacity:1; }
-  .rel-gc-ov {
-    position:absolute; inset:0;
-    background:linear-gradient(to top,rgba(0,0,0,.78) 0%,transparent 55%);
-    opacity:0; transition:opacity .22s;
-  }
-  .rel-gc:hover .rel-gc-ov { opacity:1; }
-  .rel-gc-play {
-    position:absolute; inset:0;
-    display:flex; align-items:center; justify-content:center;
-    opacity:0; transition:opacity .22s;
-  }
-  .rel-gc:hover .rel-gc-play { opacity:1; }
-  .rel-play-btn {
-    width:30px; height:30px; border-radius:50%;
-    background:rgba(255,255,255,.9);
-    display:flex; align-items:center; justify-content:center;
-    color:#000; font-size:.65rem; padding-left:2px;
-  }
-  @keyframes rel-shim { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-  .rel-shim {
-    background:linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%);
-    background-size:200% 100%; animation:rel-shim 1.5s ease infinite;
-  }
-  .dark .rel-shim {
-    background:linear-gradient(90deg,#242424 25%,#2e2e2e 50%,#242424 75%);
-    background-size:200% 100%; animation:rel-shim 1.5s ease infinite;
-  }
-  .rel-gc-ttl {
-    font-size:clamp(.56rem,.8vw,.72rem); color:#4b5563;
-    margin-top:5px; line-height:1.3;
-    display:-webkit-box; -webkit-line-clamp:2;
-    -webkit-box-orient:vertical; overflow:hidden;
-    padding:0 1px; transition:color .18s;
-  }
-  .dark .rel-gc-ttl { color:#aaa; }
-  .rel-gc:hover .rel-gc-ttl { color:#111827; }
-  .dark .rel-gc:hover .rel-gc-ttl { color:#fff; }
-
   /* Episode navigation */
   .ep-nav-btn {
     display:flex; align-items:center; justify-content:center; gap:6px;
@@ -118,6 +66,39 @@
     background:linear-gradient(90deg,#6366f1,#8b5cf6) !important;
     color:#fff !important; border-color:transparent !important;
   }
+
+  /* ── Ad gate — "tap anywhere" overlay shown once, on the Download tap ── */
+  .w2d-ad-gate {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.75); backdrop-filter: blur(3px);
+    opacity: 0; visibility: hidden; transition: opacity .25s ease;
+    cursor: pointer; padding: 16px;
+  }
+  .w2d-ad-gate.w2d-ad-visible { opacity: 1; visibility: visible; }
+  .w2d-ad-card {
+    position: relative; width: min(300px, 90vw); background: #111827;
+    border-radius: 16px; padding: 28px 20px 22px; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.55);
+  }
+  .w2d-ad-gate.w2d-ad-visible .w2d-ad-card { animation: w2d-pop .35s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes w2d-pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .w2d-ad-tag {
+    position: absolute; top: 10px; left: 10px; font-size: .62rem; font-weight: 700;
+    letter-spacing: .05em; color: rgba(255,255,255,.55); background: rgba(255,255,255,.08);
+    padding: 2px 7px; border-radius: 5px;
+  }
+  .w2d-ad-tap { position: relative; width: 64px; height: 64px; margin: 6px auto 14px; display: flex; align-items: center; justify-content: center; }
+  .w2d-ad-tap i { position: relative; z-index: 2; font-size: 1.6rem; color: #38bdf8; animation: w2d-tap .9s ease-in-out infinite; }
+  .w2d-ad-ring { position: absolute; inset: 0; border: 2px solid #38bdf8; border-radius: 50%; opacity: 0; animation: w2d-ring 1.8s ease-out infinite; }
+  .w2d-ad-ring2 { animation-delay: .6s; }
+  @keyframes w2d-ring { 0% { transform: scale(.4); opacity: .7; } 100% { transform: scale(1.4); opacity: 0; } }
+  @keyframes w2d-tap { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+  .w2d-ad-title { color: #fff; font-size: .95rem; font-weight: 700; margin: 0 0 4px; }
+  .w2d-ad-sub { color: rgba(255,255,255,.55); font-size: .75rem; margin: 0; }
+  .w2d-ad-status { color: #38bdf8; font-size: .72rem; font-weight: 600; min-height: 1em; margin: 8px 0 0; }
+  .w2d-ad-card.w2d-ad-ok { outline: 2px solid #22c55e; }
+  @media (prefers-reduced-motion: reduce) { .w2d-ad-tap i, .w2d-ad-ring { animation: none; } }
 </style>
 {% endblock %}
 
@@ -145,27 +126,18 @@
 
 <div class="container mx-auto px-4 lg:px-6 py-3 max-w-2xl">
 
-  {# ── Breadcrumb ── #}
-  <div class="mb-3">
-    <a href="{{ movie.get_absolute_url }}"
-       class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400
-              hover:text-primary-600 dark:hover:text-primary-400
-              bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm
-              border border-gray-200/60 dark:border-gray-700/60
-              px-3 py-1.5 rounded-2xl shadow-sm transition-all duration-300
-              hover:border-primary-300 dark:hover:border-primary-700
-              hover:-translate-x-0.5">
-      <i class="fas fa-arrow-left text-xs"></i>
-      Back to
-      <span class="font-medium text-gray-700 dark:text-gray-300 truncate max-w-[160px]">{{ movie.title }}</span>
-    </a>
-  </div>
-
-  {# ── Movie identity strip ── #}
+  {# ── Movie identity strip — back button folded in, one card instead of two ── #}
   <div class="flex items-center gap-4 p-3 mb-3
               bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm
               border border-gray-200/60 dark:border-gray-700/60
               rounded-3xl shadow-lg">
+    <a href="{{ movie.get_absolute_url }}" aria-label="Back to {{ movie.title }}"
+       class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center
+              bg-gray-100 dark:bg-gray-700/60 text-gray-500 dark:text-gray-400
+              hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400
+              transition-colors duration-200">
+      <i class="fas fa-arrow-left text-xs"></i>
+    </a>
     {% if movie.image_url %}
       <img src="{{ movie.image_url }}" alt="{{ movie.title }}"
            class="w-14 h-[84px] object-cover rounded-2xl flex-shrink-0 shadow-md ring-2 ring-primary-500/20">
@@ -495,24 +467,14 @@
       <i class="fas fa-fire text-sm" style="color:#f59e0b;"></i>
       <span class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">You may also like</span>
     </div>
-    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(6px,1.2vw,10px);">
-      {% for rel in related_movies|slice:":8" %}
-        <a href="{{ rel.get_absolute_url }}" class="rel-gc">
-          <div class="rel-gc-img rel-shim">
-            {% if rel.image_url %}
-              <img src="{{ rel.image_url }}"
-                   alt="{{ rel.title }}"
-                   loading="lazy"
-                   onload="this.classList.add('ld');this.parentElement.classList.remove('rel-shim')">
-            {% endif %}
-            <div class="rel-gc-ov"></div>
-            <div class="rel-gc-play">
-              <div class="rel-play-btn"><i class="fas fa-play"></i></div>
-            </div>
-          </div>
-          <p class="rel-gc-ttl">{{ rel.title }}</p>
-        </a>
-      {% endfor %}
+    <div class="srow-wrap">
+      <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="srow">
+        {% for rel in related_movies|slice:":8" %}
+          {% include 'movies/components/movie_card.html' with movie=rel %}
+        {% endfor %}
+      </div>
+      <button class="sarr sarr-r" onclick="doScroll(this,1)"><i class="fas fa-chevron-right"></i></button>
     </div>
   </div>
   {% endif %}
@@ -595,6 +557,62 @@
   }
   stopAdOnBtn(btnGo);
   stopAdOnBtn(btnFallback);
+
+  // ── Ad gate: Download button first shows a "tap anywhere" overlay; tapping
+  // it opens the ad AND the real download link together (both are synchronous
+  // window.open() calls inside that same tap, which is what keeps browsers
+  // from blocking either popup) — so the download only actually starts once
+  // the visitor has engaged with the ad. ──────────────────────────────────────
+  (function () {
+    var AD_URL = 'https://omg10.com/4/9160518';
+    var AD_LOAD_WAIT_MS = 6000; // cosmetic hold so they don't rush back and kill the ad tab
+    var gateEl = null, resolved = false, pendingHref = '';
+
+    function buildGate() {
+      if (gateEl) return gateEl;
+      gateEl = document.createElement('div');
+      gateEl.id = 'w2d-ad-gate';
+      gateEl.className = 'w2d-ad-gate';
+      gateEl.innerHTML =
+        '<div class="w2d-ad-card">' +
+          '<span class="w2d-ad-tag">Ad</span>' +
+          '<div class="w2d-ad-tap"><span class="w2d-ad-ring"></span><span class="w2d-ad-ring w2d-ad-ring2"></span><i class="fas fa-hand-pointer"></i></div>' +
+          '<p class="w2d-ad-title">Tap anywhere to start your download</p>' +
+          '<p class="w2d-ad-sub">Quick ad &mdash; won&rsquo;t take long</p>' +
+          '<p class="w2d-ad-status" aria-live="polite"></p>' +
+        '</div>';
+      document.body.appendChild(gateEl);
+      gateEl.addEventListener('click', onTap);
+      return gateEl;
+    }
+
+    function onTap() {
+      if (resolved || !pendingHref) return;
+      resolved = true;
+      var statusEl = gateEl.querySelector('.w2d-ad-status');
+      gateEl.querySelector('.w2d-ad-card').classList.add('w2d-ad-ok');
+      window.open(AD_URL, '_blank');        // ad — best effort, ignore result
+      window.open(pendingHref, '_blank');   // the actual download
+      var remaining = Math.ceil(AD_LOAD_WAIT_MS / 1000);
+      if (statusEl) statusEl.textContent = 'Starting your download… ' + remaining + 's';
+      var tick = setInterval(function () {
+        remaining--;
+        if (statusEl && remaining > 0) statusEl.textContent = 'Starting your download… ' + remaining + 's';
+      }, 1000);
+      setTimeout(function () {
+        clearInterval(tick);
+        gateEl.classList.remove('w2d-ad-visible');
+        resolved = false;
+      }, AD_LOAD_WAIT_MS);
+    }
+
+    btnGo.addEventListener('click', function (e) {
+      e.preventDefault();
+      pendingHref = btnGo.href;
+      var gate = buildGate();
+      requestAnimationFrame(function () { gate.classList.add('w2d-ad-visible'); });
+    });
+  })();
 
   function unlock() {
     markStep3Done();

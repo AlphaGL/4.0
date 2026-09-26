@@ -1,0 +1,26 @@
+{% extends 'movies/base.html' %}
+
+{% block title %}Log Out | Watch2D{% endblock %}
+
+{% block content %}
+<div class="w2d" style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:2rem 1rem;">
+  <div class="w-full max-w-sm bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
+    <div class="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-sign-out-alt text-xl text-gray-500 dark:text-gray-300"></i>
+    </div>
+    <h1 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Log out of Watch2D?</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">You can always log back in with Google or your account.</p>
+    <form method="post" action="{% url 'account_logout' %}">
+      {% csrf_token %}
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+      {% endif %}
+      <button type="submit"
+              class="w-full py-3 bg-gradient-to-r from-red-500 to-red-600 hover:opacity-90 text-white rounded-xl font-semibold transition-all duration-300 mb-3">
+        Log Out
+      </button>
+    </form>
+    <a href="{% url 'movies:home' %}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500">Cancel</a>
+  </div>
+</div>
+{% endblock %}

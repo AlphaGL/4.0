@@ -1,0 +1,104 @@
+{# Global quick-actions popup — any .js-quick-actions element (data-movie-id) opens it. #}
+<div id="quick-actions-overlay" class="qa-overlay hidden" onclick="if(event.target===this) closeQuickActions();">
+  <div class="qa-card" role="dialog" aria-modal="true">
+    <button type="button" class="qa-close" onclick="closeQuickActions()" aria-label="Close">
+      <i class="fas fa-times"></i>
+    </button>
+    <div id="quick-actions-body" class="qa-body">
+      <div class="qa-loading"><i class="fas fa-spinner fa-spin"></i></div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .qa-overlay {
+    position: fixed; inset: 0; z-index: 210;
+    background: var(--modal-overlay-bg); backdrop-filter: blur(2px);
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  @media (min-width: 640px) { .qa-overlay { align-items: center; padding: 16px; } }
+  .qa-overlay.hidden { display: none; }
+  .qa-card {
+    position: relative; width: 100%; max-width: 380px;
+    background: var(--modal-bg); border: 1px solid var(--modal-border);
+    border-radius: 18px 18px 0 0; padding: 20px 20px 24px;
+    animation: qa-in .18s ease-out;
+  }
+  @media (min-width: 640px) { .qa-card { border-radius: 18px; } }
+  @keyframes qa-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  .qa-close {
+    position: absolute; top: 12px; right: 12px; width: 30px; height: 30px;
+    border-radius: 50%; border: none; background: var(--modal-close-bg);
+    color: var(--modal-text-muted); cursor: pointer;
+  }
+  .qa-close:hover { background: var(--modal-pill-border); color: var(--modal-text); }
+  .qa-loading { text-align: center; padding: 40px 0; color: var(--modal-text-muted); font-size: 1.4rem; }
+
+  .qa-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-right: 24px; }
+  .qa-poster { width: 52px; aspect-ratio: 2/3; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+  .qa-title-wrap { min-width: 0; }
+  .qa-title { display: block; color: var(--modal-text); font-weight: 700; font-size: .92rem; text-decoration: none; line-height: 1.3; }
+  .qa-title:hover { text-decoration: underline; }
+  .qa-rating { display: inline-flex; align-items: center; gap: 4px; color: #d97706; font-size: .74rem; font-weight: 600; margin-top: 3px; }
+  .dark .qa-rating { color: #facc15; }
+
+  .qa-desc { color: var(--modal-text-muted); font-size: .78rem; line-height: 1.5; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+  .qa-primary-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .qa-primary-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px; border-radius: 10px; font-weight: 700; font-size: .82rem; text-decoration: none;
+  }
+  .qa-watch { background: linear-gradient(90deg,#22c55e,#059669); color: #fff; }
+  .qa-download { background: var(--modal-pill-bg); color: var(--modal-text); border: 1px solid var(--modal-pill-border); }
+
+  .qa-pill-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .qa-pill {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 9px 4px; border-radius: 10px; background: var(--modal-pill-bg);
+    border: 1px solid var(--modal-pill-border); color: var(--modal-text-muted); font-size: .64rem; font-weight: 700;
+    cursor: pointer; transition: all .18s;
+  }
+  .qa-pill i { font-size: .95rem; color: var(--modal-text-muted); }
+  .qa-pill:hover { background: var(--modal-pill-border); }
+  .qa-pill.active, .qa-pill.active-like { background: rgba(229,9,20,.85); border-color: rgba(229,9,20,.9); color: #fff; }
+  .qa-pill.active i, .qa-pill.active-like i { color: #fff; }
+
+  .qa-full-link {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px; color: #6366f1; font-size: .8rem; font-weight: 600; text-decoration: none;
+  }
+  .dark .qa-full-link { color: #a5b4fc; }
+  .qa-full-link:hover { text-decoration: underline; }
+  .qa-full-link-arrow { font-size: .7rem; }
+</style>
+
+<script>
+  function openQuickActions(movieId) {
+    var overlay = document.getElementById('quick-actions-overlay');
+    var body = document.getElementById('quick-actions-body');
+    if (!overlay || !body) return;
+    body.innerHTML = '<div class="qa-loading"><i class="fas fa-spinner fa-spin"></i></div>';
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    fetch('/movie/' + movieId + '/quick-actions/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function(r) { return r.text(); })
+      .then(function(html) { body.innerHTML = html; })
+      .catch(function() { body.innerHTML = '<p style="color:#f87171;text-align:center;padding:20px;">Couldn\'t load — try again.</p>'; });
+  }
+  function closeQuickActions() {
+    var overlay = document.getElementById('quick-actions-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('click', function(e) {
+    var trigger = e.target.closest('.js-quick-actions');
+    if (!trigger) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openQuickActions(trigger.dataset.movieId);
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeQuickActions();
+  });
+</script>

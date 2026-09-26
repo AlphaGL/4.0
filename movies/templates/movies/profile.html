@@ -1,0 +1,169 @@
+{% extends 'movies/base.html' %}
+
+{% block title %}{{ profile_user.profile.display_name }}'s Profile | Watch2D{% endblock %}
+{% block meta_description %}{{ profile_user.profile.display_name }} on Watch2D — {{ review_count }} review{{ review_count|pluralize }}.{% endblock %}
+
+{% block content %}
+<style>
+  .w2d { background: #f8fafc; color: #111827; min-height: 100vh; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+  .dark .w2d { background: #141414; color: #e5e5e5; }
+
+  .profile-header { padding: 2rem 4% 1.5rem; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .profile-avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; background: #e5e7eb; }
+  .dark .profile-avatar { background: #242424; }
+  .profile-name { font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+  .nickname-edit-btn {
+    width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0,0,0,.1);
+    background: rgba(0,0,0,.04); color: #6b7280; font-size: .68rem; cursor: pointer;
+  }
+  .dark .nickname-edit-btn { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: #9ca3af; }
+  .nickname-edit-btn:hover { background: rgba(99,102,241,.12); color: #6366f1; }
+  .profile-stats { display: flex; gap: 18px; margin-top: 8px; flex-wrap: wrap; }
+  .profile-stat { font-size: .78rem; color: #6b7280; }
+  .dark .profile-stat { color: #9ca3af; }
+  .profile-stat b { color: inherit; font-weight: 700; }
+
+  .section-s { padding: 0 4% 2.5rem; }
+  .section-hd { font-size: 1.05rem; font-weight: 700; margin-bottom: .8rem; display: flex; align-items: center; gap: 8px; }
+
+  .review-row { display: flex; gap: 12px; align-items: flex-start; background: #fff; border: 1px solid rgba(0,0,0,.08); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+  .dark .review-row { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.08); }
+  .review-poster { width: 46px; aspect-ratio: 2/3; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: #e5e7eb; }
+  .dark .review-poster { background: #242424; }
+  .review-title { font-weight: 600; font-size: .85rem; text-decoration: none; color: inherit; }
+  .review-stars { color: #facc15; font-size: .8rem; margin: 2px 0; }
+  .review-text { font-size: .78rem; color: #6b7280; }
+  .dark .review-text { color: #9ca3af; }
+
+  .empty-note { font-size: .8rem; color: #9ca3af; padding: 1rem 0; }
+</style>
+
+<div class="w2d">
+  <div class="profile-header">
+    <img src="{{ avatar_url }}" alt="{{ profile_user.profile.display_name }}" class="profile-avatar">
+    <div>
+      <div class="profile-name">
+        {{ profile_user.profile.display_name }}
+        {% if request.user == profile_user %}
+          <button type="button" onclick="openNicknameModal()" class="nickname-edit-btn" title="Change nickname"><i class="fas fa-pen"></i></button>
+        {% endif %}
+      </div>
+      <div class="profile-stats">
+        <span class="profile-stat"><b>{{ review_count }}</b> review{{ review_count|pluralize }}</span>
+        <span class="profile-stat"><b>{{ watched_count }}</b> watched</span>
+        <span class="profile-stat"><b>{{ watchlist_count }}</b> watchlisted</span>
+        <span class="profile-stat"><b>{{ liked_count }}</b> liked</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="section-s">
+    <div class="section-hd"><i class="fas fa-star text-yellow-400"></i> Reviews</div>
+    {% for review in reviews %}
+      <div class="review-row">
+        {% if review.movie.image_url %}<img src="{{ review.movie.image_url }}" class="review-poster" alt="">{% endif %}
+        <div class="min-w-0">
+          <a href="{{ review.movie.get_absolute_url }}" class="review-title">{{ review.movie.title }}</a>
+          <div class="review-stars">
+            {% for i in "12345" %}
+              {% if forloop.counter <= review.full_stars %}<i class="fas fa-star"></i>
+              {% elif forloop.counter == review.full_stars|add:1 and review.has_half_star %}<i class="fas fa-star-half-alt"></i>
+              {% else %}<i class="far fa-star" style="opacity:.4;"></i>{% endif %}
+            {% endfor %}
+          </div>
+          {% if review.content %}<p class="review-text">{{ review.content }}</p>{% endif %}
+        </div>
+      </div>
+    {% empty %}
+      <p class="empty-note">No reviews yet.</p>
+    {% endfor %}
+  </section>
+
+  {% if request.user == profile_user %}
+  <section class="section-s">
+    <div class="section-hd"><i class="fas fa-bookmark text-primary-500"></i> Watchlist
+      <a href="{% url 'movies:watchlist' %}" style="font-size:.7rem;font-weight:600;margin-left:auto;">See all &rsaquo;</a>
+    </div>
+    <div class="grid-wrap">
+      {% for movie in watchlist_preview %}
+        {% include 'movies/components/movie_card.html' with movie=movie %}
+      {% empty %}
+        <p class="empty-note">Nothing on your watchlist yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section-s">
+    <div class="section-hd"><i class="fas fa-heart text-red-500"></i> Liked
+      <a href="{% url 'movies:liked' %}" style="font-size:.7rem;font-weight:600;margin-left:auto;">See all &rsaquo;</a>
+    </div>
+    <div class="grid-wrap">
+      {% for movie in liked_preview %}
+        {% include 'movies/components/movie_card.html' with movie=movie %}
+      {% empty %}
+        <p class="empty-note">No liked movies yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+
+{% if request.user == profile_user %}
+<div id="nickname-modal-overlay" class="nn-overlay hidden" onclick="if(event.target===this) closeNicknameModal();">
+  <div class="nn-card">
+    <button type="button" class="nn-close" onclick="closeNicknameModal()" aria-label="Close"><i class="fas fa-times"></i></button>
+    <h3 class="nn-title">Change your nickname</h3>
+    <p class="nn-hint">This is the only name other Watch2D users ever see — pick anything you like.</p>
+    <form id="nickname-form">
+      {% csrf_token %}
+      <input type="text" name="display_name" id="nickname-input" value="{{ profile_user.profile.display_name }}"
+             maxlength="30" class="nn-input">
+      <div id="nickname-message" class="hidden nn-message"></div>
+      <button type="submit" class="nn-submit">Save</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  .nn-overlay { position: fixed; inset: 0; z-index: 218; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .nn-overlay.hidden { display: none; }
+  .nn-card { position: relative; width: 100%; max-width: 380px; background: #fff; border-radius: 16px; padding: 24px; }
+  .dark .nn-card { background: #1f2937; }
+  .nn-title { font-size: 1.05rem; font-weight: 800; margin-bottom: 4px; padding-right: 24px; }
+  .nn-hint { font-size: .78rem; color: #6b7280; margin-bottom: 14px; }
+  .dark .nn-hint { color: #9ca3af; }
+  .nn-close { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(107,114,128,.12); color: #6b7280; cursor: pointer; }
+  .nn-input { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); background: #f9fafb; font-size: .9rem; margin-bottom: 10px; }
+  .dark .nn-input { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.14); color: #f3f4f6; }
+  .nn-message { font-size: .78rem; padding: 8px 10px; border-radius: 8px; margin-bottom: 10px; }
+  .nn-submit { width: 100%; padding: 10px; border: none; border-radius: 10px; background: linear-gradient(90deg,#6366f1,#a855f7); color: #fff; font-weight: 700; cursor: pointer; }
+</style>
+
+<script>
+  function openNicknameModal() { document.getElementById('nickname-modal-overlay')?.classList.remove('hidden'); }
+  function closeNicknameModal() { document.getElementById('nickname-modal-overlay')?.classList.add('hidden'); }
+  document.getElementById('nickname-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const msg = document.getElementById('nickname-message');
+    const formData = new FormData(this);
+    try {
+      const response = await fetch('{% url "movies:update_display_name" %}', {
+        method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      const data = await response.json();
+      msg.classList.remove('hidden');
+      if (data.success) {
+        msg.style.background = '#dcfce7'; msg.style.color = '#166534';
+        msg.textContent = 'Saved! Reloading...';
+        setTimeout(function() { window.location.href = '/u/' + encodeURIComponent(data.display_name) + '/'; }, 700);
+      } else {
+        msg.style.background = '#fee2e2'; msg.style.color = '#991b1b';
+        msg.textContent = data.message;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}

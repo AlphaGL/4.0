@@ -15,7 +15,7 @@ from django.core.management.base import BaseCommand
 from django.db import connections
 from decouple import config
 
-from movies.models import Movie, Person, MovieCast
+from movies.models import Movie, Person, MovieCast, MovieCrew
 from movies import tmdb
 from movies.genres import link_tmdb_genres
 from movies.r2 import rehost_image, is_configured as r2_ready
@@ -36,6 +36,20 @@ def _sync_cast(movie_id, cast_list, r2):
                       'order': c.get('order', 0)})
 
 
+def _sync_crew(movie_id, crew_list, r2):
+    """Create Person rows + MovieCrew links (Director/Writer/Producer)."""
+    for c in crew_list or []:
+        person, created = Person.objects.get_or_create(
+            tmdb_id=c['tmdb_id'], defaults={'name': c['name'][:200]})
+        if created and c.get('profile_path') and r2:
+            img = rehost_image(f"https://image.tmdb.org/t/p/w185{c['profile_path']}")
+            if img:
+                Person.objects.filter(pk=person.pk).update(profile_url=img)
+        MovieCrew.objects.update_or_create(
+            movie_id=movie_id, person=person, job=c['job'][:100],
+            defaults={'department': c['department'], 'order': c.get('order', 0)})
+
+
 class Command(BaseCommand):
     help = "Enrich titles with TMDB rating / trailer / cast / overview / poster."
 
@@ -47,6 +61,12 @@ class Command(BaseCommand):
                             help="Re-run even titles already attempted.")
         parser.add_argument('--verbose', action='store_true',
                             help="Print titles with no TMDB match.")
+        parser.add_argument('--crew-only', action='store_true',
+                            help="Backfill ONLY Director/Writer/Producer credits for "
+                                 "already-tmdb_synced titles missing them — skips "
+                                 "poster/rating/cast/genre work for a fast one-off "
+                                 "catalog backfill after adding the Cast/Director/"
+                                 "Writers/Producers tabs.")
 
     def handle(self, *args, **opts):
         if not tmdb.is_configured():
@@ -55,6 +75,41 @@ class Command(BaseCommand):
 
         public = config('R2_PUBLIC_URL', default='').rstrip('/')
         r2 = r2_ready()
+
+        if opts['crew_only']:
+            qs = (
+                Movie.objects
+                .filter(tmdb_id__isnull=False, crew_credits__isnull=True)
+                .distinct()
+                .only('id', 'title', 'is_series')
+            )
+            if opts['limit']:
+                qs = qs[:opts['limit']]
+            movies = list(qs)
+            total = len(movies)
+            self.stdout.write(f"{total} titles missing crew credits...")
+
+            def crew_work(m):
+                try:
+                    media = 'tv' if m.is_series else 'movie'
+                    d = tmdb.details(m.tmdb_id, media)
+                    if d and d.get('crew_list'):
+                        _sync_crew(m.id, d['crew_list'], r2)
+                        return True
+                    return False
+                finally:
+                    connections.close_all()
+
+            done = 0
+            workers = max(1, opts['workers'])
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+                for i, ok in enumerate(ex.map(crew_work, movies), 1):
+                    if ok:
+                        done += 1
+                    if i % 50 == 0:
+                        self.stdout.write(f"  ...{i}/{total}")
+            self.stdout.write(self.style.SUCCESS(f"Done. Backfilled crew for {done}/{total} titles."))
+            return
 
         qs = Movie.objects.all()
         if not opts['force']:
@@ -85,6 +140,8 @@ class Command(BaseCommand):
                 updates = {'tmdb_synced': True, 'tmdb_id': tid}
                 if d['rating'] is not None:
                     updates['rating'] = d['rating']
+                if d.get('imdb_id'):
+                    updates['imdb_id'] = d['imdb_id']
                 if d['trailer_url']:
                     updates['trailer_url'] = d['trailer_url']
                 if not (m.vi_cast or '').strip() and d['cast']:
@@ -108,6 +165,7 @@ class Command(BaseCommand):
                 updates['genres_synced'] = True
                 Movie.objects.filter(pk=m.id).update(**updates)
                 _sync_cast(m.id, d.get('cast_list'), r2)
+                _sync_crew(m.id, d.get('crew_list'), r2)
                 # Link TMDB's canonical genres as browsable categories.
                 if d['genres']:
                     link_tmdb_genres(m, d['genres'])

@@ -23,32 +23,32 @@
     {% endfor %}
   </div>
 
-  <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+  <form method="get" class="relative mb-6">
+    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+    <input type="text" name="q" value="{{ query }}" placeholder="Search titles starting with &quot;{{ letter }}&quot;…"
+           class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+  </form>
+
+  <div class="grid-wrap">
     {% for m in movies %}
-    <a href="/movie/{{ m.id }}/{{ m.slug }}/" class="group block">
-      <div class="aspect-[2/3] rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 shadow-sm">
-        {% if m.image_url %}
-        <img src="{{ m.image_url }}" alt="{{ m.title }}" loading="lazy"
-             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-        {% endif %}
-      </div>
-      <p class="mt-1.5 text-[11px] leading-tight text-gray-600 dark:text-gray-400 line-clamp-2 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-        {{ m.title }}
-      </p>
-    </a>
+      {% include 'movies/components/movie_card.html' with movie=m %}
     {% empty %}
-    <p class="col-span-full text-gray-500 dark:text-gray-400 py-10 text-center">No titles found for "{{ letter }}".</p>
+      {% if query %}
+        <p class="col-span-full text-gray-500 dark:text-gray-400 py-10 text-center">No titles starting with "{{ letter }}" match "{{ query }}".</p>
+      {% else %}
+        <p class="col-span-full text-gray-500 dark:text-gray-400 py-10 text-center">No titles found for "{{ letter }}".</p>
+      {% endif %}
     {% endfor %}
   </div>
 
   {% if is_paginated %}
   <div class="flex items-center justify-center gap-3 mt-10">
     {% if page_obj.has_previous %}
-    <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-500 hover:text-white transition-all font-medium">← Prev</a>
+    <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-500 hover:text-white transition-all font-medium">← Prev</a>
     {% endif %}
     <span class="text-sm text-gray-600 dark:text-gray-400">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
     {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-500 hover:text-white transition-all font-medium">Next →</a>
+    <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary-500 hover:text-white transition-all font-medium">Next →</a>
     {% endif %}
   </div>
   {% endif %}

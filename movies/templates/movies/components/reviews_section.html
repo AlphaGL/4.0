@@ -1,0 +1,261 @@
+{# movies/templates/movies/components/reviews_section.html #}
+<div id="reviews-section" class="container mx-auto px-4 py-8">
+  <div class="max-w-4xl mx-auto">
+
+    <div class="flex items-center justify-between gap-3 mb-5">
+      <h2 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <i class="fas fa-star text-yellow-400"></i> Ratings &amp; Reviews
+      </h2>
+      {% if user.is_authenticated %}
+        <button type="button" onclick="openRateModal()"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full text-sm font-semibold shadow hover:scale-105 transition-all duration-300 shrink-0">
+          <i class="fas fa-star"></i> {% if user_review %}Edit Rating{% else %}Rate{% endif %}
+        </button>
+      {% else %}
+        <button type="button" data-mode="login"
+                class="js-open-auth inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full text-sm font-semibold shadow hover:scale-105 transition-all duration-300 shrink-0">
+          <i class="fas fa-sign-in-alt"></i> Log In to Rate
+        </button>
+      {% endif %}
+    </div>
+
+    {% if user_review %}
+      <div class="mb-4">
+        <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">Your review</p>
+        <div id="own-review-slot">
+          {% include 'movies/components/review_item.html' with review=user_review %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div id="reviews-list" class="space-y-4">
+      {% for review in reviews %}
+        {% include 'movies/components/review_item.html' with review=review %}
+      {% empty %}
+        {% if not user_review %}
+          <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-3">No reviews yet — be the first to rate this movie!</p>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+
+{# Rate popup — kept out of the page flow so the section above stays compact #}
+<div id="rate-modal-overlay" class="rate-overlay hidden" onclick="if(event.target===this) closeRateModal();">
+  <div class="rate-card">
+    <button type="button" class="rate-close" onclick="closeRateModal()" aria-label="Close"><i class="fas fa-times"></i></button>
+    <h3 class="rate-card-title">{% if user_review %}Update your rating{% else %}Rate this movie{% endif %}</h3>
+
+    <form id="review-form" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <div id="star-rating-input" class="star-rating-input flex items-center gap-1">
+          {% for i in "12345" %}
+            <span class="star-slot relative inline-block w-8 h-8 cursor-pointer" data-star="{{ forloop.counter }}">
+              <i class="far fa-star star-icon absolute inset-0 flex items-center justify-center text-2xl text-gray-400"></i>
+              <span class="star-hit absolute inset-y-0 left-0 w-1/2" data-hit="half"></span>
+              <span class="star-hit absolute inset-y-0 right-0 w-1/2" data-hit="full"></span>
+            </span>
+          {% endfor %}
+          <span id="star-rating-label" class="ml-2 text-sm text-gray-500 dark:text-gray-400"></span>
+        </div>
+        {{ review_form.rating }}
+      </div>
+
+      <textarea name="content" rows="3" placeholder="What did you think? (optional)"
+                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 dark:text-gray-100 transition-all duration-300 resize-none"
+                >{% if user_review %}{{ user_review.content }}{% endif %}</textarea>
+
+      <div class="flex items-center justify-between gap-3">
+        <div class="text-xs text-gray-500 dark:text-gray-400">
+          <i class="fas fa-info-circle mr-1"></i>Half-stars: click the left side of a star
+        </div>
+        <button type="submit" id="submit-review-btn"
+                class="group flex items-center px-5 py-2.5 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-xl font-semibold transition-all duration-300 shrink-0">
+          <i class="fas fa-paper-plane mr-2 group-hover:translate-x-1 transition-transform"></i>
+          <span id="submit-review-btn-text">{% if user_review %}Update Review{% else %}Post Review{% endif %}</span>
+        </button>
+      </div>
+    </form>
+    <div id="review-message" class="hidden mt-4 p-4 rounded-xl"></div>
+  </div>
+</div>
+
+<style>
+  .star-slot .star-icon.filled { color: #facc15; font-weight: 900; }
+  .star-slot .star-icon.half { color: #facc15; }
+
+  .rate-overlay {
+    position: fixed; inset: 0; z-index: 216; background: rgba(0,0,0,.6); backdrop-filter: blur(2px);
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .rate-overlay.hidden { display: none; }
+  .rate-card {
+    position: relative; width: 100%; max-width: 440px;
+    background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+  .dark .rate-card { background: #1f2937; }
+  .rate-card-title { font-size: 1.1rem; font-weight: 800; color: #111827; margin-bottom: 16px; padding-right: 24px; }
+  .dark .rate-card-title { color: #f3f4f6; }
+  .rate-close {
+    position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border-radius: 50%;
+    border: none; background: rgba(107,114,128,.12); color: #6b7280; cursor: pointer;
+  }
+  .rate-close:hover { background: rgba(107,114,128,.22); }
+  .dark .rate-close { background: rgba(255,255,255,.08); color: #9ca3af; }
+</style>
+
+<script>
+  function openRateModal() {
+    const overlay = document.getElementById('rate-modal-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+  }
+  function closeRateModal() {
+    const overlay = document.getElementById('rate-modal-overlay');
+    if (overlay) overlay.classList.add('hidden');
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeRateModal();
+  });
+
+document.addEventListener('DOMContentLoaded', function() {
+  const ratingInput = document.getElementById('id_review_rating');
+  const starSlots = document.querySelectorAll('#star-rating-input .star-slot');
+  const starLabel = document.getElementById('star-rating-label');
+  let currentValue = parseInt((ratingInput && ratingInput.value) || '0', 10) || 0;
+
+  function paint(value) {
+    starSlots.forEach(function(slot) {
+      const star = parseInt(slot.dataset.star, 10);
+      const icon = slot.querySelector('.star-icon');
+      const fullThreshold = star * 2;
+      const halfThreshold = star * 2 - 1;
+      icon.classList.remove('fas', 'far', 'fa-star-half-alt', 'filled', 'half');
+      if (value >= fullThreshold) {
+        icon.classList.add('fas', 'fa-star', 'filled');
+      } else if (value >= halfThreshold) {
+        icon.classList.add('fas', 'fa-star-half-alt', 'half');
+      } else {
+        icon.classList.add('far', 'fa-star');
+      }
+    });
+    if (starLabel) {
+      starLabel.textContent = value ? (value / 2).toFixed(1) + ' / 5' : '';
+    }
+  }
+
+  if (ratingInput) {
+    starSlots.forEach(function(slot) {
+      const star = parseInt(slot.dataset.star, 10);
+      slot.querySelectorAll('.star-hit').forEach(function(hit) {
+        const value = hit.dataset.hit === 'half' ? star * 2 - 1 : star * 2;
+        hit.addEventListener('mouseenter', function() { paint(value); });
+        hit.addEventListener('click', function() {
+          currentValue = value;
+          ratingInput.value = value;
+          paint(value);
+        });
+      });
+    });
+    document.getElementById('star-rating-input').addEventListener('mouseleave', function() {
+      paint(currentValue);
+    });
+    paint(currentValue);
+  }
+
+  const reviewForm = document.getElementById('review-form');
+  if (reviewForm) {
+    const submitBtn = document.getElementById('submit-review-btn');
+    const submitBtnText = document.getElementById('submit-review-btn-text');
+    const messageDiv = document.getElementById('review-message');
+
+    function showMessage(type, text) {
+      messageDiv.className = 'mt-4 p-4 rounded-xl';
+      if (type === 'success') {
+        messageDiv.classList.add('bg-green-50', 'dark:bg-green-900/20', 'border', 'border-green-200', 'dark:border-green-800', 'text-green-800', 'dark:text-green-200');
+        messageDiv.innerHTML = '<i class="fas fa-check-circle mr-2"></i>' + text;
+      } else {
+        messageDiv.classList.add('bg-red-50', 'dark:bg-red-900/20', 'border', 'border-red-200', 'dark:border-red-800', 'text-red-800', 'dark:text-red-200');
+        messageDiv.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i>' + text;
+      }
+      messageDiv.classList.remove('hidden');
+      setTimeout(function() { messageDiv.classList.add('hidden'); }, 5000);
+    }
+
+    reviewForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (!currentValue) {
+        showMessage('error', 'Please pick a star rating first');
+        return;
+      }
+      submitBtn.disabled = true;
+      submitBtnText.textContent = 'Saving...';
+
+      const formData = new FormData(reviewForm);
+      try {
+        const response = await fetch('{% url "movies:add_review" movie.pk %}', {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const data = await response.json();
+        if (data.success) {
+          showMessage('success', data.message);
+          if (data.html) {
+            let slot = document.getElementById('own-review-slot');
+            if (!slot) {
+              const wrapper = document.createElement('div');
+              wrapper.className = 'mb-4';
+              wrapper.innerHTML = '<p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">Your review</p><div id="own-review-slot"></div>';
+              document.getElementById('reviews-list').insertAdjacentElement('beforebegin', wrapper);
+              slot = document.getElementById('own-review-slot');
+            }
+            slot.innerHTML = data.html;
+            const emptyState = document.querySelector('#reviews-list p');
+            if (emptyState) emptyState.remove();
+          }
+          setTimeout(closeRateModal, 900);
+        } else {
+          showMessage('error', data.message || 'Failed to post review');
+        }
+      } catch (err) {
+        console.error(err);
+        showMessage('error', 'An error occurred. Please try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtnText.textContent = 'Update Review';
+      }
+    });
+  }
+
+  document.addEventListener('click', async function(e) {
+    const btn = e.target.closest('.delete-review-btn');
+    if (!btn) return;
+    if (!confirm('Delete your review?')) return;
+    const reviewId = btn.dataset.reviewId;
+    try {
+      const formData = new FormData();
+      const csrf = document.querySelector('[name=csrfmiddlewaretoken]');
+      if (csrf) formData.append('csrfmiddlewaretoken', csrf.value);
+      const response = await fetch(`/review/${reviewId}/delete/`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      const data = await response.json();
+      if (data.success) {
+        const item = btn.closest('.review-item');
+        item.style.transition = 'opacity 0.3s ease-out';
+        item.style.opacity = '0';
+        setTimeout(function() { item.remove(); }, 300);
+      } else {
+        alert(data.message || 'Failed to delete review');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred. Please try again.');
+    }
+  });
+});
+</script>

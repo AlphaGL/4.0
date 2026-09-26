@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'pwa',
+    'widget_tweaks',
 ]
 
 SITE_ID = 1
@@ -122,8 +123,8 @@ MIDDLEWARE = [
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
-            'client_id': '998536136119-hhihes5q9b3e6qim325j5sk8t7i7oq7a.apps.googleusercontent.com',
-            'secret': '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',
+            'client_id': config('GOOGLE_OAUTH_CLIENT_ID', default=''),
+            'secret': config('GOOGLE_OAUTH_CLIENT_SECRET', default=''),
             'key': ''
         }
     }

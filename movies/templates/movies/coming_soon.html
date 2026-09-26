@@ -9,6 +9,16 @@
 {% block og_description %}Upcoming releases with trailers, ratings and dates on Watch2D.{% endblock %}
 
 {% block content %}
+<style>
+  .notify-btn {
+    margin-top: 5px; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 5px 8px; border-radius: 6px; border: 1.5px solid #a855f7;
+    background: transparent; color: #a855f7; font-size: .62rem; font-weight: 800; cursor: pointer;
+    transition: all .18s;
+  }
+  .notify-btn:hover { background: rgba(168,85,247,.1); }
+  .notify-btn.active { background: #a855f7; color: #fff; }
+</style>
 <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
 
   <div class="text-center mb-8">
@@ -42,12 +52,12 @@
           </div>
         {% endif %}
         {% if item.trailer_url %}
-          <a href="{{ item.trailer_url }}" target="_blank" rel="noopener"
-             class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors">
+          <button type="button" data-trailer-url="{{ item.trailer_url }}" data-trailer-title="{{ item.title }}"
+             class="js-play-trailer absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors border-0 cursor-pointer w-full">
             <span class="opacity-0 group-hover:opacity-100 transition-opacity w-12 h-12 rounded-full bg-red-600/90 flex items-center justify-center text-white text-lg">
               <i class="fas fa-play ml-0.5"></i>
             </span>
-          </a>
+          </button>
         {% endif %}
       </div>
       <h4 class="font-semibold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-2">{{ item.title }}</h4>
@@ -56,6 +66,13 @@
           <i class="far fa-calendar mr-1"></i>{{ item.release_date }}
         </p>
       {% endif %}
+      <button type="button"
+              class="notify-btn js-notify-btn{% if item.tmdb_id in notify_requested_ids %} active{% endif %}"
+              data-toggle-url="{% url 'movies:toggle_notify' item.pk %}"
+              data-authenticated="{% if user.is_authenticated %}1{% else %}0{% endif %}">
+        <i class="fa{% if item.tmdb_id in notify_requested_ids %}s{% else %}r{% endif %} fa-bell"></i>
+        <span>{% if item.tmdb_id in notify_requested_ids %}Notifying{% else %}Notify Me{% endif %}</span>
+      </button>
     </div>
     {% endfor %}
   </div>

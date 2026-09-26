@@ -1,0 +1,84 @@
+{# Global cast/crew filmography popup — any .js-show-filmography element (data-person-id) opens it instead of navigating straight to the actor page. #}
+<div id="filmography-overlay" class="fg-overlay hidden" onclick="if(event.target===this) closeFilmography();">
+  <div class="fg-card" role="dialog" aria-modal="true">
+    <button type="button" class="fg-close" onclick="closeFilmography()" aria-label="Close">
+      <i class="fas fa-times"></i>
+    </button>
+    <div id="filmography-body" class="fg-body">
+      <div class="fg-loading"><i class="fas fa-spinner fa-spin"></i></div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .fg-overlay {
+    position: fixed; inset: 0; z-index: 212; background: var(--modal-overlay-bg); backdrop-filter: blur(2px);
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .fg-overlay.hidden { display: none; }
+  .fg-card {
+    position: relative; width: 100%; max-width: 420px; max-height: 82vh; overflow-y: auto;
+    background: var(--modal-bg); border: 1px solid var(--modal-border); border-radius: 16px;
+    padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.35);
+  }
+  .fg-close {
+    position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%;
+    border: none; background: var(--modal-close-bg); color: var(--modal-text-muted); cursor: pointer;
+  }
+  .fg-close:hover { background: var(--modal-pill-border); color: var(--modal-text); }
+  .fg-loading { text-align: center; padding: 40px 0; color: var(--modal-text-muted); font-size: 1.4rem; }
+
+  .fg-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-right: 24px; }
+  .fg-avatar {
+    width: 50px; height: 50px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+    background: var(--modal-bg-elevated); display: flex; align-items: center; justify-content: center; color: var(--modal-text-muted);
+  }
+  .fg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .fg-name { display: block; color: var(--modal-text); font-weight: 800; font-size: .95rem; text-decoration: none; }
+  .fg-name:hover { text-decoration: underline; }
+  .fg-count { display: block; color: var(--modal-text-muted); font-size: .72rem; margin-top: 2px; }
+
+  .fg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .fg-item { text-decoration: none; display: block; }
+  .fg-item-img { aspect-ratio: 2/3; border-radius: 6px; overflow: hidden; background: var(--modal-bg-elevated); }
+  .fg-item-img img { width: 100%; height: 100%; object-fit: cover; }
+  .fg-item-title { display: block; color: var(--modal-text); font-size: .68rem; font-weight: 700; margin-top: 4px; line-height: 1.25; }
+  .fg-item-char { display: block; color: var(--modal-text-muted); font-size: .6rem; margin-top: 1px; }
+  .fg-empty { grid-column: 1 / -1; color: var(--modal-text-muted); font-size: .8rem; text-align: center; padding: 12px 0; }
+
+  .fg-see-all {
+    display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px;
+    padding: 10px; color: #6366f1; font-size: .82rem; font-weight: 700; text-decoration: none;
+    border-top: 1px solid var(--modal-border); padding-top: 14px;
+  }
+  .dark .fg-see-all { color: #a5b4fc; }
+  .fg-see-all:hover { text-decoration: underline; }
+</style>
+
+<script>
+  function openFilmography(personId) {
+    var overlay = document.getElementById('filmography-overlay');
+    var body = document.getElementById('filmography-body');
+    if (!overlay || !body) return;
+    body.innerHTML = '<div class="fg-loading"><i class="fas fa-spinner fa-spin"></i></div>';
+    overlay.classList.remove('hidden');
+    fetch('/actor/' + personId + '/filmography/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function(r) { return r.text(); })
+      .then(function(html) { body.innerHTML = html; })
+      .catch(function() { body.innerHTML = '<p style="color:#f87171;text-align:center;padding:20px;">Couldn\'t load — try again.</p>'; });
+  }
+  function closeFilmography() {
+    var overlay = document.getElementById('filmography-overlay');
+    if (overlay) overlay.classList.add('hidden');
+  }
+  document.addEventListener('click', function(e) {
+    var trigger = e.target.closest('.js-show-filmography');
+    if (!trigger) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openFilmography(trigger.dataset.personId);
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeFilmography();
+  });
+</script>

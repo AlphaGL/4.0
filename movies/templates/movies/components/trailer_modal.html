@@ -1,0 +1,217 @@
+{# Global inline trailer player — any .js-play-trailer element (data-trailer-url, optional data-trailer-title) opens it, no leaving the site. Docked bottom-right (RT-style) so it never blocks browsing — the rest of the page stays fully scrollable/clickable while it plays. Draggable via the title bar and resizable via the corner handle (mouse + touch), with size/position remembered per-browser. #}
+<div id="trailer-dock" class="td-dock hidden">
+  <div class="td-bar" id="trailer-dock-drag">
+    <span class="td-title"><i class="fas fa-arrows-alt td-drag-icon"></i><span id="trailer-dock-title">Trailer</span></span>
+    <button type="button" class="td-close" onclick="closeTrailerModal()" aria-label="Close">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  <div id="trailer-modal-player" class="td-player"></div>
+  <div id="trailer-dock-resize" class="td-resize-handle" aria-hidden="true"><i class="fas fa-grip-lines-vertical"></i></div>
+</div>
+
+<style>
+  .td-dock {
+    position: fixed; right: 16px; bottom: 16px; z-index: 220;
+    width: min(360px, calc(100vw - 32px)); border-radius: 10px; overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,.5); background: #0f0f0f;
+    animation: td-in .2s ease-out;
+    min-width: 220px; max-width: calc(100vw - 16px);
+  }
+  @media (min-width: 768px) {
+    .td-dock { width: min(560px, 92vw); }
+  }
+  .td-dock.hidden { display: none; }
+  .td-dock.td-dragging, .td-dock.td-resizing { animation: none; user-select: none; }
+  @keyframes td-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  .td-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 8px 10px; background: #1a1a1a;
+    cursor: grab; touch-action: none;
+  }
+  .td-bar:active { cursor: grabbing; }
+  .td-drag-icon { font-size: .68rem; margin-right: 7px; color: rgba(255,255,255,.4); }
+  .td-title { color: #fff; font-size: .78rem; font-weight: 700; display: flex; align-items: center; overflow: hidden; min-width: 0; }
+  #trailer-dock-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .td-close {
+    flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; border: none;
+    background: rgba(255,255,255,.1); color: #fff; font-size: .7rem; cursor: pointer;
+  }
+  .td-close:hover { background: rgba(255,255,255,.22); }
+  .td-player { width: 100%; aspect-ratio: 16/9; background: #000; }
+  .td-player iframe, .td-player video { width: 100%; height: 100%; border: 0; display: block; }
+  .td-resize-handle {
+    position: absolute; right: 0; bottom: 0; width: 26px; height: 26px; z-index: 2;
+    display: flex; align-items: flex-end; justify-content: flex-end; padding: 4px;
+    cursor: nwse-resize; touch-action: none; color: rgba(255,255,255,.55);
+    font-size: .7rem; transform: rotate(45deg); transform-origin: center;
+  }
+  .td-resize-handle:hover { color: rgba(255,255,255,.9); }
+</style>
+
+<script>
+  function _tmYtId(url) {
+    var pats = [/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?\/]+)/, /[?&]v=([^&]+)/];
+    for (var i = 0; i < pats.length; i++) { var m = url.match(pats[i]); if (m) return m[1].split(/[?&]/)[0]; }
+    return null;
+  }
+  function _tmVimeoId(url) { var m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/); return m ? m[1] : null; }
+  function _tmIsDirect(url) { return /\.(mp4|webm|mov|m4v|mkv)(\?|$)/i.test(url); }
+
+  function openTrailerModal(url, title) {
+    if (!url) return;
+    var dock = document.getElementById('trailer-dock');
+    var player = document.getElementById('trailer-modal-player');
+    var titleEl = document.getElementById('trailer-dock-title');
+    if (!dock || !player) { window.open(url, '_blank'); return; }
+    if (titleEl) titleEl.textContent = title || 'Trailer';
+    var el, id = _tmYtId(url), vm;
+    if (id) {
+      el = document.createElement('iframe');
+      el.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&playsinline=1';
+      el.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
+      el.allowFullscreen = true;
+      el.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    } else if ((vm = _tmVimeoId(url))) {
+      el = document.createElement('iframe');
+      el.src = 'https://player.vimeo.com/video/' + vm + '?autoplay=1';
+      el.allow = 'autoplay; fullscreen; picture-in-picture';
+      el.allowFullscreen = true;
+    } else if (_tmIsDirect(url)) {
+      el = document.createElement('video');
+      el.src = url; el.controls = true; el.autoplay = true; el.playsInline = true;
+    } else {
+      el = document.createElement('iframe'); el.src = url; el.allowFullscreen = true;
+    }
+    player.innerHTML = '';
+    player.appendChild(el);
+    if (window._tdApplyDockGeom) window._tdApplyDockGeom(dock);
+    dock.classList.remove('hidden');
+  }
+  function closeTrailerModal() {
+    var dock = document.getElementById('trailer-dock');
+    var player = document.getElementById('trailer-modal-player');
+    if (dock) dock.classList.add('hidden');
+    if (player) player.innerHTML = ''; // stop playback
+  }
+  document.addEventListener('click', function(e) {
+    var trigger = e.target.closest('.js-play-trailer');
+    if (!trigger) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openTrailerModal(trigger.dataset.trailerUrl, trigger.dataset.trailerTitle);
+  });
+
+  // ── Draggable + resizable dock, remembered per-browser ─────────────────────
+  (function() {
+    var GEOM_KEY = 'w2d_trailer_dock_geom';
+    var MIN_W = 220, MIN_H_BAR = 40; // header+handle floor so it never collapses to nothing
+
+    function loadGeom() {
+      try {
+        var raw = localStorage.getItem(GEOM_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+    function saveGeom(g) {
+      try { localStorage.setItem(GEOM_KEY, JSON.stringify(g)); } catch (e) {}
+    }
+    function clamp(v, min, max) { return Math.max(min, Math.min(v, max)); }
+
+    function currentGeom(dock) {
+      var r = dock.getBoundingClientRect();
+      return { width: r.width, left: r.left, top: r.top };
+    }
+    function pinToLeftTop(dock, g) {
+      dock.style.right = 'auto';
+      dock.style.bottom = 'auto';
+      dock.style.left = g.left + 'px';
+      dock.style.top = g.top + 'px';
+      dock.style.width = g.width + 'px';
+    }
+    function clampToViewport(dock) {
+      var r = dock.getBoundingClientRect();
+      var maxW = window.innerWidth - 16;
+      var width = clamp(r.width, MIN_W, maxW);
+      var left = clamp(r.left, 4, Math.max(4, window.innerWidth - width - 4));
+      var top = clamp(r.top, 4, Math.max(4, window.innerHeight - MIN_H_BAR - 4));
+      pinToLeftTop(dock, { width: width, left: left, top: top });
+      return { width: width, left: left, top: top };
+    }
+
+    function applySavedOrDefault(dock) {
+      // Dock may still be display:none (hidden) here, so getBoundingClientRect()
+      // would read all-zero — clamp against the saved numbers directly instead.
+      var g = loadGeom();
+      if (!g || !g.width) return; // leave default CSS (bottom-right, responsive width)
+      var maxW = window.innerWidth - 16;
+      var width = clamp(g.width, MIN_W, maxW);
+      var left = clamp(g.left, 4, Math.max(4, window.innerWidth - width - 4));
+      var top = clamp(g.top, 4, Math.max(4, window.innerHeight - MIN_H_BAR - 4));
+      pinToLeftTop(dock, { width: width, left: left, top: top });
+    }
+
+    function startPointerTrack(handle, onMove, onEnd) {
+      handle.addEventListener('pointerdown', function(e) {
+        if (e.button !== undefined && e.button !== 0) return;
+        // Don't hijack clicks on real controls inside the handle (e.g. the
+        // Close button lives inside the draggable title bar) — preventDefault()
+        // on pointerdown suppresses the click that would otherwise follow.
+        if (e.target.closest('button, a')) return;
+        e.preventDefault();
+        try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+        var startX = e.clientX, startY = e.clientY;
+        function move(ev) { onMove(ev.clientX - startX, ev.clientY - startY, ev); }
+        function up(ev) {
+          handle.removeEventListener('pointermove', move);
+          handle.removeEventListener('pointerup', up);
+          handle.removeEventListener('pointercancel', up);
+          onEnd();
+        }
+        handle.addEventListener('pointermove', move);
+        handle.addEventListener('pointerup', up);
+        handle.addEventListener('pointercancel', up);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var dock = document.getElementById('trailer-dock');
+      var dragHandle = document.getElementById('trailer-dock-drag');
+      var resizeHandle = document.getElementById('trailer-dock-resize');
+      if (!dock || !dragHandle || !resizeHandle) return;
+
+      applySavedOrDefault(dock);
+      window._tdApplyDockGeom = applySavedOrDefault;
+      window.addEventListener('resize', function() {
+        if (dock.classList.contains('hidden')) return; // rect reads 0 while display:none
+        clampToViewport(dock);
+      });
+
+      // Drag (title bar) — moves the whole dock.
+      startPointerTrack(dragHandle, function(dx, dy) {
+        var base = dock._dragBase || (dock._dragBase = currentGeom(dock));
+        var left = clamp(base.left + dx, 4, window.innerWidth - base.width - 4);
+        var top = clamp(base.top + dy, 4, window.innerHeight - MIN_H_BAR - 4);
+        dock.classList.add('td-dragging');
+        pinToLeftTop(dock, { width: base.width, left: left, top: top });
+      }, function() {
+        dock.classList.remove('td-dragging');
+        dock._dragBase = null;
+        saveGeom(currentGeom(dock));
+      });
+
+      // Resize (corner handle) — width drives the 16:9 player height automatically.
+      startPointerTrack(resizeHandle, function(dx, dy) {
+        var base = dock._resizeBase || (dock._resizeBase = currentGeom(dock));
+        var maxW = window.innerWidth - base.left - 4;
+        var width = clamp(base.width + dx, MIN_W, maxW);
+        dock.classList.add('td-resizing');
+        dock.style.width = width + 'px';
+      }, function() {
+        dock.classList.remove('td-resizing');
+        dock._resizeBase = null;
+        saveGeom(currentGeom(dock));
+      });
+    });
+  })();
+</script>

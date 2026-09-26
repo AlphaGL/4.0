@@ -133,13 +133,10 @@
     let timeOnSite = 0;
     let reviewPopupActive = false;
     let popupShownThisSession = false;
-    let originalPopunderFunctions = {};
-    
     // Initialize the system
     function initializeReviewSystem() {
         startTimeTracking();
-        interceptPopunderAds();
-        
+
         // Check if we should show popup after delay
         setTimeout(() => {
             if (shouldShowReviewPopup()) {
@@ -185,34 +182,6 @@
     function incrementDismissedCount() {
         const count = parseInt(localStorage.getItem(Watch2D_CONFIG.STORAGE_KEYS.DISMISSED_COUNT) || '0');
         localStorage.setItem(Watch2D_CONFIG.STORAGE_KEYS.DISMISSED_COUNT, (count + 1).toString());
-    }
-    
-    // Intercept and control popunder ads
-    function interceptPopunderAds() {
-        // Store original functions
-        if (window._sfxyz) {
-            originalPopunderFunctions._sfxyz = window._sfxyz;
-        }
-        if (window._iamkeom) {
-            originalPopunderFunctions._iamkeom = window._iamkeom;
-        }
-        
-        // Override the popunder functions
-        window._sfxyz = function() {
-            if (reviewPopupActive) {
-                console.log('Watch2D: Popunder blocked - review popup active');
-                return false;
-            }
-            return originalPopunderFunctions._sfxyz ? originalPopunderFunctions._sfxyz.apply(this, arguments) : true;
-        };
-        
-        window._iamkeom = function() {
-            if (reviewPopupActive) {
-                console.log('Watch2D: Popunder blocked - review popup active');
-                return false;
-            }
-            return originalPopunderFunctions._iamkeom ? originalPopunderFunctions._iamkeom.apply(this, arguments) : true;
-        };
     }
     
     // Show the non-intrusive review popup
@@ -744,25 +713,6 @@
   
   {% block extra_css %}{% endblock %}
 
-
-
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3160947215625541"
-     crossorigin="anonymous">
-     </script>
-
-
-
-
-
-
-
-<!-- Monetag popunder ads -->
-<script>(function(s){s.dataset.zone='10895418',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-
-
-<!-- Monetag push notifications ads -->
- <script src="https://5gvci.com/act/files/tag.min.js?z=10895420" data-cfasync="false" async></script>
- 
 </head>
 
 <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800 text-gray-900 dark:text-gray-100">

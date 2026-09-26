@@ -1,0 +1,79 @@
+{% load movie_extras %}
+{# Rating badges row: external critic sources + Watch2D's own critic/audience meters. #}
+<div class="flex flex-wrap items-center gap-2 mb-3">
+
+  {% with imdb=external_ratings.imdb %}
+  {% if imdb %}
+    <a href="{{ imdb.url }}" target="_blank" rel="noopener" title="IMDb rating"
+       class="inline-flex items-center gap-1.5 bg-[#f5c518] text-black px-2.5 py-1 rounded-md text-xs font-bold shadow hover:brightness-95 transition">
+      <span class="font-black tracking-tight">IMDb</span>
+      <span>{{ imdb.display }}</span>
+    </a>
+  {% elif movie.rating %}
+    <span class="inline-flex items-center gap-1 bg-yellow-400/90 text-gray-900 px-2.5 py-0.5 rounded-full text-xs font-bold shadow" title="TMDB rating">
+      <i class="fas fa-star text-[10px]"></i>{{ movie.rating|floatformat:1 }}
+    </span>
+  {% endif %}
+  {% endwith %}
+
+  {% with rt=external_ratings.rt %}
+  {% if rt %}
+    <span class="inline-flex items-center gap-1.5 bg-[#fa320a] text-white px-2.5 py-1 rounded-md text-xs font-bold shadow" title="{{ rt.score|tomato_status }}. {{ rt.display }}">
+      <i class="fas fa-certificate text-[11px]"></i>{{ rt.display }}
+    </span>
+    {% if rt.audience_display %}
+      <span class="inline-flex items-center gap-1.5 bg-[#fbe14f] text-black px-2.5 py-1 rounded-md text-xs font-bold shadow" title="{{ rt.audience_score|popcorn_status }}. {{ rt.audience_display }}">
+        <i class="fas fa-users text-[11px]"></i>{{ rt.audience_display }}
+      </span>
+    {% endif %}
+  {% endif %}
+  {% endwith %}
+
+  {% with lb=external_ratings.letterboxd %}
+  {% if lb %}
+    <a href="{{ lb.url }}" target="_blank" rel="noopener" title="Letterboxd average rating"
+       class="inline-flex items-center gap-1.5 bg-[#00e054]/90 text-black px-2.5 py-1 rounded-md text-xs font-bold shadow hover:brightness-95 transition">
+      <span>Letterboxd</span><span>{{ lb.display }}</span>
+    </a>
+  {% endif %}
+  {% endwith %}
+
+  {# Watch2D's own scores: critics avg (Tomatometer-style) + audience/community avg (Popcornmeter-style) #}
+  {% if critic_score %}
+    <span class="inline-flex items-center gap-1.5 bg-primary-600/90 text-white px-2.5 py-1 rounded-md text-xs font-bold shadow" title="Watch2D critic average">
+      <i class="fas fa-award text-[11px]"></i>W2D {{ critic_score }}
+    </span>
+  {% endif %}
+  {% if community_score and community_review_count >= 3 %}
+    <span class="inline-flex items-center gap-1.5 bg-white/15 border border-white/25 text-white px-2.5 py-1 rounded-md text-xs font-bold shadow" title="Watch2D community rating ({{ community_review_count }} reviews)">
+      <i class="fas fa-users text-[11px]"></i>{{ community_score }}<span class="opacity-70 font-normal">({{ community_review_count }})</span>
+    </span>
+  {% else %}
+    <span class="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 text-white/60 px-2.5 py-1 rounded-md text-[11px] font-medium" title="Not enough Watch2D reviews yet">
+      <i class="fas fa-users text-[11px]"></i> Not enough ratings yet
+    </span>
+  {% endif %}
+
+  {% if is_certified %}
+    <span class="inline-flex items-center gap-1.5 bg-emerald-500 text-white px-2.5 py-1 rounded-md text-xs font-bold shadow" title="Critic average of 7.0+ across 2 or more independent sources">
+      <i class="fas fa-circle-check text-[11px]"></i>W2D Certified
+    </span>
+  {% endif %}
+  {% if is_fan_favorite %}
+    <span class="inline-flex items-center gap-1.5 bg-pink-500 text-white px-2.5 py-1 rounded-md text-xs font-bold shadow" title="Loved by the Watch2D community — 4.0+ stars across 10+ ratings">
+      <i class="fas fa-fire text-[11px]"></i>Fan Favorite
+    </span>
+  {% endif %}
+
+  {% if movie.on_netflix %}
+    <span class="inline-flex items-center gap-1.5 bg-black text-white px-2.5 py-1 rounded-md text-xs font-bold shadow" title="Also available on Netflix">
+      <i class="fas fa-tv text-[11px] text-red-600"></i>Also on Netflix
+    </span>
+  {% endif %}
+  {% if movie.on_prime %}
+    <span class="inline-flex items-center gap-1.5 bg-[#00A8E1] text-white px-2.5 py-1 rounded-md text-xs font-bold shadow" title="Also available on Amazon Prime Video">
+      <i class="fas fa-tv text-[11px]"></i>Also on Prime
+    </span>
+  {% endif %}
+
+</div>

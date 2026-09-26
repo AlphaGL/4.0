@@ -1,9 +1,32 @@
 # movies/models.py
+from urllib.parse import quote
+
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from django.urls import reverse
 from django.utils.text import slugify
+
+
+class Profile(models.Model):
+    """Public identity layer on top of Django's User — nobody's real name,
+    email or account username is ever shown publicly. Every user gets a fun
+    auto-generated nickname + avatar at signup (see signals.py), and can
+    change the nickname later from their profile page."""
+    user         = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    display_name = models.CharField(max_length=30, unique=True)
+    avatar_seed  = models.CharField(max_length=40, blank=True, default='',
+                                    help_text="Seed for the generated avatar — stays fixed even if display_name changes.")
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.display_name
+
+    @property
+    def avatar_url(self):
+        seed = self.avatar_seed or self.display_name
+        return f'https://api.dicebear.com/9.x/adventurer/svg?seed={quote(seed)}&backgroundType=gradientLinear'
 
 
 class Category(models.Model):
@@ -75,6 +98,9 @@ class Movie(models.Model):
                   'TMDB (e.g. {"1": 10, "2": 8}). Powers the episode selector.')
     rating       = models.FloatField(null=True, blank=True,
                                      help_text="TMDB rating (0–10).")
+    imdb_id      = models.CharField(max_length=20, blank=True, null=True, db_index=True,
+                                    help_text="IMDb id (e.g. 'tt1234567'), from TMDB external_ids. "
+                                              "Used to fetch IMDb/Rotten Tomatoes ratings via OMDb.")
     trailer_url  = models.URLField("Trailer URL", blank=True, null=True, max_length=500,
                                    help_text="Official YouTube trailer (from TMDB).")
     # ── Streaming availability (TMDB watch/providers → JustWatch data) ─
@@ -101,7 +127,18 @@ class Movie(models.Model):
         help_text="Legacy flag — blockbusters are now auto-computed by views (>=1000)"
     )
     watchlisted_by = models.ManyToManyField(User, related_name='watchlist_movies', blank=True)
+    # Self-reported "I've seen this" diary log (Letterboxd-style) — set via the
+    # Watched button, independent of rating/review.
+    watched_by = models.ManyToManyField(User, related_name='watched_movies', blank=True)
+    # Set ONLY when a logged-in user actually passes through the stream/download
+    # gate for this title — proof they watched it *on Watch2D*, not just a
+    # self-reported claim. Powers the "Watched on Watch2D" badge on reviews,
+    # something a pure review-aggregator (RT/Letterboxd) can never verify.
+    verified_watched_by = models.ManyToManyField(User, related_name='verified_watched_movies', blank=True)
     views = models.PositiveIntegerField(default=0, db_index=True)
+    # Same counter but reset weekly (see reset_weekly_views management command) —
+    # powers "Trending This Week" without disturbing the all-time `views` total.
+    weekly_views = models.PositiveIntegerField(default=0, db_index=True)
 
     # ── Video info (scraped from nkiri / 9jarocks metadata) ──────────
     vi_country  = models.CharField(max_length=120, blank=True, default='', help_text="e.g. South Korea")
@@ -303,6 +340,95 @@ class Comment(models.Model):
     def is_reply(self):
         return self.parent is not None
 
+    def reaction_counts(self):
+        """{'🔥': 3, ...} — uses the prefetch cache when reactions was
+        prefetched, so this costs zero extra queries on the comment list."""
+        counts = {}
+        for r in self.reactions.all():
+            counts[r.emoji] = counts.get(r.emoji, 0) + 1
+        return counts
+
+
+class CommentReaction(models.Model):
+    """One emoji reaction per user per comment/reply — same reaction set as
+    the app's 'Gist' feed, for brand consistency. Picking a different emoji
+    replaces the old one; picking the same one again removes it."""
+    REACTION_CHOICES = [
+        ('🔥', 'Fire'), ('😂', 'Laugh'), ('😮', 'Wow'), ('💀', 'Dead'), ('😍', 'Love'),
+    ]
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='reactions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comment_reactions')
+    emoji = models.CharField(max_length=8, choices=REACTION_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('comment', 'user')
+
+    def __str__(self):
+        return f"{self.user.username} reacted {self.emoji} to comment #{self.comment_id}"
+
+
+class ExternalRating(models.Model):
+    """A critic score for a Movie, pulled from an external source (IMDb/Rotten
+    Tomatoes via OMDb, Letterboxd via scrape). Refreshed periodically by the
+    fetch_external_ratings management command — never fetched on request."""
+    SOURCE_CHOICES = [
+        ('imdb', 'IMDb'),
+        ('rt', 'Rotten Tomatoes'),
+        ('letterboxd', 'Letterboxd'),
+    ]
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='external_ratings')
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES)
+    score = models.FloatField(help_text="Normalized 0–10 score, for averaging across sources.")
+    display = models.CharField(max_length=20, blank=True, default='',
+                               help_text="Native display string, e.g. '87%', '7.8/10'.")
+    # Only populated for source='rt' — the Popcornmeter (audience) side.
+    audience_score = models.FloatField(null=True, blank=True)
+    audience_display = models.CharField(max_length=20, blank=True, default='')
+    url = models.URLField(max_length=500, blank=True, default='')
+    fetched_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('movie', 'source')
+
+    def __str__(self):
+        return f"{self.get_source_display()} rating for {self.movie.title}: {self.display}"
+
+
+class Review(models.Model):
+    """A logged-in user's star rating + optional written review for a Movie.
+    Unlike Comment, no guest reviews — ratings must be attributable to a real
+    account so they can fairly count toward the community average."""
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="1–10 scale, displayed as 0.5–5.0 stars (rating / 2)."
+    )
+    content = models.TextField(blank=True, default='', help_text="Optional written review.")
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ('movie', 'user')
+
+    def __str__(self):
+        return f"{self.user.username}'s review of {self.movie.title} ({self.rating}/10)"
+
+    @property
+    def stars(self):
+        return self.rating / 2
+
+    @property
+    def full_stars(self):
+        return self.rating // 2
+
+    @property
+    def has_half_star(self):
+        return self.rating % 2 == 1
+
+
 class Person(models.Model):
     """An actor/cast member, matched from TMDB."""
     tmdb_id     = models.IntegerField(unique=True, db_index=True)
@@ -339,6 +465,28 @@ class MovieCast(models.Model):
         return f"{self.person.name} in {self.movie.title}"
 
 
+class MovieCrew(models.Model):
+    """Links a Movie to a Person on the crew side (Director/Writer/Producer),
+    from TMDB credits.crew. Powers the Cast/Director/Writers/Producers tabs."""
+    DEPARTMENT_CHOICES = [
+        ('directing', 'Directing'),
+        ('writing', 'Writing'),
+        ('production', 'Production'),
+    ]
+    movie      = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='crew_credits')
+    person     = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='crew_roles')
+    job        = models.CharField(max_length=100, help_text="e.g. Director, Writer, Producer")
+    department = models.CharField(max_length=20, choices=DEPARTMENT_CHOICES)
+    order      = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('movie', 'person', 'job')
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.person.name} ({self.job}) on {self.movie.title}"
+
+
 class UpcomingTitle(models.Model):
     """A not-yet-released TMDB movie/show shown in 'Coming Soon'. Auto-removed
     once a Movie with the same tmdb_id enters the catalogue."""
@@ -357,6 +505,27 @@ class UpcomingTitle(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.release_date})"
+
+
+class NotifyRequest(models.Model):
+    """A user asking to be pinged the moment an upcoming title becomes
+    watchable on Watch2D. Deliberately keyed by tmdb_id (a snapshot), NOT a
+    FK to UpcomingTitle — that row gets deleted the instant a matching Movie
+    is scraped in (see fetch_upcoming.py), which would otherwise wipe this
+    request before anyone could act on it. The notify_web_arrivals command
+    checks Movie.tmdb_id directly, independent of UpcomingTitle's lifecycle,
+    then deletes these rows once sent (one-time notification)."""
+    user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notify_requests')
+    tmdb_id    = models.IntegerField(db_index=True)
+    title      = models.CharField(max_length=255)
+    media_type = models.CharField(max_length=10, default='movie')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'tmdb_id')
+
+    def __str__(self):
+        return f"{self.user.username} wants to know about {self.title}"
 
 
 # ── "Gist": entertainment-news engagement feed ───────────────────────────────

@@ -2,7 +2,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import inlineformset_factory
-from .models import Movie, Comment, DownloadLink, Category
+from .models import Movie, Comment, Review, DownloadLink, Category
 
 from django import forms
 
@@ -86,6 +86,28 @@ class CommentForm(forms.ModelForm):
                 ),
             }),
         }
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['rating', 'content']
+        widgets = {
+            'rating': forms.NumberInput(attrs={
+                'min': 1, 'max': 10, 'step': 1,
+                'id': 'id_review_rating',
+                'style': 'display:none;',
+            }),
+            'content': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': 'What did you think? (optional)',
+                'style': (
+                    'background-color: #1c1c1e; color: #f0f0f0; border: 1px solid #444; '
+                    'border-radius: 8px; padding: 12px; font-size: 14px; font-family: Arial, sans-serif; '
+                    'resize: none; width: 100%;'
+                ),
+            }),
+        }
+
 
 class DownloadLinkForm(forms.ModelForm):
     class Meta:

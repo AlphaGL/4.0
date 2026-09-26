@@ -1,0 +1,31 @@
+{# Letterboxd-style rating distribution histogram + "Rate, log, review..." bar. #}
+<div class="container mx-auto px-4">
+  <div class="max-w-4xl mx-auto">
+
+    {% if community_review_count %}
+    <div class="ratings-histogram">
+      <div class="rh-bars">
+        {% for bucket in rating_histogram %}
+          <div class="rh-bar" style="height: {{ bucket.pct }}%;" title="{{ bucket.count }} rating{{ bucket.count|pluralize }} at {{ bucket.rating }}/10"></div>
+        {% endfor %}
+      </div>
+      <div class="rh-avg">
+        <span class="rh-avg-num">{{ community_score }}</span>
+        <span class="rh-avg-star">★★★★★</span>
+        <span class="rh-count">{{ community_review_count }} rating{{ community_review_count|pluralize }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="quick-review-bar" onclick="{% if user.is_authenticated %}openRateModal(){% else %}openAuthModal('login'){% endif %};">
+      <div class="quick-review-avatar">
+        {% if user.is_authenticated %}<img src="{{ user.profile.avatar_url }}" alt="" style="width:100%;height:100%;border-radius:50%;">{% else %}<i class="fas fa-user text-sm"></i>{% endif %}
+      </div>
+      <span class="quick-review-text">
+        {% if user_review %}Update your rating, log, review, add to list + more{% else %}Rate, log, review, add to list + more{% endif %}
+      </span>
+      <i class="fas fa-ellipsis-h quick-review-more"></i>
+    </div>
+
+  </div>
+</div>

@@ -74,12 +74,23 @@
   .pill-red   { background: #e50914; color: #fff; }
   .pill-glass { background: rgba(0,0,0,0.12); color: #111827; border: 1px solid rgba(0,0,0,0.2); }
   .dark .pill-glass { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.28); }
-  .hero-btns { display: flex; gap: 10px; flex-wrap: wrap; }
-  .hbtn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 22px; border-radius: 4px; font-size: clamp(0.7rem, 1vw, 0.88rem); font-weight: 700; cursor: pointer; text-decoration: none; transition: opacity .18s; white-space: nowrap; }
-  .hbtn:hover { opacity: .82; }
-  .hbtn-white { background: #fff; color: #000; }
-  .hbtn-dark  { background: rgba(50,50,60,.72); color: #fff; }
-  .dark .hbtn-dark { background: rgba(109,109,110,.72); color: #fff; }
+  .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
+  .hbtn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 13px 28px; border-radius: 999px;
+    font-size: clamp(0.78rem, 1.05vw, 0.95rem); font-weight: 800; cursor: pointer; text-decoration: none;
+    white-space: nowrap; transition: transform .2s, box-shadow .2s, background .2s;
+  }
+  .hbtn-white {
+    background: linear-gradient(90deg,#e50914,#ff4d5e); color: #fff;
+    box-shadow: 0 8px 26px rgba(229,9,20,.45);
+  }
+  .hbtn-white:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 12px 32px rgba(229,9,20,.6); }
+  .hbtn-dark {
+    background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.25);
+    backdrop-filter: blur(6px);
+  }
+  .dark .hbtn-dark { background: rgba(255,255,255,.1); }
+  .hbtn-dark:hover { background: rgba(255,255,255,.24); transform: translateY(-2px); }
 
   /* ── TICKER ── */
   .ticker {
@@ -108,9 +119,10 @@
   .ticker-dot { width: 4px; height: 4px; border-radius: 50%; background: #e50914; flex-shrink: 0; }
 
   /* ── ROW SECTIONS ── */
-  .row-s { padding: 0 0 2rem; }
-  .row-s:first-of-type { margin-top: -5vw; position: relative; z-index: 2; padding-top: .5rem; }
-  .row-hd { display: flex; align-items: baseline; gap: 10px; padding: 0 4% .55rem; }
+  .row-s { padding: 1.6rem 0 2.6rem; border-top: 1px solid rgba(0,0,0,.06); }
+  .dark .row-s { border-top-color: rgba(255,255,255,.06); }
+  .row-s:first-of-type { margin-top: -5vw; position: relative; z-index: 2; padding-top: .5rem; border-top: none; }
+  .row-hd { display: flex; align-items: baseline; gap: 10px; padding: 0 4% .8rem; }
   .row-ttl { font-size: clamp(.82rem, 1.35vw, 1.2rem); font-weight: 700; color: #111827; }
   .dark .row-ttl { color: #e5e5e5; }
   .row-see { font-size: .68rem; color: #54b3d6; font-weight: 600; text-decoration: none; opacity: 0; transform: translateX(-5px); transition: opacity .2s, transform .2s; }
@@ -122,21 +134,6 @@
   .bl-blue  { background: #0070f3; color: #fff; }
 
   /* ── SCROLL ROWS ── */
-  .srow-wrap { position: relative; }
-  .srow { display: flex; gap: clamp(4px,.5vw,8px); overflow-x: auto; padding: 4px 4% 10px; scroll-behavior: smooth; -ms-overflow-style: none; scrollbar-width: none; }
-  .srow::-webkit-scrollbar { display: none; }
-  .sarr {
-    position: absolute; top: 0; bottom: 10px; width: 4%; min-width: 34px; max-width: 56px;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(248,250,252,.85); color: #374151;
-    z-index: 5; cursor: pointer; border: none; font-size: 1.1rem;
-    opacity: 0; transition: opacity .18s;
-  }
-  .dark .sarr { background: rgba(20,20,20,.65); color: #fff; }
-  .srow-wrap:hover .sarr { opacity: 1; }
-  .sarr:hover { background: rgba(240,244,248,.98); }
-  .dark .sarr:hover { background: rgba(20,20,20,.92); }
-  .sarr-l { left: 0; } .sarr-r { right: 0; }
 
   /* ── CARD ── */
   .card { flex-shrink: 0; width: clamp(105px,13.5vw,195px); cursor: pointer; text-decoration: none; display: block; position: relative; transition: transform .22s ease; z-index: 1; }
@@ -153,6 +150,8 @@
   .cbadge { position: absolute; font-size: .52rem; font-weight: 800; padding: 2px 5px; border-radius: 2px; text-transform: uppercase; letter-spacing: .02em; }
   .cbtl { top: 5px; left: 5px; }
   .cbtr { top: 5px; right: 5px; }
+  .cbbr { bottom: 5px; right: 5px; }
+  .b-rating { background: rgba(0,0,0,.65); color: #facc15; border: 1px solid rgba(250,204,21,.4); }
   .b-new  { background: #e50914; color: #fff; }
   .b-hot  { background: #f5a623; color: #000; }
   .b-ep   { background: #7c3aed; color: #fff; }
@@ -164,13 +163,65 @@
   .dark .card:hover .card-ttl { color: #fff; }
   .card-sub { font-size: .58rem; color: #7c3aed; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; padding: 0 1px; }
 
+  /* ── RT-STYLE CARD (poster + score row + title + watchlist button) ── */
+  .rt-card { display: flex; flex-direction: column; position: relative; }
+  .rt-card-more {
+    position: absolute; top: 6px; right: 6px; z-index: 5;
+    width: 26px; height: 26px; border-radius: 50%; border: none;
+    background: rgba(0,0,0,.55); color: #fff; font-size: .78rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rt-card-more:hover { background: rgba(0,0,0,.8); }
+  .rt-card-poster-link { display: block; text-decoration: none; }
+  .rt-card-img { position: relative; aspect-ratio: 2/3; border-radius: 6px; overflow: hidden; background: #e5e7eb; }
+  .dark .rt-card-img { background: #242424; }
+  .rt-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .3s; }
+  .rt-card-img img.ld { opacity: 1; }
+  .rt-card-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .22s; background: rgba(0,0,0,.25); color: #fff; font-size: 1.1rem; }
+  .rt-card:hover .rt-card-play { opacity: 1; }
+  .rt-score-row { display: flex; align-items: center; gap: 8px; margin-top: 7px; font-size: .68rem; font-weight: 700; color: #374151; flex-wrap: wrap; }
+  .dark .rt-score-row { color: #d1d5db; }
+  .rt-score { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+  .rt-score-muted { color: #9ca3af; font-weight: 500; }
+  .rt-imdb { color: #f5c518; -webkit-text-stroke: .3px #b8930f; font-weight: 900; }
+  .rt-card-title { display: block; font-size: .78rem; font-weight: 700; color: #111827; margin-top: 4px; text-decoration: none; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dark .rt-card-title { color: #f3f4f6; }
+  .rt-watchlist-btn {
+    margin-top: 7px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 6px 10px; border-radius: 5px; border: 1.5px solid #cbd5e1; background: transparent;
+    color: #475569; font-size: .62rem; font-weight: 800; letter-spacing: .03em; cursor: pointer;
+    transition: all .18s;
+  }
+  .dark .rt-watchlist-btn { border-color: #4b5563; color: #cbd5e1; }
+  .rt-watchlist-btn:hover { border-color: #e50914; color: #e50914; }
+  .rt-watchlist-btn.active { background: #e50914; border-color: #e50914; color: #fff; }
+  .rt-trailer-btn {
+    margin-top: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 6px 10px; border-radius: 5px; border: 1.5px solid #6366f1; background: transparent;
+    color: #6366f1; font-size: .62rem; font-weight: 800; letter-spacing: .03em; cursor: pointer;
+    width: 100%; transition: all .18s;
+  }
+  .rt-trailer-btn:hover { background: rgba(99,102,241,.1); }
+  .dark .rt-trailer-btn { border-color: #818cf8; color: #818cf8; }
+
+  .notify-btn {
+    margin-top: 5px; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 5px 6px; border-radius: 5px; border: 1.5px solid #a855f7;
+    background: transparent; color: #a855f7; font-size: .58rem; font-weight: 800; cursor: pointer;
+    transition: all .18s;
+  }
+  .notify-btn:hover { background: rgba(168,85,247,.1); }
+  .notify-btn.active { background: #a855f7; color: #fff; }
+
   /* ── GRID SECTIONS ── */
-  .grid-s { padding: 0 4% 2.5rem; }
-  .grid-wrap { display: grid; grid-template-columns: repeat(3,1fr); gap: clamp(6px,1.2vw,13px); }
-  @media (min-width:480px)  { .grid-wrap { grid-template-columns: repeat(4,1fr); } }
-  @media (min-width:640px)  { .grid-wrap { grid-template-columns: repeat(5,1fr); } }
-  @media (min-width:900px)  { .grid-wrap { grid-template-columns: repeat(6,1fr); } }
-  @media (min-width:1200px) { .grid-wrap { grid-template-columns: repeat(7,1fr); } }
+  /* Organic, self-fitting grid instead of hard column breakpoints — cards keep
+     a comfortable minimum width and the row just fits as many as space allows,
+     so it never feels cramped into a fixed column count. */
+  .grid-s { padding: 1.6rem 4% 2.6rem; border-top: 1px solid rgba(0,0,0,.06); }
+  .dark .grid-s { border-top-color: rgba(255,255,255,.06); }
+  .grid-wrap { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: clamp(12px,1.8vw,20px); }
+  @media (min-width:640px)  { .grid-wrap { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); } }
+  @media (min-width:1200px) { .grid-wrap { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); } }
   .gc { cursor: pointer; text-decoration: none; display: block; }
   .gc-img { position: relative; aspect-ratio: 2/3; border-radius: 4px; overflow: hidden; background: #e5e7eb; transition: transform .22s ease; }
   .dark .gc-img { background: #242424; }
@@ -225,7 +276,7 @@
     .hero-content { right: 8%; bottom: 14%; gap: 9px; }
     .hero-desc { display: none; }
     .pill-glass { display: none; }
-    .hbtn { padding: 7px 14px; }
+    .hbtn { padding: 10px 18px; }
   }
   @media (max-width:400px) {
     .hero-content { right: 4%; left: 4%; }
@@ -413,26 +464,66 @@
   {% if blockbusters %}
   <div class="row-s" style="padding-top:1.2rem;">
     <div class="row-hd">
-      <span class="row-ttl">🏆 Most Watched</span>
+      <span class="row-ttl"><i class="fas fa-trophy" style="color:#f5a623;margin-right:6px;"></i>Most Watched</span>
       <span class="badge-label bl-gold">1K+ Views</span>
     </div>
     <div class="srow-wrap">
       <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
       <div class="srow">
         {% for movie in blockbusters %}
-        <a href="{{ movie.get_absolute_url }}" class="card">
-          <div class="card-img shim">
-            {% if movie.image_url %}<img src="{{ movie.image_url }}" alt="{{ movie.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
-            <div class="c-ov"></div>
-            <div class="c-play"><div class="c-play-btn"><i class="fas fa-play"></i></div></div>
-            <span class="cbadge cbtl b-hot"><i class="fas fa-crown" style="font-size:.45rem;"></i> HOT</span>
-            <span class="cbadge cbtr b-hd">HD</span>
-          </div>
-          <div class="card-ttl">{{ movie.title }}</div>
-        </a>
+          {% include 'movies/components/movie_card.html' with movie=movie %}
         {% endfor %}
       </div>
       <button class="sarr sarr-r" onclick="doScroll(this,1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ═══ TRENDING THIS WEEK — resets every Monday, unlike all-time Most Watched ═══ #}
+  {% if trending_this_week %}
+  <div class="row-s">
+    <div class="row-hd">
+      <span class="row-ttl"><i class="fas fa-chart-line" style="color:#ec4899;margin-right:6px;"></i>Trending This Week</span>
+      <span class="badge-label bl-red">New</span>
+    </div>
+    <div class="srow-wrap">
+      <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="srow">
+        {% for movie in trending_this_week %}
+          {% include 'movies/components/movie_card.html' with movie=movie %}
+        {% endfor %}
+      </div>
+      <button class="sarr sarr-r" onclick="doScroll(this,1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ═══ INSTANT WATCH ROW — stream right now, no download step ═══ #}
+  {% if instant_watch %}
+  <div class="row-s">
+    <div class="row-hd">
+      <span class="row-ttl"><i class="fas fa-play-circle" style="color:#2dbd6e;margin-right:6px;"></i>Instant Watch</span>
+      <span class="badge-label bl-green">No Wait</span>
+      <a href="{% url 'movies:stream_only' %}" class="row-see" style="opacity:1;transform:none;font-size:.68rem;color:#2dbd6e;font-weight:600;text-decoration:none;margin-left:auto;white-space:nowrap;">See All &rsaquo;</a>
+    </div>
+    <div class="srow-wrap">
+      <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="srow">
+        {% for movie in instant_watch %}
+          {% include 'movies/components/movie_card.html' with movie=movie %}
+        {% endfor %}
+      </div>
+      <button class="sarr sarr-r" onclick="doScroll(this,1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ═══ MOST POPULAR — split Movies / TV Shows, RT homepage style ═══ #}
+  {% if trending_movies_list or trending_series_list %}
+  <div class="row-s">
+    <div class="trend-list-pair">
+      {% include 'movies/components/trending_list.html' with trending_list=trending_movies_list heading="Popular Movies" icon="fa-clapperboard" view_all_url_name="movies:top_movies" %}
+      {% include 'movies/components/trending_list.html' with trending_list=trending_series_list heading="Popular TV Shows" icon="fa-tv" view_all_url_name="movies:top_series" %}
     </div>
   </div>
   {% endif %}
@@ -480,16 +571,31 @@
       <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
       <div class="srow">
         {% for item in upcoming %}
-        <a href="{% url 'movies:coming_soon' %}" class="card">
-          <div class="card-img shim">
-            {% if item.poster_url %}<img src="{{ item.poster_url }}" alt="{{ item.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
-            <div class="c-ov"></div>
-            <span class="cbadge cbtl" style="background:#7c3aed;color:#fff;">SOON</span>
-            {% if item.rating %}<span class="cbadge cbtr" style="background:#facc15;color:#111;">★ {{ item.rating|floatformat:1 }}</span>{% endif %}
-          </div>
-          <div class="card-ttl">{{ item.title }}</div>
-          {% if item.release_date %}<div class="card-sub" style="color:#7c3aed;">{{ item.release_date }}</div>{% endif %}
-        </a>
+        <div class="card">
+          <a href="{% url 'movies:coming_soon' %}" class="block">
+            <div class="card-img shim">
+              {% if item.poster_url %}<img src="{{ item.poster_url }}" alt="{{ item.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
+              <div class="c-ov"></div>
+              <span class="cbadge cbtl" style="background:#7c3aed;color:#fff;">SOON</span>
+              {% if item.rating %}<span class="cbadge cbtr" style="background:#facc15;color:#111;">★ {{ item.rating|floatformat:1 }}</span>{% endif %}
+              {% if item.trailer_url %}
+              <button type="button" data-trailer-url="{{ item.trailer_url }}" data-trailer-title="{{ item.title }}"
+                      class="js-play-trailer c-play" style="background:none;border:0;">
+                <div class="c-play-btn"><i class="fas fa-play"></i></div>
+              </button>
+              {% endif %}
+            </div>
+            <div class="card-ttl">{{ item.title }}</div>
+            {% if item.release_date %}<div class="card-sub" style="color:#7c3aed;">{{ item.release_date }}</div>{% endif %}
+          </a>
+          <button type="button"
+                  class="notify-btn js-notify-btn{% if item.tmdb_id in notify_requested_ids %} active{% endif %}"
+                  data-toggle-url="{% url 'movies:toggle_notify' item.pk %}"
+                  data-authenticated="{% if request.user.is_authenticated %}1{% else %}0{% endif %}">
+            <i class="fa{% if item.tmdb_id in notify_requested_ids %}s{% else %}r{% endif %} fa-bell"></i>
+            <span>{% if item.tmdb_id in notify_requested_ids %}Notifying{% else %}Notify Me{% endif %}</span>
+          </button>
+        </div>
         {% endfor %}
       </div>
       <button class="sarr sarr-r" onclick="doScroll(this,1)"><i class="fas fa-chevron-right"></i></button>
@@ -509,17 +615,7 @@
     </div>
     <div class="grid-wrap" id="ongoing-grid">
       {% for series in ongoing_series %}
-      <a href="{{ series.get_absolute_url }}" class="gc">
-        <div class="gc-img shim">
-          {% if series.image_url %}<img src="{{ series.image_url }}" alt="{{ series.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
-          <div class="gc-ov"></div>
-          <div class="gc-play"><div class="gc-play-btn"><i class="fas fa-play"></i></div></div>
-          <span class="cbadge cbtl b-ep" style="font-size:.48rem;">NEW EP</span>
-          <span class="cbadge cbtr b-hd" style="font-size:.48rem;">HD</span>
-        </div>
-        <div class="gc-ttl">{{ series.title }}</div>
-        {% if series.title_b %}<div class="gc-yr" style="color:#7c3aed;">{{ series.title_b }}</div>{% endif %}
-      </a>
+        {% include 'movies/components/movie_card.html' with movie=series %}
       {% endfor %}
     </div>
     {% if ongoing_series.has_next %}
@@ -537,17 +633,7 @@
   <div class="row-s">
     <div class="row-hd">
       <span class="row-ttl">
-        {% if 'nollywood' in category.name|lower %}🎭
-        {% elif 'hollywood' in category.name|lower %}🎬
-        {% elif 'korean' in category.name|lower %}🇰🇷
-        {% elif 'chinese' in category.name|lower %}🇨🇳
-        {% elif 'anime' in category.name|lower %}⛩️
-        {% elif 'thai' in category.name|lower %}🇹🇭
-        {% elif 'bollywood' in category.name|lower %}🎵
-        {% elif 'series' in category.name|lower %}📺
-        {% else %}🎥
-        {% endif %}
-        {{ category.name }}
+        <i class="fas {{ category.name|category_icon_class }}" style="margin-right:6px;color:#6366f1;"></i>{{ category.name }}
       </span>
       <a href="{% url 'movies:category_movies' category.id category.slug %}" class="row-see" style="opacity:1;transform:none;font-size:.68rem;color:#54b3d6;font-weight:600;text-decoration:none;margin-left:auto;white-space:nowrap;">See All &rsaquo;</a>
     </div>
@@ -555,18 +641,7 @@
       <button class="sarr sarr-l" onclick="doScroll(this,-1)"><i class="fas fa-chevron-left"></i></button>
       <div class="srow">
         {% for movie in category.latest_movies %}
-        <a href="{{ movie.get_absolute_url }}" class="card">
-          <div class="card-img shim">
-            {% if movie.image_url %}<img src="{{ movie.image_url }}" alt="{{ movie.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
-            <div class="c-ov"></div>
-            <div class="c-play"><div class="c-play-btn"><i class="fas fa-play"></i></div></div>
-            {% if movie.title_b and not movie.completed %}<span class="cbadge cbtl b-ep">NEW EP</span>
-            {% elif movie.created_at|is_recent %}<span class="cbadge cbtl b-new">NEW</span>{% endif %}
-            <span class="cbadge cbtr b-hd">HD</span>
-          </div>
-          <div class="card-ttl">{{ movie.title }}</div>
-          {% if movie.title_b %}<div class="card-sub">{{ movie.title_b }}</div>{% endif %}
-        </a>
+          {% include 'movies/components/movie_card.html' with movie=movie %}
         {% endfor %}
       </div>
       <button class="sarr sarr-r" onclick="doScroll(this,1)"><i class="fas fa-chevron-right"></i></button>
@@ -577,7 +652,7 @@
   {# ═══ RECENTLY UPLOADED GRID ═══ #}
   <div class="grid-s" id="recent-section">
     <div class="row-hd" style="padding-left:0;padding-right:0;margin-bottom:.5rem;">
-      <span class="row-ttl">🕐 Recently Uploaded</span>
+      <span class="row-ttl"><i class="fas fa-clock" style="color:#54b3d6;margin-right:6px;"></i>Recently Uploaded</span>
       <span class="badge-label bl-blue">Fresh</span>
       <span style="margin-left:auto;font-size:.62rem;display:flex;align-items:center;gap:5px;color:#9ca3af;">
         <span style="width:6px;height:6px;border-radius:50%;background:#2dbd6e;display:inline-block;animation:pulse-dot 2s infinite;"></span> Live
@@ -585,17 +660,7 @@
     </div>
     <div class="grid-wrap" id="recent-grid">
       {% for movie in movies %}
-      <a href="{{ movie.get_absolute_url }}" class="gc">
-        <div class="gc-img shim">
-          {% if movie.image_url %}<img src="{{ movie.image_url }}" alt="{{ movie.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
-          <div class="gc-ov"></div>
-          <div class="gc-play"><div class="gc-play-btn"><i class="fas fa-play"></i></div></div>
-          {% if movie.created_at|is_recent %}<span class="cbadge cbtl b-new" style="font-size:.48rem;">NEW</span>{% endif %}
-          <span class="cbadge cbtr b-hd" style="font-size:.48rem;">HD</span>
-        </div>
-        <div class="gc-ttl">{{ movie.title }}</div>
-        {% if movie.vi_year %}<div class="gc-yr">{{ movie.vi_year }}</div>{% endif %}
-      </a>
+        {% include 'movies/components/movie_card.html' with movie=movie %}
       {% empty %}
       <div class="empty-state" style="grid-column:1/-1;text-align:center;padding:3rem;">
         <i class="fas fa-film" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i>
@@ -616,20 +681,12 @@
   {% if completed_series %}
   <div class="grid-s" id="series-section">
     <div class="row-hd" style="padding-left:0;padding-right:0;margin-bottom:.5rem;">
-      <span class="row-ttl">✅ Completed Series</span>
+      <span class="row-ttl"><i class="fas fa-circle-check" style="color:#2dbd6e;margin-right:6px;"></i>Completed Series</span>
       <span class="badge-label bl-green">Full</span>
     </div>
     <div class="grid-wrap" id="series-grid">
       {% for series in completed_series %}
-      <a href="{{ series.get_absolute_url }}" class="gc">
-        <div class="gc-img shim">
-          {% if series.image_url %}<img src="{{ series.image_url }}" alt="{{ series.title }}" loading="lazy" onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">{% endif %}
-          <div class="gc-ov"></div>
-          <div class="gc-play"><div class="gc-play-btn" style="color:#2dbd6e;"><i class="fas fa-play"></i></div></div>
-          <span class="cbadge cbtr b-hd" style="font-size:.48rem;">HD</span>
-        </div>
-        <div class="gc-ttl">{{ series.title }}</div>
-      </a>
+        {% include 'movies/components/movie_card.html' with movie=series %}
       {% endfor %}
     </div>
     {% if completed_series.has_next %}
@@ -642,62 +699,30 @@
   </div>
   {% endif %}
 
-  {# ═══ BROWSE BY CATEGORY GRID ═══ #}
+  {# ═══ BROWSE BY CATEGORY — poster-backed genre tiles ═══ #}
   {% if all_categories %}
   <div class="grid-s" id="categories-section" style="padding-bottom:3rem;">
     <div class="row-hd" style="padding-left:0;padding-right:0;margin-bottom:.8rem;">
-      <span class="row-ttl">🗂️ Browse by Category</span>
-      <span class="badge-label bl-green">All Genres</span>
+      <span class="row-ttl"><i class="fas fa-layer-group" style="color:#2dbd6e;margin-right:6px;"></i>Browse by Category</span>
+      <span class="badge-label bl-green">{{ all_categories|length }} Genres</span>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+    <div class="cat-grid-v2">
       {% for cat in all_categories %}
-      <a href="{% url 'movies:category_movies' cat.id cat.slug %}" class="cat-tile">
-        <span class="cat-icon">
-          {% if 'nollywood' in cat.name|lower %}🎭
-          {% elif 'hollywood' in cat.name|lower %}🎬
-          {% elif 'korean' in cat.name|lower or 'kdrama' in cat.name|lower %}🇰🇷
-          {% elif 'chinese' in cat.name|lower %}🇨🇳
-          {% elif 'anime' in cat.name|lower %}⛩️
-          {% elif 'thai' in cat.name|lower %}🇹🇭
-          {% elif 'bollywood' in cat.name|lower %}🎵
-          {% elif 'series' in cat.name|lower %}📺
-          {% elif 'ongoing' in cat.name|lower %}🔄
-          {% elif 'horror' in cat.name|lower %}👻
-          {% elif 'comedy' in cat.name|lower %}😂
-          {% elif 'romance' in cat.name|lower %}❤️
-          {% elif 'action' in cat.name|lower %}💥
-          {% elif 'sport' in cat.name|lower or 'wrestling' in cat.name|lower %}🏆
-          {% elif '18' in cat.name %}🔞
-          {% else %}🎥
-          {% endif %}
-        </span>
-        <span class="cat-name">{{ cat.name }}</span>
-        <span class="cat-count">{{ cat.movie_count }}</span>
+      <a href="{% url 'movies:category_movies' cat.id cat.slug %}" class="cat-tile-v2">
+        {% for img in cat.preview_images %}
+          <img src="{{ img }}" alt="" class="cat-tile-v2-bg" loading="lazy">
+        {% endfor %}
+        <div class="cat-tile-v2-overlay"></div>
+        <span class="cat-tile-v2-icon"><i class="fas {{ cat.name|category_icon_class }}"></i></span>
+        <div class="cat-tile-v2-foot">
+          <span class="cat-tile-v2-name">{{ cat.name }}</span>
+          <span class="cat-tile-v2-count">{{ cat.movie_count }} title{{ cat.movie_count|pluralize }}</span>
+        </div>
       </a>
       {% endfor %}
     </div>
   </div>
   {% endif %}
-
-  <style>
-    .cat-tile {
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      gap:5px; padding:14px 8px; border-radius:8px; text-decoration:none;
-      background:rgba(0,0,0,.03); border:1px solid rgba(0,0,0,.08);
-      transition:background .18s,transform .18s; text-align:center; cursor:pointer;
-    }
-    .dark .cat-tile { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.1); }
-    .cat-tile:hover { background:rgba(229,9,20,.07); border-color:rgba(229,9,20,.25); transform:translateY(-2px); }
-    .dark .cat-tile:hover { background:rgba(229,9,20,.12); border-color:rgba(229,9,20,.3); }
-    .cat-icon { font-size:1.5rem; line-height:1; }
-    .cat-name { font-size:.65rem; font-weight:700; color:#374151; line-height:1.2; }
-    .dark .cat-name { color:#ccc; }
-    .cat-count { font-size:.55rem; color:#9ca3af; font-weight:500; }
-    @media (min-width:480px) { #categories-section > div { grid-template-columns:repeat(4,1fr); } }
-    @media (min-width:640px) { #categories-section > div { grid-template-columns:repeat(5,1fr); } }
-    @media (min-width:900px) { #categories-section > div { grid-template-columns:repeat(7,1fr); } }
-    @media (min-width:1200px) { #categories-section > div { grid-template-columns:repeat(9,1fr); } }
-  </style>
 
   {# ═══ FLOATING DOWNLOAD GUIDE VIDEO ═══ #}
   <style>
@@ -903,22 +928,6 @@
 </div>
 
 <script>
-  /* ── Arrow scroll ── */
-  function doScroll(btn, dir) {
-    const row = btn.closest('.srow-wrap').querySelector('.srow');
-    row.scrollBy({ left: dir * Math.round(row.clientWidth * 0.75), behavior: 'smooth' });
-  }
-
-  /* ── Drag-to-scroll ── */
-  document.querySelectorAll('.srow').forEach(el => {
-    let dn = false, sx, sl;
-    el.style.cursor = 'grab';
-    el.addEventListener('mousedown',  e => { dn=true; sx=e.pageX-el.offsetLeft; sl=el.scrollLeft; el.style.cursor='grabbing'; });
-    el.addEventListener('mouseleave', () => { dn=false; el.style.cursor='grab'; });
-    el.addEventListener('mouseup',    () => { dn=false; el.style.cursor='grab'; });
-    el.addEventListener('mousemove',  e => { if (!dn) return; e.preventDefault(); el.scrollLeft = sl-(e.pageX-el.offsetLeft-sx)*1.4; });
-  });
-
   /* ── Load More ── */
   document.addEventListener('click', function(e) {
     const btn = e.target.closest('.lm-btn');

@@ -18,6 +18,14 @@ from .views import (
     ComingSoonView,           # ← NEW: Coming Soon (TMDB upcoming)
     AZIndexView, AZLetterView, GenresIndexView,   # ← A–Z browse + genre hub (SEO)
     StreamOnlyView,           # ← NEW: movies with a stream but no download link yet
+    TopMoviesView, TopSeriesView,   # ← full ranked "Most Popular" lists
+    add_review, delete_review,           # ← NEW: ratings/reviews
+    WatchlistView, LikedView, ProfileView,  # ← NEW: watchlist/liked/profile pages
+    toggle_watched, toggle_notify, WatchedView,  # ← NEW: diary log + release notify
+    movie_quick_actions,                 # ← NEW: site-wide quick-actions popup
+    person_filmography,                  # ← NEW: cast filmography popup
+    react_to_comment,                    # ← NEW: emoji reactions on chat messages
+    update_display_name,                 # ← NEW: change your anonymous nickname
 )
 
 app_name = 'movies'
@@ -31,9 +39,14 @@ urlpatterns = [
 
     # ── Coming Soon (TMDB upcoming) ─────────────────────────────────────────
     path('coming-soon/', ComingSoonView.as_view(), name='coming_soon'),
+    path('coming-soon/<int:pk>/notify/', toggle_notify, name='toggle_notify'),
 
     # ── Streaming Only (has a stream, no download link yet) ────────────────
     path('streaming-only/', StreamOnlyView.as_view(), name='stream_only'),
+
+    # ── "View All" targets for the Most Popular lists ───────────────────────
+    path('top-movies/', TopMoviesView.as_view(), name='top_movies'),
+    path('top-tv-shows/', TopSeriesView.as_view(), name='top_series'),
 
     # ── A–Z browse + genre hub (long-tail SEO) ──────────────────────────────
     path('a-z/', AZIndexView.as_view(), name='az_index'),
@@ -41,6 +54,9 @@ urlpatterns = [
     path('genres/', GenresIndexView.as_view(), name='genres_index'),
 
     # ── Actor / cast member page (SEO) ──────────────────────────────────────
+    # The filmography popup route MUST come first — it's actor/<pk>/filmography/,
+    # which would otherwise be swallowed by the <slug:slug> catch-all below.
+    path('actor/<int:pk>/filmography/', person_filmography, name='person_filmography'),
     path('actor/<int:pk>/<slug:slug>/', ActorView.as_view(), name='actor'),
 
     path('category/<int:cat_id>/<slug:slug>/', CategoryMoviesView.as_view(), name='category_movies'),
@@ -55,8 +71,11 @@ urlpatterns = [
     path('movie/<int:pk>/report-broken-link/', report_broken_link, name='report_broken_link'),
     path('movie/<int:pk>/like/',               toggle_like,         name='toggle_like'),
     path('movie/<int:pk>/watchlist/',          toggle_watchlist,    name='toggle_watchlist'),
+    path('movie/<int:pk>/watched/',            toggle_watched,      name='toggle_watched'),
+    path('movie/<int:pk>/quick-actions/',      movie_quick_actions, name='quick_actions'),
     path('movie/<int:pk>/comment/',            add_comment,         name='add_comment'),
     path('movie/<int:movie_pk>/comment/<int:comment_pk>/reply/', add_reply, name='add_reply'),
+    path('movie/<int:pk>/review/',             add_review,          name='add_review'),
 
     # ── NEW: Download gate — sits before the canonical detail URL ─────────────
     # The gate is a clean page (/movie/<pk>/download/) that fires the popunder
@@ -75,6 +94,15 @@ urlpatterns = [
     path('movie/<int:pk>/', old_movie_redirect, name='movie_detail_legacy'),
 
     path('comment/<int:pk>/delete/', delete_comment, name='delete_comment'),
+    path('comment/<int:pk>/react/', react_to_comment, name='react_to_comment'),
+    path('review/<int:pk>/delete/', delete_review, name='delete_review'),
+
+    # ── Watchlist / Liked / Watched / Profile ─────────────────────────────────
+    path('watchlist/', WatchlistView.as_view(), name='watchlist'),
+    path('liked/', LikedView.as_view(), name='liked'),
+    path('watched/', WatchedView.as_view(), name='watched'),
+    path('u/nickname/', update_display_name, name='update_display_name'),
+    path('u/<str:display_name>/', ProfileView.as_view(), name='profile'),
 
     path('search/', SearchResultsView.as_view(), name='search_results'),
 

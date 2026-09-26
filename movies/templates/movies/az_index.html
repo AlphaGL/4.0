@@ -6,20 +6,41 @@
 
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 py-10">
-  <h1 class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mb-2">Browse A–Z</h1>
-  <p class="text-gray-500 dark:text-gray-400 mb-8">Every movie and series on Watch2D, sorted alphabetically. Pick a letter to see all titles.</p>
+  <div class="flex items-center gap-3 mb-2">
+    <i class="fas fa-arrow-down-a-z text-primary-500 text-2xl"></i>
+    <h1 class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">Browse A–Z</h1>
+  </div>
+  <p class="text-gray-500 dark:text-gray-400 mb-8">
+    {{ total_titles }} title{{ total_titles|pluralize }} on Watch2D, sorted alphabetically. Pick a letter to jump straight in.
+  </p>
 
   <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-9 gap-3">
-    {% for L in letters %}
-    <a href="{% url 'movies:az_letter' L %}"
-       class="flex items-center justify-center h-14 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-primary-500 hover:text-white text-lg font-bold text-gray-800 dark:text-gray-200 transition-all">
-      {{ L }}
+    {% for item in letters %}
+    <a href="{% url 'movies:az_letter' item.letter %}"
+       class="flex flex-col items-center justify-center h-16 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-primary-500 hover:text-white text-gray-800 dark:text-gray-200 transition-all group">
+      <span class="text-lg font-bold">{{ item.letter }}</span>
+      <span class="text-[10px] font-semibold text-gray-400 group-hover:text-white/80 dark:text-gray-500">{{ item.count }}</span>
     </a>
     {% endfor %}
   </div>
 
-  <div class="mt-10">
-    <a href="{% url 'movies:genres_index' %}" class="text-primary-600 dark:text-primary-400 font-semibold hover:underline">Or browse by genre →</a>
+  {% if trending_movies_list or trending_series_list %}
+  <div class="mt-12 trend-list-pair">
+    {% include 'movies/components/trending_list.html' with trending_list=trending_movies_list heading="Popular Movies" icon="fa-clapperboard" view_all_url_name="movies:top_movies" %}
+    {% include 'movies/components/trending_list.html' with trending_list=trending_series_list heading="Popular TV Shows" icon="fa-tv" view_all_url_name="movies:top_series" %}
   </div>
+  {% endif %}
+
+  {% if browse_categories %}
+  <div class="mt-12">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
+        <i class="fas fa-layer-group text-green-500"></i>Or Browse by Genre
+      </h2>
+      <a href="{% url 'movies:genres_index' %}" class="text-xs font-semibold text-primary-500 hover:underline whitespace-nowrap">All Genres &rsaquo;</a>
+    </div>
+    {% include 'movies/components/category_tiles.html' with categories=browse_categories %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

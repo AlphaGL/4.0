@@ -1,0 +1,18 @@
+{% load movie_extras %}
+{# Home-style crossfading category tiles. Expects `categories` with `.latest_movies` prefetched. #}
+{% if categories %}
+<div class="cat-grid-v2">
+  {% for cat in categories %}
+  <a href="{% url 'movies:category_movies' cat.id cat.slug %}" class="cat-tile-v2">
+    {% for movie in cat.latest_movies|slice:":5" %}
+      {% if movie.image_url %}<img src="{{ movie.image_url }}" alt="" class="cat-tile-v2-bg" loading="lazy">{% endif %}
+    {% endfor %}
+    <div class="cat-tile-v2-overlay"></div>
+    <span class="cat-tile-v2-icon"><i class="fas {{ cat.name|category_icon_class }}"></i></span>
+    <div class="cat-tile-v2-foot">
+      <span class="cat-tile-v2-name">{{ cat.name }}</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}

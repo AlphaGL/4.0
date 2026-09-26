@@ -224,29 +224,8 @@
 
   {# -- Extra head elements per-page -- #}
   {% block head_extra %}{% endblock %}
-<!-- 
-  {# -- Popunder ad zones — same al5sm/5gvci scripts the download/stream gate
-       pages already use, now applied site-wide instead of the old Monetag
-       Direct Link click-handler. Gate pages set disable_global_popunder=True
-       and embed their own copy directly in head_extra, so this is skipped
-       there to avoid firing the popunder twice. Movie detail pages override
-       this block with their own dedicated zone (11721757) instead. -- #} -->
-  {% block popunder_scripts %}
-    {% if not disable_global_popunder %}
-      <script>(function(s){s.dataset.zone='11272472',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-      <script src="https://5gvci.com/act/files/tag.min.js?z=11272474" data-cfasync="false" async></script>
-    {% endif %}
-  {% endblock %}
 
-
-
-
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3160947215625541"
-     crossorigin="anonymous"></script>
-
-
-
-
+  {% block popunder_scripts %}{% endblock %}
 
 
 <!-- Push notifications now run only on the download/stream gate pages (not
@@ -310,6 +289,41 @@
                   class="p-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 group">
             <i class="fas fa-moon text-gray-600 dark:text-yellow-400 group-hover:scale-110 transition-transform"></i>
           </button>
+
+          {# Account (desktop) #}
+          <div class="hidden lg:block relative">
+            {% if user.is_authenticated %}
+              <button onclick="toggleAccountMenu()" id="account-menu-btn"
+                      class="flex items-center gap-2 p-1.5 pr-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300">
+                <img src="{{ user.profile.avatar_url }}" alt="" class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-200 max-w-[100px] truncate">{{ user.profile.display_name }}</span>
+                <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+              </button>
+              <div id="account-menu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 z-50">
+                <a href="{% url 'movies:profile' user.profile.display_name %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <i class="fas fa-user w-4 text-gray-400"></i> My Profile
+                </a>
+                <a href="{% url 'movies:watchlist' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <i class="fas fa-bookmark w-4 text-gray-400"></i> My Watchlist
+                </a>
+                <a href="{% url 'movies:liked' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <i class="fas fa-heart w-4 text-gray-400"></i> Liked Movies
+                </a>
+                <a href="{% url 'movies:watched' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <i class="fas fa-eye w-4 text-gray-400"></i> Watched
+                </a>
+                <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                <a href="{% url 'account_logout' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <i class="fas fa-sign-out-alt w-4 text-gray-400"></i> Log Out
+                </a>
+              </div>
+            {% else %}
+              <button type="button" data-mode="login"
+                 class="js-open-auth inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold transition-all duration-300">
+                <i class="fas fa-sign-in-alt text-xs"></i> Log In
+              </button>
+            {% endif %}
+          </div>
 
           {# Mobile Menu Toggle #}
           <button class="lg:hidden p-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative" onclick="toggleMobileMenu()">
@@ -459,6 +473,79 @@
                     <i class="fas fa-chevron-right text-gray-400"></i>
                   </a>
 
+                  {% if user.is_authenticated %}
+                  <a href="{% url 'movies:watchlist' %}" class="mobile-nav-link {% if request.resolver_match.url_name == 'watchlist' %}active{% endif %}">
+                    <div class="flex items-center">
+                      <div class="w-10 h-10 bg-gradient-to-r from-primary-500 to-blue-600 rounded-xl flex items-center justify-center mr-3">
+                        <i class="fas fa-bookmark text-white text-sm"></i>
+                      </div>
+                      <div>
+                        <span class="font-medium">My Watchlist</span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Movies you want to watch</p>
+                      </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                  </a>
+                  <a href="{% url 'movies:liked' %}" class="mobile-nav-link {% if request.resolver_match.url_name == 'liked' %}active{% endif %}">
+                    <div class="flex items-center">
+                      <div class="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-xl flex items-center justify-center mr-3">
+                        <i class="fas fa-heart text-white text-sm"></i>
+                      </div>
+                      <div>
+                        <span class="font-medium">Liked Movies</span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Movies you've liked</p>
+                      </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                  </a>
+                  <a href="{% url 'movies:watched' %}" class="mobile-nav-link {% if request.resolver_match.url_name == 'watched' %}active{% endif %}">
+                    <div class="flex items-center">
+                      <div class="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mr-3">
+                        <i class="fas fa-eye text-white text-sm"></i>
+                      </div>
+                      <div>
+                        <span class="font-medium">Watched</span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Your viewing diary</p>
+                      </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                  </a>
+                  <a href="{% url 'movies:profile' user.profile.display_name %}" class="mobile-nav-link">
+                    <div class="flex items-center">
+                      <div class="w-10 h-10 bg-gradient-to-r from-gray-500 to-gray-700 rounded-xl flex items-center justify-center mr-3">
+                        <i class="fas fa-user text-white text-sm"></i>
+                      </div>
+                      <div>
+                        <span class="font-medium">My Profile</span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ user.profile.display_name }}</p>
+                      </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                  </a>
+                  <a href="{% url 'account_logout' %}" class="mobile-nav-link">
+                    <div class="flex items-center">
+                      <div class="w-10 h-10 bg-gradient-to-r from-gray-400 to-gray-600 rounded-xl flex items-center justify-center mr-3">
+                        <i class="fas fa-sign-out-alt text-white text-sm"></i>
+                      </div>
+                      <div><span class="font-medium">Log Out</span></div>
+                    </div>
+                  </a>
+                  {% else %}
+                  <button type="button" data-mode="login" class="js-open-auth mobile-nav-link w-full text-left">
+                    <div class="flex items-center">
+                      <div class="w-10 h-10 bg-gradient-to-r from-primary-500 to-accent-500 rounded-xl flex items-center justify-center mr-3">
+                        <i class="fas fa-sign-in-alt text-white text-sm"></i>
+                      </div>
+                      <div>
+                        <span class="font-medium">Log In / Sign Up</span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Rate movies, keep a watchlist</p>
+                      </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                  </button>
+                  {% endif %}
+                  </a>
+
                   <a href="{% url 'movies:stream_only' %}" class="mobile-nav-link {% if request.resolver_match.url_name == 'stream_only' %}active{% endif %}">
                     <div class="flex items-center">
                       <div class="w-10 h-10 bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl flex items-center justify-center mr-3">
@@ -590,33 +677,6 @@
       </div>
     </div>
   </header>
-
-  <!-- {# Popunder ad notice — same idea as thenkiri.com's banner: tells visitors
-     a new tab may open on click and that's expected, not malware. Dismissal
-     is remembered in localStorage so it only shows once per browser, not on
-     every single page load (a popunder can fire on nearly every click). #} -->
-  <div id="popunder-notice" class="hidden bg-blue-50 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200 text-xs sm:text-sm">
-    <div class="container mx-auto px-4 py-2 flex items-center justify-between gap-3">
-      <span>
-        <i class="fas fa-circle-info mr-1.5"></i>
-        Watch2D is ad-supported — clicking a link may open a new tab with an ad. Just close it and continue browsing. Stay safe! ❤️
-      </span>
-      <button onclick="document.getElementById('popunder-notice').style.display='none'; try { localStorage.setItem('w2d_popunder_notice_dismissed', '1'); } catch (e) {}"
-              class="flex-shrink-0 text-blue-500 hover:text-blue-700 dark:hover:text-blue-100" aria-label="Dismiss">
-        <i class="fas fa-xmark"></i>
-      </button>
-    </div>
-  </div>
-  <script>
-    try {
-      if (!localStorage.getItem('w2d_popunder_notice_dismissed')) {
-        document.getElementById('popunder-notice').classList.remove('hidden');
-      }
-    } catch (e) {
-      // localStorage unavailable (private mode etc.) — just show it.
-      document.getElementById('popunder-notice').classList.remove('hidden');
-    }
-  </script>
 
   {# Mobile Menu Overlay #}
   <div id="mobile-menu-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden lg:hidden" onclick="toggleMobileMenu()"></div>
@@ -809,6 +869,162 @@
       const mobileSearch = document.getElementById('mobile-search');
       mobileSearch.classList.toggle('hidden');
     }
+
+    // RT-style Watchlist button (event delegation — works on any page/card)
+    document.addEventListener('click', async function(e) {
+      const btn = e.target.closest('.js-watchlist-btn');
+      if (!btn) return;
+      e.preventDefault();
+      if (btn.dataset.authenticated !== '1') {
+        openAuthModal('login');
+        return;
+      }
+      if (btn.dataset.busy === '1') return;
+      btn.dataset.busy = '1';
+      try {
+        const response = await fetch(btn.dataset.toggleUrl, {
+          method: 'GET',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const data = await response.json();
+        if (data.success) {
+          const icon = btn.querySelector('i');
+          const label = btn.querySelector('span');
+          if (data.is_watchlisted) {
+            btn.classList.add('active');
+            icon.className = 'fas fa-bookmark';
+            if (label) label.textContent = 'WATCHLISTED';
+          } else {
+            btn.classList.remove('active');
+            icon.className = 'far fa-bookmark';
+            if (label) label.textContent = 'WATCHLIST';
+          }
+        }
+      } catch (err) {
+        console.error('Watchlist toggle failed', err);
+      } finally {
+        btn.dataset.busy = '0';
+      }
+    });
+
+    // Like button (event delegation — mirrors the watchlist button above)
+    document.addEventListener('click', async function(e) {
+      const btn = e.target.closest('.js-like-btn');
+      if (!btn) return;
+      e.preventDefault();
+      if (btn.dataset.authenticated !== '1') {
+        openAuthModal('login');
+        return;
+      }
+      if (btn.dataset.busy === '1') return;
+      btn.dataset.busy = '1';
+      try {
+        const response = await fetch(btn.dataset.toggleUrl, {
+          method: 'GET',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const data = await response.json();
+        if (data.success) {
+          const icon = btn.querySelector('i');
+          if (data.is_liked) {
+            btn.classList.add('active-like');
+            icon.className = 'fas fa-heart';
+          } else {
+            btn.classList.remove('active-like');
+            icon.className = 'far fa-heart';
+          }
+        }
+      } catch (err) {
+        console.error('Like toggle failed', err);
+      } finally {
+        btn.dataset.busy = '0';
+      }
+    });
+
+    // Watched button (diary log — mirrors the watchlist/like buttons above)
+    document.addEventListener('click', async function(e) {
+      const btn = e.target.closest('.js-watched-btn');
+      if (!btn) return;
+      e.preventDefault();
+      if (btn.dataset.authenticated !== '1') {
+        openAuthModal('login');
+        return;
+      }
+      if (btn.dataset.busy === '1') return;
+      btn.dataset.busy = '1';
+      try {
+        const response = await fetch(btn.dataset.toggleUrl, {
+          method: 'GET',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const data = await response.json();
+        if (data.success) {
+          const icon = btn.querySelector('i');
+          if (data.is_watched) {
+            btn.classList.add('active');
+            icon.className = 'fas fa-eye';
+          } else {
+            btn.classList.remove('active');
+            icon.className = 'far fa-eye';
+          }
+        }
+      } catch (err) {
+        console.error('Watched toggle failed', err);
+      } finally {
+        btn.dataset.busy = '0';
+      }
+    });
+
+    // "Notify Me" button (Coming Soon release tracking)
+    document.addEventListener('click', async function(e) {
+      const btn = e.target.closest('.js-notify-btn');
+      if (!btn) return;
+      e.preventDefault();
+      if (btn.dataset.authenticated !== '1') {
+        openAuthModal('login');
+        return;
+      }
+      if (btn.dataset.busy === '1') return;
+      btn.dataset.busy = '1';
+      try {
+        const response = await fetch(btn.dataset.toggleUrl, {
+          method: 'GET',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const data = await response.json();
+        if (data.success) {
+          const icon = btn.querySelector('i');
+          const label = btn.querySelector('span');
+          if (data.is_notifying) {
+            btn.classList.add('active');
+            if (icon) icon.className = 'fas fa-bell';
+            if (label) label.textContent = 'Notifying';
+          } else {
+            btn.classList.remove('active');
+            if (icon) icon.className = 'far fa-bell';
+            if (label) label.textContent = 'Notify Me';
+          }
+        }
+      } catch (err) {
+        console.error('Notify toggle failed', err);
+      } finally {
+        btn.dataset.busy = '0';
+      }
+    });
+
+    // Account dropdown (desktop)
+    function toggleAccountMenu() {
+      const menu = document.getElementById('account-menu');
+      if (menu) menu.classList.toggle('hidden');
+    }
+    document.addEventListener('click', function(e) {
+      const menu = document.getElementById('account-menu');
+      const btn = document.getElementById('account-menu-btn');
+      if (!menu || menu.classList.contains('hidden')) return;
+      if (!menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.classList.add('hidden');
+      }
+    });
 
     // Mobile Menu Toggle
     function toggleMobileMenu() {
@@ -1254,19 +1470,218 @@
     }
   </style>
 
+  {# Global RT-style movie card + grid, shared by every page that lists movies. #}
+  <style>
+    .rt-card { display: flex; flex-direction: column; position: relative; }
+    .srow .rt-card { flex-shrink: 0; width: clamp(105px,13.5vw,195px); }
+    .rt-card-more {
+      position: absolute; top: 6px; right: 6px; z-index: 5;
+      width: 26px; height: 26px; border-radius: 50%; border: none;
+      background: rgba(0,0,0,.55); color: #fff; font-size: .78rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .rt-card-more:hover { background: rgba(0,0,0,.8); }
+    .rt-card-poster-link { display: block; text-decoration: none; }
+    .rt-card-img { position: relative; aspect-ratio: 2/3; border-radius: 6px; overflow: hidden; background: #e5e7eb; }
+    .dark .rt-card-img { background: #242424; }
+    .rt-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .3s; }
+    .rt-card-img img.ld { opacity: 1; }
+    .rt-card-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .22s; background: rgba(0,0,0,.25); color: #fff; font-size: 1.1rem; }
+    .rt-card:hover .rt-card-play { opacity: 1; }
+    .rt-score-row { display: flex; align-items: center; gap: 8px; margin-top: 7px; font-size: .68rem; font-weight: 700; color: #374151; flex-wrap: wrap; }
+    .dark .rt-score-row { color: #d1d5db; }
+    .rt-score { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+    .rt-score-muted { color: #9ca3af; font-weight: 500; }
+    .rt-imdb { color: #f5c518; -webkit-text-stroke: .3px #b8930f; font-weight: 900; }
+    .rt-card-title { display: block; font-size: .78rem; font-weight: 700; color: #111827; margin-top: 4px; text-decoration: none; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dark .rt-card-title { color: #f3f4f6; }
+    .rt-watchlist-btn {
+      margin-top: 7px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 6px 10px; border-radius: 5px; border: 1.5px solid #cbd5e1; background: transparent;
+      color: #475569; font-size: .62rem; font-weight: 800; letter-spacing: .03em; cursor: pointer;
+      transition: all .18s;
+    }
+    .dark .rt-watchlist-btn { border-color: #4b5563; color: #cbd5e1; }
+    .rt-watchlist-btn:hover { border-color: #e50914; color: #e50914; }
+    .rt-watchlist-btn.active { background: #e50914; border-color: #e50914; color: #fff; }
+    .rt-trailer-btn {
+      margin-top: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 6px 10px; border-radius: 5px; border: 1.5px solid #6366f1; background: transparent;
+      color: #6366f1; font-size: .62rem; font-weight: 800; letter-spacing: .03em; cursor: pointer;
+      width: 100%; transition: all .18s;
+    }
+    .rt-trailer-btn:hover { background: rgba(99,102,241,.1); }
+    .dark .rt-trailer-btn { border-color: #818cf8; color: #818cf8; }
+    .notify-btn {
+      margin-top: 5px; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      padding: 5px 6px; border-radius: 5px; border: 1.5px solid #a855f7;
+      background: transparent; color: #a855f7; font-size: .58rem; font-weight: 800; cursor: pointer;
+      transition: all .18s;
+    }
+    .notify-btn:hover { background: rgba(168,85,247,.1); }
+    .notify-btn.active { background: #a855f7; color: #fff; }
+    .grid-wrap { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: clamp(12px,1.8vw,20px); }
+    @media (min-width:640px)  { .grid-wrap { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); } }
+    @media (min-width:1200px) { .grid-wrap { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); } }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .shim { background: linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%); background-size: 200% 100%; animation: shimmer 1.5s ease infinite; }
+    .dark .shim { background: linear-gradient(90deg,#242424 25%,#2e2e2e 50%,#242424 75%); background-size: 200% 100%; animation: shimmer 1.5s ease infinite; }
+
+    /* ── "Most Popular" compact ranked list (RT-style, text not posters) ── */
+    .trend-list-pair { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 900px) { .trend-list-pair { grid-template-columns: 1fr 1fr; } }
+    .trend-list-card { background: #fff; border: 1px solid rgba(0,0,0,.08); border-radius: 12px; overflow: hidden; }
+    .dark .trend-list-card { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
+    .trend-list-hd { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,.06); }
+    .dark .trend-list-hd { border-bottom-color: rgba(255,255,255,.08); }
+    .trend-list-ttl { font-size: .88rem; font-weight: 800; color: #111827; display: flex; align-items: center; gap: 7px; }
+    .dark .trend-list-ttl { color: #f3f4f6; }
+    .trend-list-ttl i { color: #f59e0b; }
+    .trend-list-more { font-size: .72rem; font-weight: 700; color: #6366f1; text-decoration: none; }
+    .trend-list-more:hover { text-decoration: underline; }
+    .trend-list-body { display: grid; grid-template-columns: 1fr; }
+    @media (min-width: 640px) { .trend-list-body.two-col { grid-template-columns: 1fr 1fr; } }
+    .trend-row {
+      display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+      text-decoration: none; border-bottom: 1px solid rgba(0,0,0,.05);
+      transition: background .15s; min-width: 0; overflow: hidden;
+    }
+    .dark .trend-row { border-bottom-color: rgba(255,255,255,.06); }
+    .trend-row:hover { background: rgba(99,102,241,.06); }
+    .trend-row:last-child { border-bottom: none; }
+    .trend-rank { flex-shrink: 0; width: 16px; font-size: .78rem; font-weight: 800; color: #9ca3af; }
+    .trend-title { flex: 1 1 auto; min-width: 0; font-size: .82rem; font-weight: 600; color: #1f2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dark .trend-title { color: #e5e7eb; }
+    .trend-score { flex: 0 0 auto; font-size: .76rem; font-weight: 700; color: #374151; white-space: nowrap; text-align: right; }
+    .dark .trend-score { color: #d1d5db; }
+    @media (max-width: 480px) {
+      .trend-row { padding: 8px 12px; gap: 6px; }
+      .trend-title { font-size: .76rem; }
+      .trend-score { font-size: .68rem; }
+      .trend-rank { width: 14px; font-size: .7rem; }
+    }
+    .ic-rt { color: #fa320a; }
+    .ic-audience { color: #f59e0b; }
+
+    /* ── Horizontal-scroll card row — shared by every page that shows a
+       "you may also like" style strip (home, download/stream gate pages). ── */
+    .srow-wrap { position: relative; }
+    .srow { display: flex; gap: clamp(10px,1.2vw,16px); overflow-x: auto; padding: 4px 4% 10px; scroll-behavior: smooth; -ms-overflow-style: none; scrollbar-width: none; }
+    .srow::-webkit-scrollbar { display: none; }
+    .srow .rt-card { flex-shrink: 0; width: clamp(105px,13.5vw,195px); }
+    .sarr {
+      position: absolute; top: 0; bottom: 10px; width: 4%; min-width: 34px; max-width: 56px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(248,250,252,.85); color: #374151;
+      z-index: 5; cursor: pointer; border: none; font-size: 1.1rem;
+      opacity: 0; transition: opacity .18s;
+    }
+    .dark .sarr { background: rgba(20,20,20,.65); color: #fff; }
+    .srow-wrap:hover .sarr { opacity: 1; }
+    .sarr:hover { background: rgba(240,244,248,.98); }
+    .dark .sarr:hover { background: rgba(20,20,20,.92); }
+    .sarr-l { left: 0; } .sarr-r { right: 0; }
+
+    /* ── Shared modal theme tokens — every popup (quick actions, auth,
+       filmography, download, nickname, rate) reads these instead of
+       hardcoding colors, so they follow the light/dark toggle automatically. ── */
+    :root {
+      --modal-bg: #ffffff;
+      --modal-bg-elevated: #f3f4f6;
+      --modal-border: rgba(0,0,0,.1);
+      --modal-text: #111827;
+      --modal-text-muted: #6b7280;
+      --modal-pill-bg: rgba(0,0,0,.045);
+      --modal-pill-border: rgba(0,0,0,.12);
+      --modal-input-bg: #f9fafb;
+      --modal-overlay-bg: rgba(17,24,39,.5);
+      --modal-close-bg: rgba(0,0,0,.06);
+    }
+    .dark {
+      --modal-bg: #17181c;
+      --modal-bg-elevated: #1f2937;
+      --modal-border: rgba(255,255,255,.1);
+      --modal-text: #ffffff;
+      --modal-text-muted: #9ca3af;
+      --modal-pill-bg: rgba(255,255,255,.06);
+      --modal-pill-border: rgba(255,255,255,.1);
+      --modal-input-bg: rgba(255,255,255,.06);
+      --modal-overlay-bg: rgba(0,0,0,.65);
+      --modal-close-bg: rgba(255,255,255,.08);
+    }
+
+    /* ── Category tiles — crossfading poster carousel, shared by every page
+       that browses by genre (home, category page, search, A-Z). ── */
+    .cat-grid-v2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; }
+    .cat-tile-v2 {
+      position: relative; aspect-ratio: 16/10; border-radius: 12px; overflow: hidden;
+      text-decoration: none; display: block; background: #1f2937;
+      box-shadow: 0 1px 3px rgba(0,0,0,.15); transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .cat-tile-v2:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+    .cat-tile-v2-bg {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+      opacity: 0; animation: cat-crossfade 20s infinite;
+    }
+    .cat-tile-v2-bg:nth-child(1) { animation-delay: 0s; }
+    .cat-tile-v2-bg:nth-child(2) { animation-delay: 4s; }
+    .cat-tile-v2-bg:nth-child(3) { animation-delay: 8s; }
+    .cat-tile-v2-bg:nth-child(4) { animation-delay: 12s; }
+    .cat-tile-v2-bg:nth-child(5) { animation-delay: 16s; }
+    @keyframes cat-crossfade {
+      0%, 100% { opacity: 0; }
+      3%, 16% { opacity: .6; }
+      20% { opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .cat-tile-v2-bg { animation: none; opacity: 0; }
+      .cat-tile-v2-bg:first-child { opacity: .55; }
+    }
+    .cat-tile-v2-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.75) 100%); }
+    .cat-tile-v2-icon { position: absolute; top: 8px; left: 9px; font-size: 1.15rem; color: #fff; filter: drop-shadow(0 1px 3px rgba(0,0,0,.6)); z-index: 1; }
+    .cat-tile-v2-foot { position: absolute; left: 10px; right: 10px; bottom: 8px; z-index: 1; }
+    .cat-tile-v2-name { display: block; color: #fff; font-weight: 800; font-size: .78rem; line-height: 1.25; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+    .cat-tile-v2-count { display: block; color: rgba(255,255,255,.75); font-size: .62rem; font-weight: 600; margin-top: 1px; }
+  </style>
+
   {# PWA Scripts - Load PWA functionality #}
   <script src="{% static 'js/pwa.js' %}" defer></script>
 
-
-  {# The site-wide Monetag Direct Link click-handler that used to live here has
-     been replaced by the al5sm/5gvci zone scripts in the popunder_scripts
-     block up in <head> — same mechanism the gate pages already used. #}
+  {# Shared horizontal-scroll row behavior (.srow) — arrow buttons + drag-to-scroll #}
+  <script>
+    function doScroll(btn, dir) {
+      var row = btn.closest('.srow-wrap').querySelector('.srow');
+      row.scrollBy({ left: dir * Math.round(row.clientWidth * 0.75), behavior: 'smooth' });
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.srow').forEach(function (el) {
+        var dn = false, sx, sl;
+        el.style.cursor = 'grab';
+        el.addEventListener('mousedown',  function (e) { dn = true; sx = e.pageX - el.offsetLeft; sl = el.scrollLeft; el.style.cursor = 'grabbing'; });
+        el.addEventListener('mouseleave', function () { dn = false; el.style.cursor = 'grab'; });
+        el.addEventListener('mouseup',    function () { dn = false; el.style.cursor = 'grab'; });
+        el.addEventListener('mousemove',  function (e) { if (!dn) return; e.preventDefault(); el.scrollLeft = sl - (e.pageX - el.offsetLeft - sx) * 1.4; });
+      });
+    });
+  </script>
 
 
   {% block extra_js %}{% endblock %}
 
   {# Review-prompt popup (shared with anime/main) — asks users for a Google review #}
   {% include 'partials/review_popup.html' %}
+
+  {# Global sign-in/sign-up modal — any .js-open-auth element opens it #}
+  {% include 'movies/components/auth_modal.html' %}
+
+  {# Global quick-actions popup — any .js-quick-actions element opens it #}
+  {% include 'movies/components/quick_actions_modal.html' %}
+
+  {# Global inline trailer player — any .js-play-trailer element opens it #}
+  {% include 'movies/components/trailer_modal.html' %}
+
+  {# Global cast/crew filmography popup — any .js-show-filmography element opens it #}
+  {% include 'movies/components/filmography_modal.html' %}
 
 </body>
 </html>

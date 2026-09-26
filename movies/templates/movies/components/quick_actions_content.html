@@ -1,0 +1,50 @@
+{# Small fragment injected into #quick-actions-modal — kept deliberately tiny. #}
+<div class="qa-header">
+  {% if movie.image_url %}<img src="{{ movie.image_url }}" alt="{{ movie.title }}" class="qa-poster">{% endif %}
+  <div class="qa-title-wrap">
+    <a href="{{ movie.get_absolute_url }}" class="qa-title">{{ movie.title }}</a>
+    {% if movie.rating %}<span class="qa-rating"><i class="fas fa-star"></i> {{ movie.rating|floatformat:1 }}</span>{% endif %}
+  </div>
+</div>
+
+{% if movie.description %}
+  <p class="qa-desc">{{ movie.description|truncatewords:24 }}</p>
+{% endif %}
+
+<div class="qa-primary-row">
+  {% if movie.stream_url %}
+    <a href="{% url 'movies:stream_gate' movie.pk %}" class="qa-primary-btn qa-watch">
+      <i class="fas fa-play"></i> Watch Now
+    </a>
+  {% endif %}
+  {% if movie.download_links.exists or movie.download_url %}
+    <a href="{{ movie.get_absolute_url }}#download" class="qa-primary-btn qa-download">
+      <i class="fas fa-download"></i> Download
+    </a>
+  {% endif %}
+</div>
+
+<div class="qa-pill-row">
+  <button type="button"
+          class="qa-pill js-watchlist-btn{% if is_watchlisted %} active{% endif %}"
+          data-toggle-url="{% url 'movies:toggle_watchlist' movie.pk %}"
+          data-authenticated="{% if user.is_authenticated %}1{% else %}0{% endif %}">
+    <i class="fa{% if is_watchlisted %}s{% else %}r{% endif %} fa-bookmark"></i><span>Watchlist</span>
+  </button>
+  <button type="button"
+          class="qa-pill js-like-btn{% if is_liked %} active-like{% endif %}"
+          data-toggle-url="{% url 'movies:toggle_like' movie.pk %}"
+          data-authenticated="{% if user.is_authenticated %}1{% else %}0{% endif %}">
+    <i class="fa{% if is_liked %}s{% else %}r{% endif %} fa-heart"></i><span>Like</span>
+  </button>
+  <button type="button"
+          class="qa-pill js-watched-btn{% if is_watched %} active{% endif %}"
+          data-toggle-url="{% url 'movies:toggle_watched' movie.pk %}"
+          data-authenticated="{% if user.is_authenticated %}1{% else %}0{% endif %}">
+    <i class="fa{% if is_watched %}s{% else %}r{% endif %} fa-eye"></i><span>Watched</span>
+  </button>
+</div>
+
+<a href="{{ movie.get_absolute_url }}#reviews-section" class="qa-full-link">
+  <i class="fas fa-star"></i> Rate &amp; write a review <i class="fas fa-arrow-right qa-full-link-arrow"></i>
+</a>

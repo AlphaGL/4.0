@@ -1,0 +1,53 @@
+{% load movie_extras %}
+{# Card: poster + play overlay, critic/audience score row, title, Watchlist button. #}
+<div class="rt-card" data-movie-id="{{ movie.id }}">
+  <a href="{{ movie.get_absolute_url }}" class="rt-card-poster-link" title="{{ movie.title }}">
+    <div class="rt-card-img shim">
+      {% if movie.image_url %}
+      <img src="{{ movie.image_url }}" alt="{{ movie.title }}" loading="lazy"
+           onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">
+      {% endif %}
+      <div class="rt-card-play"><i class="fas fa-play"></i></div>
+    </div>
+  </a>
+  <button type="button" class="rt-card-more js-quick-actions" data-movie-id="{{ movie.id }}" title="Quick actions" aria-label="Quick actions">
+    <i class="fas fa-ellipsis-v"></i>
+  </button>
+
+  <div class="rt-score-row">
+    {% with rt=movie|external_rating:'rt' %}
+    {% if rt %}
+      <span class="rt-score" title="{{ rt.score|tomato_status }}. {{ rt.display }}"><i class="fas fa-certificate ic-rt"></i> {{ rt.display }}</span>
+      <span class="rt-score" title="{% if rt.audience_display %}{{ rt.audience_score|popcorn_status }}. {{ rt.audience_display }}{% else %}No audience score yet{% endif %}"><i class="fas fa-users ic-audience"></i> {{ rt.audience_display|default:"--" }}</span>
+    {% else %}
+      {% with imdb=movie|external_rating:'imdb' %}
+      {% if imdb %}
+        <span class="rt-score" title="IMDb rating"><b class="rt-imdb">IMDb</b> {{ imdb.display }}</span>
+      {% elif movie.rating %}
+        <span class="rt-score" title="Rating"><i class="fas fa-star" style="color:#facc15"></i> {{ movie.rating|floatformat:1 }}</span>
+      {% else %}
+        <span class="rt-score rt-score-muted">Not yet rated</span>
+      {% endif %}
+      {% endwith %}
+    {% endif %}
+    {% endwith %}
+  </div>
+
+  <a href="{{ movie.get_absolute_url }}" class="rt-card-title">{{ movie.title }}</a>
+
+  <button type="button"
+          class="rt-watchlist-btn js-watchlist-btn{% if movie.id in watchlisted_ids %} active{% endif %}"
+          data-movie-id="{{ movie.id }}"
+          data-toggle-url="{% url 'movies:toggle_watchlist' movie.id %}"
+          data-authenticated="{% if request.user.is_authenticated %}1{% else %}0{% endif %}">
+    <i class="fa{% if movie.id in watchlisted_ids %}s{% else %}r{% endif %} fa-bookmark"></i>
+    <span>{% if movie.id in watchlisted_ids %}WATCHLISTED{% else %}WATCHLIST{% endif %}</span>
+  </button>
+  {% if movie.trailer_url %}
+  <button type="button" class="rt-trailer-btn js-play-trailer"
+          data-trailer-url="{{ movie.trailer_url }}" data-trailer-title="{{ movie.title }}">
+    <i class="fas fa-play"></i>
+    <span>TRAILER</span>
+  </button>
+  {% endif %}
+</div>

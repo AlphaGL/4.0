@@ -1,0 +1,32 @@
+{% load movie_extras %}
+{# RT-style "Most Popular" compact ranked list — text + score, no poster art. #}
+{% if trending_list %}
+<div class="trend-list-card">
+  <div class="trend-list-hd">
+    <span class="trend-list-ttl"><i class="fas {{ icon|default:'fa-fire' }}"></i> {{ heading|default:"Most Popular" }}</span>
+    <a href="{% if view_all_url_name %}{% url view_all_url_name %}{% else %}{{ view_all_url|default:'/' }}{% endif %}" class="trend-list-more">View All</a>
+  </div>
+  <div class="trend-list-body{% if two_col %} two-col{% endif %}">
+    {% for movie in trending_list %}
+      {% with rt=movie|external_rating:'rt' imdb=movie|external_rating:'imdb' %}
+      <a href="{{ movie.get_absolute_url }}" class="trend-row"
+         title="{% if rt %}{{ rt.score|tomato_status }}.{% elif imdb %}IMDb rating.{% else %}Rating.{% endif %}">
+        <span class="trend-rank">{{ forloop.counter }}</span>
+        <span class="trend-title">{{ movie.title }}</span>
+        <span class="trend-score">
+          {% if rt %}
+            <i class="fas fa-certificate ic-rt"></i> {{ rt.display }}
+          {% elif imdb %}
+            <b class="rt-imdb">IMDb</b> {{ imdb.display }}
+          {% elif movie.rating %}
+            <i class="fas fa-star" style="color:#facc15"></i> {{ movie.rating|floatformat:1 }}
+          {% else %}
+            <span class="rt-score-muted">—</span>
+          {% endif %}
+        </span>
+      </a>
+      {% endwith %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

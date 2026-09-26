@@ -31,9 +31,9 @@ PROVIDERS = {
 }
 
 # The fallback chain, in order. Players try each until one plays.
-# streamimdb leads (it's the in-house embed); vidlink.pro catches the cases where
-# streamimdb is down/slow.
-PROVIDER_ORDER = ['streamimdb', 'vidlink']
+# streamimdb leads (it's the in-house embed); the rest are alternates a viewer
+# can switch to manually if the active one won't play.
+PROVIDER_ORDER = ['streamimdb', 'vidlink', 'vidsrc', '2embed']
 
 
 def build_stream_url(provider, tmdb_id, is_series=False, season=1, episode=1):

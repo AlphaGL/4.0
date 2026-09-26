@@ -1,0 +1,30 @@
+{# Small fragment injected into the global filmography popup. #}
+<div class="fg-header">
+  <div class="fg-avatar">
+    {% if person.profile_url %}<img src="{{ person.profile_url }}" alt="{{ person.name }}">{% else %}<i class="fas fa-user"></i>{% endif %}
+  </div>
+  <div>
+    <a href="{{ person.get_absolute_url }}" class="fg-name">{{ person.name }}</a>
+    <span class="fg-count">{{ total }} title{{ total|pluralize }} on Watch2D</span>
+  </div>
+</div>
+
+<div class="fg-grid">
+  {% for t in titles %}
+    <a href="{{ t.movie.get_absolute_url }}" class="fg-item">
+      <div class="fg-item-img">
+        {% if t.movie.image_url %}<img src="{{ t.movie.image_url }}" alt="{{ t.movie.title }}">{% endif %}
+      </div>
+      <span class="fg-item-title">{{ t.movie.title }}</span>
+      {% if t.character %}<span class="fg-item-char">as {{ t.character }}</span>{% endif %}
+    </a>
+  {% empty %}
+    <p class="fg-empty">No other titles on Watch2D yet.</p>
+  {% endfor %}
+</div>
+
+{% if has_more %}
+  <a href="{{ person.get_absolute_url }}" class="fg-see-all">
+    See all {{ total }} titles <i class="fas fa-arrow-right"></i>
+  </a>
+{% endif %}

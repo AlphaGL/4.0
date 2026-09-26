@@ -26,13 +26,10 @@
     let timeOnSite = 0;
     let reviewPopupActive = false;
     let popupShownThisSession = false;
-    let originalPopunderFunctions = {};
-    
     // Initialize the system
     function initializeReviewSystem() {
         startTimeTracking();
-        interceptPopunderAds();
-        
+
         // Check if we should show popup after delay
         setTimeout(() => {
             if (shouldShowReviewPopup()) {
@@ -78,34 +75,6 @@
     function incrementDismissedCount() {
         const count = parseInt(localStorage.getItem(Watch2D_CONFIG.STORAGE_KEYS.DISMISSED_COUNT) || '0');
         localStorage.setItem(Watch2D_CONFIG.STORAGE_KEYS.DISMISSED_COUNT, (count + 1).toString());
-    }
-    
-    // Intercept and control popunder ads
-    function interceptPopunderAds() {
-        // Store original functions
-        if (window._sfxyz) {
-            originalPopunderFunctions._sfxyz = window._sfxyz;
-        }
-        if (window._iamkeom) {
-            originalPopunderFunctions._iamkeom = window._iamkeom;
-        }
-        
-        // Override the popunder functions
-        window._sfxyz = function() {
-            if (reviewPopupActive) {
-                console.log('Watch2D: Popunder blocked - review popup active');
-                return false;
-            }
-            return originalPopunderFunctions._sfxyz ? originalPopunderFunctions._sfxyz.apply(this, arguments) : true;
-        };
-        
-        window._iamkeom = function() {
-            if (reviewPopupActive) {
-                console.log('Watch2D: Popunder blocked - review popup active');
-                return false;
-            }
-            return originalPopunderFunctions._iamkeom ? originalPopunderFunctions._iamkeom.apply(this, arguments) : true;
-        };
     }
     
     // Show the non-intrusive review popup

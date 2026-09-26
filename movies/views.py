@@ -1,5 +1,6 @@
 # movies/views.py
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.views.generic import ListView, DetailView, CreateView, TemplateView
 from django.contrib.auth.views import LoginView, LogoutView
@@ -8,9 +9,9 @@ from django.contrib.auth import login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from .models import Movie, Category, Comment, Person, MovieCast, UpcomingTitle
-from .forms import MovieForm, CommentForm, DownloadLinkFormSet
-from django.db.models import Q, Prefetch, Count
+from .models import Movie, Category, Comment, CommentReaction, Review, ExternalRating, Person, MovieCast, MovieCrew, UpcomingTitle, NotifyRequest, Profile
+from .forms import MovieForm, CommentForm, ReviewForm, DownloadLinkFormSet
+from django.db.models import Q, Prefetch, Count, Avg
 from django.templatetags.static import static
 import random
 from django.http import JsonResponse
@@ -63,9 +64,30 @@ def _build_movies_home_context():
     # Blockbusters
     ctx['blockbusters'] = list(
         Movie.objects
-        .only('id', 'title', 'slug', 'image_url', 'created_at', 'views')
+        .only('id', 'title', 'slug', 'image_url', 'created_at', 'views', 'rating', 'trailer_url')
+        .prefetch_related('external_ratings')
         .filter(views__gte=1000)
         .order_by('-views', '-created_at')[:12]
+    )
+
+    # Instant Watch — has a working stream, no gate/download friction to see it
+    ctx['instant_watch'] = list(
+        Movie.objects
+        .only('id', 'title', 'slug', 'image_url', 'created_at', 'views', 'rating', 'trailer_url')
+        .prefetch_related('external_ratings')
+        .exclude(stream_url='').exclude(stream_url__isnull=True)
+        .order_by('-views', '-created_at')[:15]
+    )
+
+    # Trending This Week — weekly_views resets every Monday (see
+    # reset_weekly_views), so this rotates instead of freezing on whatever
+    # crossed 1000 all-time views first like "Most Watched" does.
+    ctx['trending_this_week'] = list(
+        Movie.objects
+        .only('id', 'title', 'slug', 'image_url', 'created_at', 'weekly_views', 'rating', 'trailer_url')
+        .prefetch_related('external_ratings')
+        .filter(weekly_views__gt=0)
+        .order_by('-weekly_views', '-created_at')[:12]
     )
 
     # Trending
@@ -78,6 +100,11 @@ def _build_movies_home_context():
 
     # Sidebar categories (already cached separately for 4 h)
     ctx['categories'] = get_sidebar_categories()
+
+    # "Most Popular" compact ranked lists — split movies vs TV, one shared
+    # cache entry each, sitewide.
+    ctx['trending_movies_list'] = get_trending_list(10, is_series=False)
+    ctx['trending_series_list'] = get_trending_list(10, is_series=True)
 
     # All categories — deduplicated
     _STOP = _re.compile(
@@ -102,6 +129,17 @@ def _build_movies_home_context():
             seen_keys[key] = True
             deduped.append(cat)
     deduped.sort(key=lambda c: _re.sub(r'[^\w\s]', '', c.name).strip().lower())
+
+    # Top 5 posters per category (its most-watched titles) — powers the
+    # crossfading "Browse by Category" tile carousel. Cheap, only runs inside
+    # this 5-min cache.
+    for cat in deduped:
+        cat.preview_images = list(
+            Movie.objects.filter(categories=cat)
+            .exclude(image_url='').exclude(image_url__isnull=True)
+            .order_by('-views').values_list('image_url', flat=True)[:5]
+        )
+
     ctx['all_categories'] = deduped
 
     return ctx
@@ -132,8 +170,8 @@ def get_sidebar_categories():
             Prefetch(
                 'movies',
                 queryset=Movie.objects.select_related().only(
-                    'id', 'title', 'image_url', 'created_at'
-                ).order_by('-created_at')[:12],
+                    'id', 'title', 'slug', 'image_url', 'created_at', 'rating', 'title_b', 'trailer_url'
+                ).prefetch_related('external_ratings').order_by('-created_at')[:12],
                 to_attr='latest_movies'
             )
         )
@@ -157,6 +195,32 @@ def invalidate_sidebar_cache():
     cache.delete(SIDEBAR_CATEGORIES_CACHE_KEY, version=CACHE_VERSION)
     cache.delete('movies_home_ctx_v2')
     cache.delete('movies_categories_v1')
+    cache.delete('trending_list_v1_None')
+    cache.delete('trending_list_v1_True')
+    cache.delete('trending_list_v1_False')
+
+
+TRENDING_LIST_CACHE_TTL = 60 * 15  # 15 minutes
+
+
+def get_trending_list(count=10, is_series=None):
+    """
+    RT-style "Most Popular" compact list — ranked by page views, sitewide.
+    One shared cache entry per variant (not per-page) since the list is
+    identical everywhere it's shown (home, every movie detail page).
+    `is_series=None` mixes both; True/False splits into Movies vs TV Shows.
+    """
+    cache_key = f'trending_list_v1_{is_series}'
+    trending = cache.get(cache_key)
+    if trending is None:
+        qs = Movie.objects.only(
+            'id', 'title', 'slug', 'image_url', 'rating', 'views', 'is_series'
+        ).prefetch_related('external_ratings')
+        if is_series is not None:
+            qs = qs.filter(is_series=is_series)
+        trending = list(qs.order_by('-views', '-created_at')[:count])
+        cache.set(cache_key, trending, TRENDING_LIST_CACHE_TTL)
+    return trending
 
 
 def robots_txt(request):
@@ -808,17 +872,23 @@ def _resolve_loadedfiles(landing_url, parsed, debug=False):
         #   A redirect off loadedfiles.org IS the real direct download link, so
         #   the browser downloads it immediately (the 20s countdown is cosmetic).
         from urllib.parse import urljoin, urlparse as _urlparse
+        import json as _json
 
         next_patterns = (
             r"var\s+downloadUrl\s*=\s*['\"](https?://[^'\"]+)['\"]",
             r"window\.location(?:\.href)?\s*=\s*['\"](https?://[^'\"]+\?pt=[^'\"]+)['\"]",
             r"['\"](https?://loadedfiles\.[a-z]{2,}/[^'\"]+\?pt=[^'\"]+)['\"]",
+            # 2026 redesign: an Alpine.js widget (`x-data="dlTimer({ link: '...' })"`)
+            # replaced the old countdown script. The link is JSON/unicode-escaped
+            # inside the HTML attribute (e.g. : for ':'), not a plain URL.
+            r"dlTimer\(\{[^}]*?link:\s*'([^']+)'",
         )
         referer = 'https://www.my9jarocks.bz/'
         current = landing_url
         last_pt = None
+        saw_redirect_hop = False
 
-        for hop in range(6):
+        for hop in range(3):
             resp = session.get(current, timeout=15, allow_redirects=False,
                                headers={'Referer': referer})
             code = resp.status_code
@@ -833,6 +903,7 @@ def _resolve_loadedfiles(landing_url, parsed, debug=False):
                 if 'loadedfiles.' not in _urlparse(target).netloc.lower():
                     dbg['pattern'] = 'cdn_redirect'
                     return target, dbg          # ← direct CDN download URL
+                saw_redirect_hop = True
                 referer, current = current, target
                 continue
 
@@ -849,12 +920,27 @@ def _resolve_loadedfiles(landing_url, parsed, debug=False):
                     break
             if not nxt or nxt == current:
                 break
+            # The dlTimer pattern's capture is JSON/unicode-escaped
+            # (\uXXXX, \/) — decode it the same way a JS engine would.
+            # No-op for the other patterns, which never contain a backslash.
+            if '\\' in nxt:
+                try:
+                    nxt = _json.loads('"' + nxt + '"')
+                except ValueError:
+                    pass
             if '?pt=' in nxt:
                 last_pt = nxt
             referer, current = current, nxt
 
-        # Fallback: deepest ?pt= link (old behaviour) if no CDN redirect reached.
-        if last_pt:
+        # Fallback: deepest ?pt= link (old behaviour) — only trust it if we
+        # actually saw at least one real redirect hop (proof the token chain
+        # is converging toward a CDN file). Some loadedfiles.net requests now
+        # just regenerate a brand-new token on every fetch forever without
+        # ever redirecting — returning one of those as a "resolved" link
+        # would just hand the user another dead countdown page instead of
+        # falling back to the real landing page where their own browser can
+        # complete the JS challenge properly.
+        if last_pt and saw_redirect_hop:
             dbg['pattern'] = 'pt_fallback'
             return last_pt, dbg
         dbg.setdefault('error', 'no_link_found')
@@ -1044,7 +1130,8 @@ class HomeView(ListView):
     def get_queryset(self):
         return (
             Movie.objects
-            .only('id', 'title', 'slug', 'image_url', 'created_at', 'title_b', 'vi_year')
+            .only('id', 'title', 'slug', 'image_url', 'created_at', 'title_b', 'vi_year', 'rating', 'trailer_url')
+            .prefetch_related('external_ratings')
             .filter(
                 Q(is_series=False),
                 Q(title_b__isnull=True) | Q(title_b=''),
@@ -1068,7 +1155,8 @@ class HomeView(ListView):
             ongoing_cached = list(
                 Movie.objects
                 .only('id', 'title', 'slug', 'title_b', 'image_url',
-                      'title_b_updated_at', 'created_at')
+                      'title_b_updated_at', 'created_at', 'rating', 'trailer_url')
+                .prefetch_related('external_ratings')
                 .filter(
                     Q(is_series=True) | (Q(title_b__isnull=False) & ~Q(title_b='')),
                     completed=False,
@@ -1082,7 +1170,8 @@ class HomeView(ListView):
             comp_cached = list(
                 Movie.objects
                 .only('id', 'title', 'slug', 'title_b', 'image_url',
-                      'title_b_updated_at', 'created_at')
+                      'title_b_updated_at', 'created_at', 'rating', 'trailer_url')
+                .prefetch_related('external_ratings')
                 .filter(
                     Q(is_series=True) | (Q(title_b__isnull=False) & ~Q(title_b='')),
                     completed=True,
@@ -1111,6 +1200,16 @@ class HomeView(ListView):
             cache.set('home_upcoming_v2', upcoming_cached, MOVIES_HOME_CACHE_TTL)
         context['upcoming'] = upcoming_cached
 
+        if self.request.user.is_authenticated:
+            context['watchlisted_ids'] = set(
+                self.request.user.watchlist_movies.values_list('id', flat=True))
+            context['notify_requested_ids'] = set(
+                NotifyRequest.objects.filter(user=self.request.user)
+                .values_list('tmdb_id', flat=True))
+        else:
+            context['watchlisted_ids'] = set()
+            context['notify_requested_ids'] = set()
+
         return context
 
 
@@ -1138,22 +1237,36 @@ class CategoryMoviesView(ListView):
         if category is None:
             category = get_object_or_404(Category, id=self.kwargs['cat_id'])
         self.category = category
-        cache_key = f'cat_movies_{category.pk}_v1'
+        cache_key = f'cat_movies_{category.pk}_v2'
         qs = cache.get(cache_key)
         if qs is None:
             qs = list(
                 Movie.objects
-                .only('id', 'title', 'slug', 'image_url', 'created_at', 'description', 'vi_year')
+                .only('id', 'title', 'slug', 'image_url', 'created_at', 'description', 'vi_year', 'rating', 'trailer_url')
+                .prefetch_related('external_ratings')
                 .filter(categories=self.category)
                 .order_by('-created_at')
             )
             cache.set(cache_key, qs, CATEGORY_PAGE_CACHE_TTL)
+        self.query = self.request.GET.get('q', '').strip()
+        if self.query:
+            q_lower = self.query.lower()
+            qs = [m for m in qs if q_lower in m.title.lower()]
         return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['category'] = self.category
         context['categories'] = get_sidebar_categories()
+        context['query'] = self.query
+        context['other_categories'] = [
+            c for c in context['categories'] if c.id != self.category.id
+        ]
+        if self.request.user.is_authenticated:
+            context['watchlisted_ids'] = set(
+                self.request.user.watchlist_movies.values_list('id', flat=True))
+        else:
+            context['watchlisted_ids'] = set()
         return context
 
 
@@ -1165,13 +1278,35 @@ class CategoryMoviesView(ListView):
 AZ_LETTERS = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ') + ['0-9']
 
 
+AZ_INDEX_CACHE_TTL = 60 * 60 * 6  # 6 hours — counts change slowly, page is low-traffic
+
+
 class AZIndexView(TemplateView):
     """/a-z/ hub — links out to every letter page."""
     template_name = 'movies/az_index.html'
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['letters'] = AZ_LETTERS
+
+        letter_counts = cache.get('az_index_counts_v1')
+        if letter_counts is None:
+            letter_counts = {}
+            for letter in AZ_LETTERS:
+                if letter == '0-9':
+                    letter_counts[letter] = Movie.objects.exclude(
+                        title__iregex=r'^[A-Za-z]').count()
+                else:
+                    letter_counts[letter] = Movie.objects.filter(
+                        title__istartswith=letter).count()
+            cache.set('az_index_counts_v1', letter_counts, AZ_INDEX_CACHE_TTL)
+
+        ctx['letters'] = [
+            {'letter': L, 'count': letter_counts.get(L, 0)} for L in AZ_LETTERS
+        ]
+        ctx['total_titles'] = sum(letter_counts.values())
+        ctx['trending_movies_list'] = get_trending_list(6, is_series=False)
+        ctx['trending_series_list'] = get_trending_list(6, is_series=True)
+        ctx['browse_categories'] = get_sidebar_categories()
         return ctx   # nav `categories` comes from the context processor (full list)
 
 
@@ -1188,15 +1323,28 @@ class AZLetterView(ListView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        base = Movie.objects.only('id', 'title', 'slug', 'image_url')
+        base = Movie.objects.only(
+            'id', 'title', 'slug', 'image_url', 'rating', 'trailer_url'
+        ).prefetch_related('external_ratings')
         if self.letter == '0-9':
-            return base.exclude(title__iregex=r'^[A-Za-z]').order_by('title')
-        return base.filter(title__istartswith=self.letter).order_by('title')
+            qs = base.exclude(title__iregex=r'^[A-Za-z]')
+        else:
+            qs = base.filter(title__istartswith=self.letter)
+        self.query = self.request.GET.get('q', '').strip()
+        if self.query:
+            qs = qs.filter(title__icontains=self.query)
+        return qs.order_by('title')
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['letter'] = self.letter
         ctx['letters'] = AZ_LETTERS
+        ctx['query'] = self.query
+        if self.request.user.is_authenticated:
+            ctx['watchlisted_ids'] = set(
+                self.request.user.watchlist_movies.values_list('id', flat=True))
+        else:
+            ctx['watchlisted_ids'] = set()
         return ctx
 
 
@@ -1208,7 +1356,19 @@ class GenresIndexView(TemplateView):
         ctx = super().get_context_data(**kwargs)
         # ALL categories — not the 3-item sidebar set. This is the full genre hub.
         # Adult/18+ hidden from public browse (ad-network + SEO safety).
-        ctx['all_categories'] = Category.objects.exclude(name__icontains='18+').order_by('name')
+        # `latest_movies` (top 5 by views) feeds category_tiles.html's poster
+        # crossfade — one extra query total via Prefetch, not one per category.
+        ctx['all_categories'] = (
+            Category.objects.exclude(name__icontains='18+')
+            .prefetch_related(
+                Prefetch(
+                    'movies',
+                    queryset=Movie.objects.only('id', 'image_url').order_by('-views')[:5],
+                    to_attr='latest_movies'
+                )
+            )
+            .order_by('name')
+        )
         return ctx
 
 
@@ -1329,7 +1489,8 @@ class MovieDetailView(DetailView):
 
     def get_queryset(self):
         return Movie.objects.prefetch_related(
-            'liked_by', 'watchlisted_by', 'categories', 'comments__user'
+            'liked_by', 'watchlisted_by', 'watched_by', 'verified_watched_by',
+            'categories', 'comments__user'
         )
 
     def get_object(self, queryset=None):
@@ -1351,8 +1512,10 @@ class MovieDetailView(DetailView):
             if obj is None:
                 raise Http404('No movie matches the given query.')
             # get() will redirect to obj.get_absolute_url() since the slug differs.
-        Movie.objects.filter(pk=obj.pk).update(views=F('views') + 1)
+        Movie.objects.filter(pk=obj.pk).update(
+            views=F('views') + 1, weekly_views=F('weekly_views') + 1)
         obj.views = (obj.views or 0) + 1   # reflect the bump without an extra round-trip
+        obj.weekly_views = (obj.weekly_views or 0) + 1
         return obj
 
     def get(self, request, *args, **kwargs):
@@ -1428,37 +1591,86 @@ class MovieDetailView(DetailView):
         # prefetched categories, so no extra query.
         context['primary_category'] = movie_categories[0] if movie_categories else None
 
-        # ── Like / watchlist — use prefetched sets, no extra queries ──────────
+        # ── Like / watchlist / watched — use prefetched sets, no extra queries ─
+        verified_watched_ids = {u.pk for u in movie.verified_watched_by.all()}
+        context['verified_watched_ids'] = verified_watched_ids
         if user.is_authenticated:
             liked_ids      = {u.pk for u in movie.liked_by.all()}
             watchlisted_ids = {u.pk for u in movie.watchlisted_by.all()}
+            watched_ids    = {u.pk for u in movie.watched_by.all()}
             context['is_liked']       = user.pk in liked_ids
             context['is_watchlisted'] = user.pk in watchlisted_ids
+            context['is_watched']     = user.pk in watched_ids
         else:
             context['is_liked']       = False
             context['is_watchlisted'] = False
+            context['is_watched']     = False
 
         # ── Comments (prefetched in get_queryset) ─────────────────────────────
         context['comments'] = movie.comments.filter(
             parent__isnull=True
         ).select_related('user').prefetch_related(
-            'replies__user'
+            'replies__user', 'reactions', 'replies__reactions'
         ).order_by('-created_at')
+        # movie.comments.all() is already prefetched in get_queryset() — counting
+        # the in-memory list (not .count()) avoids a second query.
+        context['total_comment_count'] = len(movie.comments.all())
 
         context['comment_form'] = CommentForm()
+
+        # ── Reviews & ratings ──────────────────────────────────────────────────
+        context['external_ratings'] = {
+            r.source: r for r in movie.external_ratings.all()
+        }
+        agg_key = f'movie_review_agg_{movie.id}_v1'
+        agg = cache.get(agg_key)
+        if agg is None:
+            agg = Review.objects.filter(movie=movie).aggregate(
+                avg=Avg('rating'), count=Count('id'))
+            cache.set(agg_key, agg, 60 * 15)
+        context['community_score'] = round(agg['avg'] / 2, 1) if agg['avg'] else None
+        context['community_review_count'] = agg['count']
+
+        critic_scores = [r.score for r in context['external_ratings'].values()]
+        context['critic_score'] = round(sum(critic_scores) / len(critic_scores), 1) if critic_scores else None
+
+        # ── Trust badges — cheap, purely presentational, computed from data
+        # already gathered above. Require >=2 independent sources / reviews so
+        # a single generous score can't "certify" a title on its own. ─────────
+        context['is_certified'] = (
+            context['critic_score'] is not None and context['critic_score'] >= 7.0
+            and len(critic_scores) >= 2
+        )
+        context['is_fan_favorite'] = (
+            context['community_score'] is not None and context['community_score'] >= 4.0
+            and agg['count'] >= 10
+        )
+
+        if user.is_authenticated:
+            context['user_review'] = Review.objects.filter(movie=movie, user=user).first()
+        else:
+            context['user_review'] = None
+        context['review_form'] = ReviewForm(instance=context['user_review'])
+        context['reviews'] = (
+            Review.objects.filter(movie=movie)
+            .exclude(user=user if user.is_authenticated else None)
+            .select_related('user')
+            .order_by('-created_at')[:20]
+        )
 
         # ── Related movies — by category, deterministic order (NO order_by('?'))
         # order_by('?') = ORDER BY RANDOM() = full table scan every request.
         # Use pk descending (fast index scan) filtered by same category instead.
         # Cached per-movie (30 min) — this m2m join+distinct is the page's heaviest
         # query and its result changes rarely, so skip the round-trip on repeats.
-        rel_key = f'movie_related_{movie.id}_v1'
+        rel_key = f'movie_related_{movie.id}_v2'
         related_movies = cache.get(rel_key)
         if related_movies is None:
             if movie_categories:
                 related_movies = list(
                     Movie.objects
-                    .only('id', 'title', 'slug', 'image_url', 'created_at')
+                    .only('id', 'title', 'slug', 'image_url', 'created_at', 'rating', 'trailer_url')
+                    .prefetch_related('external_ratings')
                     .filter(categories__in=movie_categories)
                     .exclude(id=movie.id)
                     .distinct()
@@ -1467,13 +1679,21 @@ class MovieDetailView(DetailView):
             else:
                 related_movies = list(
                     Movie.objects
-                    .only('id', 'title', 'slug', 'image_url', 'created_at')
+                    .only('id', 'title', 'slug', 'image_url', 'created_at', 'rating', 'trailer_url')
+                    .prefetch_related('external_ratings')
                     .exclude(id=movie.id)
                     .order_by('-created_at')[:12]
                 )
             cache.set(rel_key, related_movies, 60 * 30)
 
         context['related_movies'] = related_movies
+        context['trending_movies_list'] = get_trending_list(6, is_series=False)
+        context['trending_series_list'] = get_trending_list(6, is_series=True)
+        if user.is_authenticated:
+            context['watchlisted_ids'] = set(
+                user.watchlist_movies.values_list('id', flat=True))
+        else:
+            context['watchlisted_ids'] = set()
 
         # ── Cast (TMDB-enriched). Top-billed first; capped for the row. ───────
         # Cached per-movie (6h) — cast essentially never changes after enrichment.
@@ -1489,6 +1709,44 @@ class MovieDetailView(DetailView):
             cache.set(cast_key, cast, 60 * 60 * 6)
         context['cast'] = cast
 
+        # ── Crew (Director / Writers / Producers tabs) ─────────────────────────
+        crew_key = f'movie_crew_{movie.id}_v1'
+        crew = cache.get(crew_key)
+        if crew is None:
+            crew = list(
+                MovieCrew.objects
+                .filter(movie=movie)
+                .select_related('person')
+                .order_by('order')
+            )
+            cache.set(crew_key, crew, 60 * 60 * 6)
+        context['directors'] = [c for c in crew if c.department == 'directing']
+        context['writers']   = [c for c in crew if c.department == 'writing']
+        context['producers'] = [c for c in crew if c.department == 'production']
+        context['director_names'] = ', '.join(c.person.name for c in context['directors'])
+
+        # ── Rating distribution histogram (1..10 half-star buckets) ───────────
+        hist_key = f'movie_rating_hist_{movie.id}_v1'
+        histogram = cache.get(hist_key)
+        if histogram is None:
+            counts_qs = (
+                Review.objects.filter(movie=movie)
+                .values('rating')
+                .annotate(n=Count('id'))
+            )
+            counts = {row['rating']: row['n'] for row in counts_qs}
+            max_count = max(counts.values()) if counts else 0
+            histogram = [
+                {
+                    'rating': r,
+                    'count': counts.get(r, 0),
+                    'pct': round((counts.get(r, 0) / max_count) * 100) if max_count else 0,
+                }
+                for r in range(1, 11)
+            ]
+            cache.set(hist_key, histogram, 60 * 15)
+        context['rating_histogram'] = histogram
+
         context['categories']     = get_sidebar_categories()
         context['full_image_url'] = request.build_absolute_uri(movie.image_url)
         context['full_video_url'] = request.build_absolute_uri(movie.video_url)
@@ -1503,8 +1761,12 @@ def toggle_like(request, pk):
     user = request.user
     if movie.liked_by.filter(pk=user.pk).exists():
         movie.liked_by.remove(user)
+        is_liked = False
     else:
         movie.liked_by.add(user)
+        is_liked = True
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'is_liked': is_liked})
     return redirect(movie.get_absolute_url())
 
 
@@ -1514,9 +1776,72 @@ def toggle_watchlist(request, pk):
     user = request.user
     if movie.watchlisted_by.filter(pk=user.pk).exists():
         movie.watchlisted_by.remove(user)
+        is_watchlisted = False
     else:
         movie.watchlisted_by.add(user)
+        is_watchlisted = True
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'is_watchlisted': is_watchlisted})
     return redirect(movie.get_absolute_url())
+
+
+@login_required
+def toggle_watched(request, pk):
+    """Self-reported diary log — 'I've seen this', independent of rating."""
+    movie = get_object_or_404(Movie, pk=pk)
+    user = request.user
+    if movie.watched_by.filter(pk=user.pk).exists():
+        movie.watched_by.remove(user)
+        is_watched = False
+    else:
+        movie.watched_by.add(user)
+        is_watched = True
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'is_watched': is_watched})
+    return redirect(movie.get_absolute_url())
+
+
+@login_required
+def toggle_notify(request, pk):
+    """'Notify Me' on an upcoming (not-yet-released) title. Stored as a
+    NotifyRequest keyed by tmdb_id (see model docstring for why it isn't an
+    M2M on UpcomingTitle directly)."""
+    upcoming = get_object_or_404(UpcomingTitle, pk=pk)
+    user = request.user
+    existing = NotifyRequest.objects.filter(user=user, tmdb_id=upcoming.tmdb_id).first()
+    if existing:
+        existing.delete()
+        is_notifying = False
+    else:
+        NotifyRequest.objects.create(
+            user=user, tmdb_id=upcoming.tmdb_id,
+            title=upcoming.title, media_type=upcoming.media_type,
+        )
+        is_notifying = True
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'is_notifying': is_notifying})
+    return redirect('movies:coming_soon')
+
+
+def movie_quick_actions(request, pk):
+    """Small HTML fragment (poster, Watch/Download, Watchlist/Like/Watched
+    toggles) for the site-wide 'quick actions' popup — so a Watchlist/Like/
+    Watched tap works straight from any grid/carousel, no need to open the
+    full movie page first. Buttons reuse the same .js-watchlist-btn/.js-like-
+    btn/.js-watched-btn delegated handlers already wired in base.html."""
+    movie = get_object_or_404(Movie, pk=pk)
+    user = request.user
+    if user.is_authenticated:
+        is_liked = movie.liked_by.filter(pk=user.pk).exists()
+        is_watchlisted = movie.watchlisted_by.filter(pk=user.pk).exists()
+        is_watched = movie.watched_by.filter(pk=user.pk).exists()
+    else:
+        is_liked = is_watchlisted = is_watched = False
+    html = render_to_string('movies/components/quick_actions_content.html', {
+        'movie': movie, 'user': user,
+        'is_liked': is_liked, 'is_watchlisted': is_watchlisted, 'is_watched': is_watched,
+    }, request=request)
+    return HttpResponse(html)
 
 
 class SearchResultsView(ListView):
@@ -1534,14 +1859,14 @@ class SearchResultsView(ListView):
         if not query:
             return Movie.objects.none()
 
-        search_cache_key = f'search_{hash(query.lower())}'
+        search_cache_key = f'search_v2_{hash(query.lower())}'
         cached_results = cache.get(search_cache_key)
         if cached_results is not None:
             return cached_results
 
         base_qs = Movie.objects.only(
-            'id', 'title', 'slug', 'description', 'image_url', 'created_at'
-        )
+            'id', 'title', 'slug', 'description', 'image_url', 'created_at', 'rating', 'trailer_url'
+        ).prefetch_related('external_ratings')
 
         exact_q = Q(title__icontains=query) | Q(description__icontains=query)
         exact_matches = list(base_qs.filter(exact_q).distinct())
@@ -1569,6 +1894,11 @@ class SearchResultsView(ListView):
         context = super().get_context_data(**kwargs)
         context['query'] = self.request.GET.get('q', '')
         context['categories'] = get_sidebar_categories()
+        if self.request.user.is_authenticated:
+            context['watchlisted_ids'] = set(
+                self.request.user.watchlist_movies.values_list('id', flat=True))
+        else:
+            context['watchlisted_ids'] = set()
         return context
 
 
@@ -1613,6 +1943,7 @@ def sync_offline_actions(request):
     return JsonResponse({'success': False, 'error': 'Invalid method'})
 
 
+@login_required
 @require_POST
 def add_comment(request, pk):
     movie = get_object_or_404(Movie, pk=pk)
@@ -1628,18 +1959,7 @@ def add_comment(request, pk):
     comment = Comment()
     comment.movie = movie
     comment.content = content
-
-    if request.user.is_authenticated:
-        comment.user = request.user
-    else:
-        guest_name = request.POST.get('name', '').strip()
-        if not guest_name:
-            if is_ajax:
-                return JsonResponse({'success': False, 'message': 'Please provide your name'})
-            messages.error(request, 'Please provide your name')
-            return redirect(movie.get_absolute_url())
-        comment.guest_name = guest_name
-
+    comment.user = request.user
     comment.save()
 
     if is_ajax:
@@ -1659,6 +1979,7 @@ def add_comment(request, pk):
     return redirect(movie.get_absolute_url() + '#comments-section')
 
 
+@login_required
 @require_POST
 def add_reply(request, movie_pk, comment_pk):
     movie = get_object_or_404(Movie, pk=movie_pk)
@@ -1676,18 +1997,7 @@ def add_reply(request, movie_pk, comment_pk):
     reply.movie = movie
     reply.parent = parent_comment
     reply.content = content
-
-    if request.user.is_authenticated:
-        reply.user = request.user
-    else:
-        guest_name = request.POST.get('name', '').strip()
-        if not guest_name:
-            if is_ajax:
-                return JsonResponse({'success': False, 'message': 'Please provide your name'})
-            messages.error(request, 'Please provide your name')
-            return redirect(movie.get_absolute_url())
-        reply.guest_name = guest_name
-
+    reply.user = request.user
     reply.save()
 
     if is_ajax:
@@ -1723,6 +2033,96 @@ def delete_comment(request, pk):
         messages.error(request, 'You do not have permission to delete this comment')
 
     return redirect(movie.get_absolute_url() + '#comments-section')
+
+
+@login_required
+@require_POST
+def react_to_comment(request, pk):
+    """Toggle an emoji reaction on a comment/reply. Same emoji again removes
+    it; a different emoji swaps it (one reaction per user per message)."""
+    comment = get_object_or_404(Comment, pk=pk)
+    emoji = request.POST.get('emoji', '').strip()
+    valid_emojis = {choice[0] for choice in CommentReaction.REACTION_CHOICES}
+    if emoji not in valid_emojis:
+        return JsonResponse({'success': False, 'message': 'Invalid reaction'})
+
+    existing = CommentReaction.objects.filter(comment=comment, user=request.user).first()
+    if existing and existing.emoji == emoji:
+        existing.delete()
+        user_reaction = None
+    elif existing:
+        existing.emoji = emoji
+        existing.save(update_fields=['emoji'])
+        user_reaction = emoji
+    else:
+        CommentReaction.objects.create(comment=comment, user=request.user, emoji=emoji)
+        user_reaction = emoji
+
+    counts = dict(
+        CommentReaction.objects.filter(comment=comment)
+        .values_list('emoji').annotate(n=Count('id')).order_by()
+    )
+    return JsonResponse({'success': True, 'counts': counts, 'user_reaction': user_reaction})
+
+
+@login_required
+@require_POST
+def add_review(request, pk):
+    movie = get_object_or_404(Movie, pk=pk)
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    try:
+        rating = int(request.POST.get('rating', ''))
+        assert 1 <= rating <= 10
+    except (TypeError, ValueError, AssertionError):
+        if is_ajax:
+            return JsonResponse({'success': False, 'message': 'Please pick a star rating'})
+        messages.error(request, 'Please pick a star rating')
+        return redirect(movie.get_absolute_url())
+
+    content = request.POST.get('content', '').strip()
+    review, _created = Review.objects.update_or_create(
+        movie=movie, user=request.user,
+        defaults={'rating': rating, 'content': content},
+    )
+    movie.watched_by.add(request.user)  # rating it implies you've seen it
+    cache.delete(f'movie_review_agg_{movie.id}_v1')
+
+    if is_ajax:
+        html = render_to_string('movies/components/review_item.html', {
+            'review': review, 'movie': movie, 'user': request.user,
+            'verified_watched_ids': {u.pk for u in movie.verified_watched_by.all()},
+        })
+        return JsonResponse({
+            'success': True,
+            'message': 'Review posted!',
+            'html': html,
+            'review_id': review.id,
+        })
+
+    messages.success(request, 'Review posted!')
+    return redirect(movie.get_absolute_url() + '#reviews-section')
+
+
+@login_required
+@require_POST
+def delete_review(request, pk):
+    review = get_object_or_404(Review, pk=pk)
+    movie = review.movie
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    if request.user == review.user or request.user.is_staff:
+        review.delete()
+        cache.delete(f'movie_review_agg_{movie.id}_v1')
+        if is_ajax:
+            return JsonResponse({'success': True, 'message': 'Review deleted'})
+        messages.success(request, 'Review deleted')
+    else:
+        if is_ajax:
+            return JsonResponse({'success': False, 'message': 'You do not have permission to delete this review'})
+        messages.error(request, 'You do not have permission to delete this review')
+
+    return redirect(movie.get_absolute_url() + '#reviews-section')
 
 
 @require_POST
@@ -1916,6 +2316,11 @@ class DownloadGateView(DetailView):
     # ── Request handling ──────────────────────────────────────────────────────
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
+        # Real proof they watched it HERE (not just self-reported) — the trust
+        # signal RT/Letterboxd can't offer since they don't host the content.
+        if request.user.is_authenticated:
+            self.object.watched_by.add(request.user)
+            self.object.verified_watched_by.add(request.user)
         context = self.get_context_data(object=self.object)
         return self.render_to_response(context)
 
@@ -1995,10 +2400,12 @@ class DownloadGateView(DetailView):
             seo_type = 'Movie'
 
         # ── 3. Related movies ─────────────────────────────────────────────────
+        related_fields = ('id', 'title', 'slug', 'image_url', 'rating', 'trailer_url')
         if movie_categories:
             related_movies = list(
                 Movie.objects
-                .only('id', 'title', 'slug', 'image_url')
+                .only(*related_fields)
+                .prefetch_related('external_ratings')
                 .filter(categories__in=movie_categories)
                 .exclude(pk=movie.pk)
                 .distinct()
@@ -2007,7 +2414,8 @@ class DownloadGateView(DetailView):
         else:
             related_movies = list(
                 Movie.objects
-                .only('id', 'title', 'slug', 'image_url')
+                .only(*related_fields)
+                .prefetch_related('external_ratings')
                 .exclude(pk=movie.pk)
                 .order_by('-created_at')[:8]
             )
@@ -2055,6 +2463,10 @@ class DownloadGateView(DetailView):
             # Tells base.html to skip the global click-popunder so the gate's
             # own ad script is the sole popunder on this page.
             'disable_global_popunder': True,
+            'watchlisted_ids': (
+                set(request.user.watchlist_movies.values_list('id', flat=True))
+                if request.user.is_authenticated else set()
+            ),
         })
         return context
 
@@ -2087,6 +2499,9 @@ class StreamGateView(DetailView):
         # No stream → bounce back to the detail page.
         if not self.object.stream_url:
             return redirect(self.object.get_absolute_url())
+        if request.user.is_authenticated:
+            self.object.watched_by.add(request.user)
+            self.object.verified_watched_by.add(request.user)
         context = self.get_context_data(object=self.object)
         return self.render_to_response(context)
 
@@ -2119,10 +2534,12 @@ class StreamGateView(DetailView):
             seo_type = 'Movie'
 
         # ── Related movies ────────────────────────────────────────────────────
+        related_fields = ('id', 'title', 'slug', 'image_url', 'rating', 'trailer_url')
         if movie_categories:
             related_movies = list(
                 Movie.objects
-                .only('id', 'title', 'slug', 'image_url')
+                .only(*related_fields)
+                .prefetch_related('external_ratings')
                 .filter(categories__in=movie_categories)
                 .exclude(pk=movie.pk)
                 .distinct()
@@ -2131,25 +2548,32 @@ class StreamGateView(DetailView):
         else:
             related_movies = list(
                 Movie.objects
-                .only('id', 'title', 'slug', 'image_url')
+                .only(*related_fields)
+                .prefetch_related('external_ratings')
                 .exclude(pk=movie.pk)
                 .order_by('-created_at')[:8]
             )
 
-        # Fallback source (vidlink.pro) built from tmdb_id — the player auto-
-        # switches to it (or via "Switch source") if the main streamimdb embed
-        # won't play.
-        from movies.stream_providers import build_stream_url
-        stream_fallback = build_stream_url(
-            'vidlink', movie.tmdb_id,
-            is_series=movie.is_series, season=movie.season_number or 1)
-        if stream_fallback == movie.stream_url:
-            stream_fallback = ''
+        # Full server chain built from tmdb_id (streamimdb, vidlink, vidsrc,
+        # 2embed) — deduped and with the stored stream_url leading, so viewers
+        # get real numbered servers to switch between, not a single blind
+        # fallback.
+        from movies.stream_providers import build_stream_chain
+        chain = build_stream_chain(
+            movie.tmdb_id, is_series=movie.is_series,
+            season=movie.season_number or 1)
+        sources = []
+        seen = set()
+        for url in [movie.stream_url] + chain:
+            url = (url or '').strip()
+            if url and url not in seen:
+                seen.add(url)
+                sources.append(url)
 
         context.update({
             'movie':           movie,
             'stream_url':      movie.stream_url,
-            'stream_fallback': stream_fallback,
+            'stream_sources':  sources,
             'tmdb_id':         movie.tmdb_id or '',
             'is_series':       movie.is_series,
             'tmdb_seasons':    movie.tmdb_seasons or '',
@@ -2157,6 +2581,10 @@ class StreamGateView(DetailView):
             'related_movies':  related_movies,
             'categories':      get_sidebar_categories(),
             'disable_global_popunder': True,
+            'watchlisted_ids': (
+                set(self.request.user.watchlist_movies.values_list('id', flat=True))
+                if self.request.user.is_authenticated else set()
+            ),
         })
         return context
 
@@ -2184,6 +2612,7 @@ class ActorView(DetailView):
             MovieCast.objects
             .filter(person=person)
             .select_related('movie')
+            .prefetch_related('movie__external_ratings')
             .order_by('order', '-movie__created_at')
         )
         # De-dup movies (a person can have one credit per movie via unique_together,
@@ -2196,7 +2625,42 @@ class ActorView(DetailView):
             titles.append({'movie': c.movie, 'character': c.character})
         context['titles'] = titles
         context['title_count'] = len(titles)
+        if self.request.user.is_authenticated:
+            context['watchlisted_ids'] = set(
+                self.request.user.watchlist_movies.values_list('id', flat=True))
+        else:
+            context['watchlisted_ids'] = set()
         return context
+
+
+PERSON_FILMOGRAPHY_PREVIEW_LIMIT = 6
+
+
+def person_filmography(request, pk):
+    """Small HTML fragment — a person's other titles for the site-wide
+    'filmography' popup, so seeing what someone's been in is one click from
+    the movie page instead of a full navigation most people never discover."""
+    person = get_object_or_404(Person, pk=pk)
+    credits = (
+        MovieCast.objects
+        .filter(person=person)
+        .select_related('movie')
+        .order_by('order', '-movie__created_at')
+    )
+    seen, titles = set(), []
+    for c in credits:
+        if c.movie_id in seen:
+            continue
+        seen.add(c.movie_id)
+        titles.append({'movie': c.movie, 'character': c.character})
+    total = len(titles)
+    html = render_to_string('movies/components/filmography_content.html', {
+        'person': person,
+        'titles': titles[:PERSON_FILMOGRAPHY_PREVIEW_LIMIT],
+        'total': total,
+        'has_more': total > PERSON_FILMOGRAPHY_PREVIEW_LIMIT,
+    }, request=request)
+    return HttpResponse(html)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -2221,6 +2685,12 @@ class ComingSoonView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['categories'] = get_sidebar_categories()
+        if self.request.user.is_authenticated:
+            context['notify_requested_ids'] = set(
+                NotifyRequest.objects.filter(user=self.request.user)
+                .values_list('tmdb_id', flat=True))
+        else:
+            context['notify_requested_ids'] = set()
         return context
 
 
@@ -2236,19 +2706,209 @@ class StreamOnlyView(ListView):
     paginate_by = 24
 
     def get_queryset(self):
-        from django.db.models import Count
-        return (
+        from django.db.models import Count, Q
+        qs = (
             Movie.objects
-            .exclude(stream_url='')
-            .filter(download_url='')
+            .prefetch_related('external_ratings')
+            .exclude(Q(stream_url='') | Q(stream_url__isnull=True))
+            # download_url is NULL (not '') for most rows that never had the
+            # legacy single-URL field set — filtering only on '' silently
+            # excluded almost every genuinely streaming-only title.
+            .filter(Q(download_url='') | Q(download_url__isnull=True))
             .annotate(num_links=Count('download_links'))
             .filter(num_links=0)
-            .order_by('-created_at')
         )
+        self.query = self.request.GET.get('q', '').strip()
+        if self.query:
+            qs = qs.filter(title__icontains=self.query)
+        return qs.order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['categories'] = get_sidebar_categories()
         context['category'] = None
         context['stream_only'] = True
+        context['query'] = self.query
+        if self.request.user.is_authenticated:
+            context['watchlisted_ids'] = set(
+                self.request.user.watchlist_movies.values_list('id', flat=True))
+        else:
+            context['watchlisted_ids'] = set()
         return context
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  TOP MOVIES / TOP TV SHOWS  —  /top-movies/, /top-tv-shows/
+#  Full ranked "Most Popular" list — the "View All" target for the compact
+#  trending_list.html widget shown on home/movie-detail/A-Z.
+# ══════════════════════════════════════════════════════════════════════════════
+class TopListView(ListView):
+    model = Movie
+    template_name = 'movies/top_list.html'
+    context_object_name = 'movies'
+    paginate_by = 50
+    is_series = False  # overridden by subclasses
+    page_heading = 'Top Movies'
+
+    def get_queryset(self):
+        qs = (
+            Movie.objects
+            .only('id', 'title', 'slug', 'image_url', 'rating', 'views', 'is_series')
+            .prefetch_related('external_ratings')
+            .filter(is_series=self.is_series)
+        )
+        self.query = self.request.GET.get('q', '').strip()
+        if self.query:
+            qs = qs.filter(title__icontains=self.query)
+        return qs.order_by('-views', '-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = get_sidebar_categories()
+        context['page_heading'] = self.page_heading
+        context['query'] = self.query
+        return context
+
+
+class TopMoviesView(TopListView):
+    is_series = False
+    page_heading = 'Top Movies'
+
+
+class TopSeriesView(TopListView):
+    is_series = True
+    page_heading = 'Top TV Shows'
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  WATCHLIST / LIKED  —  /watchlist/, /liked/
+#  A signed-in user's own saved titles.
+# ══════════════════════════════════════════════════════════════════════════════
+class WatchlistView(LoginRequiredMixin, ListView):
+    model = Movie
+    template_name = 'movies/watchlist.html'
+    context_object_name = 'movies'
+    paginate_by = 24
+
+    def get_queryset(self):
+        return self.request.user.watchlist_movies.prefetch_related('external_ratings').order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = get_sidebar_categories()
+        context['page_title'] = 'My Watchlist'
+        context['watchlisted_ids'] = set(
+            self.request.user.watchlist_movies.values_list('id', flat=True))
+        return context
+
+
+class LikedView(LoginRequiredMixin, ListView):
+    model = Movie
+    template_name = 'movies/watchlist.html'
+    context_object_name = 'movies'
+    paginate_by = 24
+
+    def get_queryset(self):
+        return self.request.user.liked_movies.prefetch_related('external_ratings').order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = get_sidebar_categories()
+        context['watchlisted_ids'] = set(
+            self.request.user.watchlist_movies.values_list('id', flat=True))
+        context['page_title'] = 'My Liked Movies'
+        return context
+
+
+class WatchedView(LoginRequiredMixin, ListView):
+    """Self-reported diary log — everything the user has marked as watched."""
+    model = Movie
+    template_name = 'movies/watchlist.html'
+    context_object_name = 'movies'
+    paginate_by = 24
+
+    def get_queryset(self):
+        return self.request.user.watched_movies.prefetch_related('external_ratings').order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = get_sidebar_categories()
+        context['watchlisted_ids'] = set(
+            self.request.user.watchlist_movies.values_list('id', flat=True))
+        context['page_title'] = 'Watched'
+        return context
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  PROFILE  —  /u/<display_name>/
+#  Keyed by the anonymous nickname, never the account username — nobody's
+#  real identity (username, email, or Google photo) is ever shown publicly.
+# ══════════════════════════════════════════════════════════════════════════════
+class ProfileView(DetailView):
+    model = User
+    template_name = 'movies/profile.html'
+    context_object_name = 'profile_user'
+    slug_field = 'profile__display_name'
+    slug_url_kwarg = 'display_name'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        profile_user = context['profile_user']
+        context['avatar_url'] = profile_user.profile.avatar_url
+
+        context['reviews'] = (
+            Review.objects.filter(user=profile_user)
+            .select_related('movie')
+            .order_by('-created_at')[:30]
+        )
+        context['review_count'] = Review.objects.filter(user=profile_user).count()
+        context['watchlist_count'] = profile_user.watchlist_movies.count()
+        context['liked_count'] = profile_user.liked_movies.count()
+        context['watched_count'] = profile_user.watched_movies.count()
+        context['categories'] = get_sidebar_categories()
+
+        movie_fields = ('id', 'title', 'slug', 'image_url', 'rating', 'trailer_url')
+        context['watchlist_preview'] = (
+            profile_user.watchlist_movies.only(*movie_fields)
+            .prefetch_related('external_ratings')[:12]
+        )
+        context['liked_preview'] = (
+            profile_user.liked_movies.only(*movie_fields)
+            .prefetch_related('external_ratings')[:12]
+        )
+        if self.request.user.is_authenticated:
+            context['watchlisted_ids'] = set(
+                self.request.user.watchlist_movies.values_list('id', flat=True))
+        else:
+            context['watchlisted_ids'] = set()
+        return context
+
+
+@login_required
+@require_POST
+def update_display_name(request):
+    """Change your public nickname (never the underlying account username)."""
+    import re as _re_mod
+    new_name = request.POST.get('display_name', '').strip()
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    if not (2 <= len(new_name) <= 30) or not _re_mod.match(r'^[A-Za-z0-9_ ]+$', new_name):
+        msg = 'Nickname must be 2-30 characters (letters, numbers, spaces, underscores only)'
+        if is_ajax:
+            return JsonResponse({'success': False, 'message': msg})
+        messages.error(request, msg)
+        return redirect('movies:profile', display_name=request.user.profile.display_name)
+
+    if Profile.objects.filter(display_name__iexact=new_name).exclude(user=request.user).exists():
+        msg = 'That nickname is already taken'
+        if is_ajax:
+            return JsonResponse({'success': False, 'message': msg})
+        messages.error(request, msg)
+        return redirect('movies:profile', display_name=request.user.profile.display_name)
+
+    request.user.profile.display_name = new_name
+    request.user.profile.save(update_fields=['display_name'])
+    if is_ajax:
+        return JsonResponse({'success': True, 'display_name': new_name})
+    messages.success(request, 'Nickname updated!')
+    return redirect('movies:profile', display_name=new_name)

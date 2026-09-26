@@ -126,7 +126,7 @@ def upcoming(media='movie', pages=1):
 def details(tmdb_id, media):
     """Fetch full metadata for a matched title. Returns a dict or None."""
     data = _get(f'/{media}/{tmdb_id}',
-                {'append_to_response': 'credits,videos'})
+                {'append_to_response': 'credits,videos,external_ids'})
     if not data:
         return None
 
@@ -152,6 +152,34 @@ def details(tmdb_id, media):
         'character': c.get('character') or '',
         'order': c.get('order', i),
     } for i, c in enumerate(cast_raw) if c.get('id') and c.get('name')]
+
+    # Crew — only the jobs the Cast/Director/Writers/Producers tabs care about.
+    JOB_DEPARTMENT = {
+        'Director': 'directing',
+        'Writer': 'writing', 'Screenplay': 'writing', 'Story': 'writing',
+        'Producer': 'production', 'Executive Producer': 'production',
+    }
+    crew_raw = (data.get('credits') or {}).get('crew') or []
+    crew_list = []
+    seen = set()
+    for i, c in enumerate(crew_raw):
+        job = c.get('job')
+        dept = JOB_DEPARTMENT.get(job)
+        if not dept or not c.get('id') or not c.get('name'):
+            continue
+        key = (c['id'], job)
+        if key in seen:
+            continue
+        seen.add(key)
+        crew_list.append({
+            'tmdb_id': c['id'],
+            'name': c.get('name', ''),
+            'profile_path': c.get('profile_path'),
+            'job': job,
+            'department': dept,
+            'order': i,
+        })
+
     poster = data.get('poster_path')
     rating = data.get('vote_average')
     year = (data.get('release_date') or data.get('first_air_date') or '')[:4]
@@ -160,15 +188,26 @@ def details(tmdb_id, media):
         ert = data.get('episode_run_time') or []
         runtime = ert[0] if ert else None
 
+    imdb_id = (data.get('external_ids') or {}).get('imdb_id') or None
+
     return {
         'tmdb_id': tmdb_id,
+        'imdb_id': imdb_id,
         'rating': round(rating, 1) if rating else None,
         'poster_url': f'{IMG}{poster}' if poster else None,
         'trailer_url': trailer,
         'cast': cast,
         'cast_list': cast_list,
+        'crew_list': crew_list,
         'overview': (data.get('overview') or '').strip(),
         'genres': ', '.join(g['name'] for g in (data.get('genres') or [])),
         'year': year,
         'runtime': str(runtime) if runtime else '',
     }
+
+
+def external_ids(tmdb_id, media):
+    """Standalone external_ids lookup (imdb_id) for movies already enriched
+    before this field existed — avoids re-fetching the full details() payload."""
+    data = _get(f'/{media}/{tmdb_id}/external_ids')
+    return (data or {}).get('imdb_id') or None

@@ -42,5 +42,11 @@ services:
         sync: false
       - key: BREVO_ADMIN_EMAIL
         sync: false
+      - key: GOOGLE_OAUTH_CLIENT_ID   # Google login — Google Cloud Console → Credentials
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: OMDB_API_KEY             # IMDb/Rotten Tomatoes ratings — free key at omdbapi.com
+        sync: false
     # The Telegram / Twitter / Facebook / Telethon vars are used by the GitHub
     # Actions scrapers, NOT by this web service — no need to set them here.

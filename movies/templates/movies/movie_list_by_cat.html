@@ -2,9 +2,7 @@
 {% load movie_extras %}
 {% load static %}
 
-{# ═══════════════════════════════════════════════════════════
-   SEO BLOCKS
-   ═══════════════════════════════════════════════════════════ #}
+{# SEO BLOCKS #}
 
 {% block title %}
   {% if category %}
@@ -172,7 +170,7 @@
   }
 
   /* ── Shared row-hd / badge styles (mirror home.html) ── */
-  .row-hd  { display:flex; align-items:baseline; gap:10px; padding:0 0 .55rem; }
+  .row-hd  { display:flex; align-items:baseline; gap:10px; padding:0 0 .8rem; }
   .row-ttl { font-size:clamp(.82rem,1.35vw,1.2rem); font-weight:700; color:#111827; }
   .dark .row-ttl { color:#e5e5e5; }
   .badge-label { font-size:.58rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em; padding:2px 7px; border-radius:2px; }
@@ -181,71 +179,42 @@
   .bl-green { background:#2dbd6e; color:#fff; }
   .bl-blue  { background:#0070f3; color:#fff; }
 
-  /* ── Grid — identical to home.html ── */
-  .grid-s   { padding: 0 4% 2.5rem; }
-  .grid-wrap {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: clamp(6px, 1.2vw, 13px);
-  }
-  @media (min-width:480px)  { .grid-wrap { grid-template-columns: repeat(4,1fr); } }
-  @media (min-width:640px)  { .grid-wrap { grid-template-columns: repeat(5,1fr); } }
-  @media (min-width:900px)  { .grid-wrap { grid-template-columns: repeat(6,1fr); } }
-  @media (min-width:1200px) { .grid-wrap { grid-template-columns: repeat(7,1fr); } }
+  /* ── Grid — organic self-fitting, matches home.html ── */
+  .grid-s   { padding: 1.6rem 4% 2.6rem; }
+  .grid-wrap { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: clamp(12px,1.8vw,20px); }
+  @media (min-width:640px)  { .grid-wrap { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); } }
+  @media (min-width:1200px) { .grid-wrap { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); } }
 
-  /* ── Movie card — identical to home.html gc / gc-* ── */
-  .gc { cursor:pointer; text-decoration:none; display:block; }
-  .gc-img {
-    position:relative; aspect-ratio:2/3; border-radius:4px;
-    overflow:hidden; background:#e5e7eb;
-    transition:transform .22s ease;
+  /* ── RT-style card (poster + score row + title + Watchlist/Trailer buttons) ── */
+  .rt-card { display: flex; flex-direction: column; position: relative; }
+  .rt-card-more {
+    position: absolute; top: 6px; right: 6px; z-index: 5;
+    width: 26px; height: 26px; border-radius: 50%; border: none;
+    background: rgba(0,0,0,.55); color: #fff; font-size: .78rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
   }
-  .dark .gc-img { background:#242424; }
-  .gc:hover .gc-img { transform:scale(1.05); }
-  .gc-img img {
-    width:100%; height:100%; object-fit:cover;
-    display:block; opacity:0; transition:opacity .3s;
-  }
-  .gc-img img.ld { opacity:1; }
-  .gc-ov {
-    position:absolute; inset:0;
-    background:linear-gradient(to top,rgba(0,0,0,.78) 0%,transparent 55%);
-    opacity:0; transition:opacity .22s;
-  }
-  .gc:hover .gc-ov { opacity:1; }
-  .gc-play {
-    position:absolute; inset:0;
-    display:flex; align-items:center; justify-content:center;
-    opacity:0; transition:opacity .22s;
-  }
-  .gc:hover .gc-play { opacity:1; }
-  .gc-play-btn {
-    width:30px; height:30px; border-radius:50%;
-    background:rgba(255,255,255,.9);
-    display:flex; align-items:center; justify-content:center;
-    color:#000; font-size:.65rem; padding-left:2px;
-  }
-  .gc-ttl {
-    font-size:clamp(.58rem,.82vw,.73rem); color:#4b5563;
-    margin-top:5px; line-height:1.3;
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
-    overflow:hidden; transition:color .18s;
-  }
-  .dark .gc-ttl { color:#aaa; }
-  .gc:hover .gc-ttl { color:#111827; }
-  .dark .gc:hover .gc-ttl { color:#fff; }
-  .gc-sub { font-size:.58rem; color:#7c3aed; margin-top:2px; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
-  .gc-yr  { font-size:.56rem; color:#9ca3af; margin-top:2px; }
-  .dark .gc-yr { color:#555; }
-
-  /* badges — identical to home.html */
-  .cbadge { position:absolute; font-size:.52rem; font-weight:800; padding:2px 5px; border-radius:2px; text-transform:uppercase; letter-spacing:.02em; }
-  .cbtl { top:5px; left:5px; }
-  .cbtr { top:5px; right:5px; }
-  .b-new  { background:#e50914; color:#fff; }
-  .b-ep   { background:#7c3aed; color:#fff; }
-  .b-done { background:#2dbd6e; color:#fff; }
-  .b-hd   { background:rgba(0,0,0,.55); color:#ccc; border:1px solid rgba(255,255,255,.18); }
+  .rt-card-more:hover { background: rgba(0,0,0,.8); }
+  .rt-card-poster-link { display: block; text-decoration: none; }
+  .rt-card-img { position: relative; aspect-ratio: 2/3; border-radius: 6px; overflow: hidden; background: #e5e7eb; }
+  .dark .rt-card-img { background: #242424; }
+  .rt-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .3s; }
+  .rt-card-img img.ld { opacity: 1; }
+  .rt-card-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .22s; background: rgba(0,0,0,.25); color: #fff; font-size: 1.1rem; }
+  .rt-card:hover .rt-card-play { opacity: 1; }
+  .rt-score-row { display: flex; align-items: center; gap: 8px; margin-top: 7px; font-size: .68rem; font-weight: 700; color: #374151; flex-wrap: wrap; }
+  .dark .rt-score-row { color: #d1d5db; }
+  .rt-score { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+  .rt-score-muted { color: #9ca3af; font-weight: 500; }
+  .rt-imdb { color: #f5c518; font-weight: 900; }
+  .rt-card-title { display: block; font-size: .78rem; font-weight: 700; color: #111827; margin-top: 4px; text-decoration: none; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dark .rt-card-title { color: #f3f4f6; }
+  .rt-watchlist-btn { margin-top: 7px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; border-radius: 5px; border: 1.5px solid #cbd5e1; background: transparent; color: #475569; font-size: .62rem; font-weight: 800; letter-spacing: .03em; cursor: pointer; width: 100%; transition: all .18s; }
+  .dark .rt-watchlist-btn { border-color: #4b5563; color: #cbd5e1; }
+  .rt-watchlist-btn:hover { border-color: #e50914; color: #e50914; }
+  .rt-watchlist-btn.active { background: #e50914; border-color: #e50914; color: #fff; }
+  .rt-trailer-btn { margin-top: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; border-radius: 5px; border: 1.5px solid #6366f1; background: transparent; color: #6366f1; font-size: .62rem; font-weight: 800; letter-spacing: .03em; cursor: pointer; width: 100%; transition: all .18s; }
+  .rt-trailer-btn:hover { background: rgba(99,102,241,.1); }
+  .dark .rt-trailer-btn { border-color: #818cf8; color: #818cf8; }
 
   /* shimmer skeleton */
   @keyframes shimmer { to { background-position: -200% 0; } }
@@ -368,26 +337,11 @@
     <div class="cat-heading-row">
       <h1 class="cat-heading">
         {% if category %}
-          {% if 'nollywood' in category.name|lower %}🎭
-          {% elif 'hollywood' in category.name|lower %}🎬
-          {% elif 'korean' in category.name|lower %}🇰🇷
-          {% elif 'chinese' in category.name|lower %}🇨🇳
-          {% elif 'anime' in category.name|lower %}⛩️
-          {% elif 'thai' in category.name|lower %}🇹🇭
-          {% elif 'bollywood' in category.name|lower %}🎵
-          {% elif 'series' in category.name|lower or 'tv' in category.name|lower %}📺
-          {% elif 'horror' in category.name|lower %}👻
-          {% elif 'comedy' in category.name|lower %}😂
-          {% elif 'romance' in category.name|lower %}❤️
-          {% elif 'action' in category.name|lower %}💥
-          {% elif 'wrestling' in category.name|lower %}🏆
-          {% else %}🎬
-          {% endif %}
-          {{ category.name }}
+          <i class="fas {{ category.name|category_icon_class }}"></i> {{ category.name }}
         {% elif stream_only %}
-          ▶️ Streaming Only
+          <i class="fas fa-play"></i> Streaming Only
         {% else %}
-          🎬 All Movies
+          <i class="fas fa-film"></i> All Movies
         {% endif %}
       </h1>
       <span class="cat-count-pill">{{ page_obj.paginator.count }} title{{ page_obj.paginator.count|pluralize }}</span>
@@ -400,6 +354,15 @@
 
   </header>
 
+  <div class="max-w-xl mx-auto px-4">
+    <form method="get" class="relative mb-4">
+      <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+      <input type="text" name="q" value="{{ query }}"
+             placeholder="Search {% if category %}{{ category.name }}{% elif stream_only %}streaming titles{% else %}all movies{% endif %}…"
+             class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+    </form>
+  </div>
+
   {% if movies %}
 
   {# ── Movie grid ── #}
@@ -408,7 +371,9 @@
       <span class="row-ttl">
         {% if category %}{{ category.name }}{% elif stream_only %}Streaming Only{% else %}All Movies{% endif %}
       </span>
-      {% if page_obj.number == 1 %}
+      {% if query %}
+      <span class="badge-label bl-blue">"{{ query }}"</span>
+      {% elif page_obj.number == 1 %}
       <span class="badge-label bl-red">Latest First</span>
       {% else %}
       <span class="badge-label bl-blue">Page {{ page_obj.number }}</span>
@@ -417,33 +382,7 @@
 
     <div class="grid-wrap">
       {% for movie in movies %}
-      <a href="{{ movie.get_absolute_url }}"
-         class="gc"
-         title="{{ movie.title }}{% if movie.vi_year %} ({{ movie.vi_year }}){% endif %} – Free Download on Watch2D">
-        <div class="gc-img shim">
-          {% if movie.image_url %}
-          <img src="{{ movie.image_url }}"
-               alt="{{ movie.title }} poster"
-               loading="lazy"
-               width="300" height="450"
-               onload="this.classList.add('ld');this.parentElement.classList.remove('shim')">
-          {% endif %}
-          <div class="gc-ov"></div>
-          <div class="gc-play"><div class="gc-play-btn"><i class="fas fa-play"></i></div></div>
-
-          {# Left badge: NEW EP (ongoing series) → NEW (recently added) #}
-          {% if movie.title_b and not movie.completed %}
-            <span class="cbadge cbtl b-ep">NEW EP</span>
-          {% elif movie.created_at|is_recent %}
-            <span class="cbadge cbtl b-new">NEW</span>
-          {% endif %}
-
-          <span class="cbadge cbtr b-hd">HD</span>
-        </div>
-        <div class="gc-ttl">{{ movie.title }}</div>
-        {% if movie.title_b %}<div class="gc-sub">{{ movie.title_b }}</div>{% endif %}
-        {% if movie.vi_year %}<div class="gc-yr">{{ movie.vi_year }}</div>{% endif %}
-      </a>
+        {% include 'movies/components/movie_card.html' with movie=movie %}
       {% endfor %}
     </div>
   </section>
@@ -454,12 +393,12 @@
 
     {# First + Prev #}
     {% if page_obj.number > 2 %}
-    <a href="?page=1" class="pag-btn" aria-label="First page">
+    <a href="?page=1{% if query %}&q={{ query|urlencode }}{% endif %}" class="pag-btn" aria-label="First page">
       <i class="fas fa-angle-double-left"></i>
     </a>
     {% endif %}
     {% if page_obj.has_previous %}
-    <a href="?page={{ page_obj.previous_page_number }}" class="pag-btn" aria-label="Previous page">
+    <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="pag-btn" aria-label="Previous page">
       <i class="fas fa-chevron-left"></i>
     </a>
     {% endif %}
@@ -469,22 +408,22 @@
       {% if num == page_obj.number %}
         <span class="pag-btn active" aria-current="page">{{ num }}</span>
       {% elif num == 1 or num == page_obj.paginator.num_pages %}
-        <a href="?page={{ num }}" class="pag-btn">{{ num }}</a>
+        <a href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="pag-btn">{{ num }}</a>
       {% elif num == page_obj.number|add:"-2" or num == page_obj.number|add:"2" %}
         <span class="pag-ellipsis">…</span>
       {% elif num >= page_obj.number|add:"-1" and num <= page_obj.number|add:"1" %}
-        <a href="?page={{ num }}" class="pag-btn">{{ num }}</a>
+        <a href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="pag-btn">{{ num }}</a>
       {% endif %}
     {% endfor %}
 
     {# Next + Last #}
     {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}" class="pag-btn" aria-label="Next page">
+    <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="pag-btn" aria-label="Next page">
       <i class="fas fa-chevron-right"></i>
     </a>
     {% endif %}
     {% if page_obj.number < page_obj.paginator.num_pages|add:"-1" %}
-    <a href="?page={{ page_obj.paginator.num_pages }}" class="pag-btn" aria-label="Last page">
+    <a href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query|urlencode }}{% endif %}" class="pag-btn" aria-label="Last page">
       <i class="fas fa-angle-double-right"></i>
     </a>
     {% endif %}
@@ -497,7 +436,7 @@
   {% if page_obj.paginator.num_pages > 5 %}
   <div class="pag-jump">
     <label for="pageJump">Jump to page:</label>
-    <select id="pageJump" onchange="window.location.href='?page='+this.value" aria-label="Jump to page">
+    <select id="pageJump" onchange="window.location.href='?page='+this.value+'{% if query %}&q={{ query|urlencode }}{% endif %}'" aria-label="Jump to page">
       {% for num in page_obj.paginator.page_range %}
       <option value="{{ num }}" {% if page_obj.number == num %}selected{% endif %}>Page {{ num }}</option>
       {% endfor %}
@@ -513,7 +452,9 @@
     <i class="fas fa-film" aria-hidden="true"></i>
     <h2>No Movies Found</h2>
     <p>
-      {% if category %}
+      {% if query %}
+        Nothing matches "{{ query }}"{% if category %} in {{ category.name }}{% endif %}.
+      {% elif category %}
         There are no movies in the <strong>{{ category.name }}</strong> category yet.
       {% elif stream_only %}
         Nothing is streaming-only right now — every title currently has a download link too.
@@ -529,41 +470,13 @@
   {% endif %}
 
   {# ── Browse other categories ── #}
-  {% if categories %}
+  {% if other_categories %}
   <section class="grid-s" aria-label="Browse other categories" style="padding-bottom:3rem;">
     <div class="row-hd" style="padding-bottom:.8rem;">
-      <span class="row-ttl">Browse Other Categories</span>
+      <span class="row-ttl"><i class="fas fa-layer-group" style="color:#2dbd6e;margin-right:6px;"></i>Browse Other Categories</span>
       <span class="badge-label bl-green">All Genres</span>
     </div>
-    <div class="cat-grid">
-      {% for cat in categories %}
-      {% if not category or cat.id != category.id %}
-      <a href="{{ cat.get_absolute_url }}"
-         class="cat-tile"
-         title="{{ cat.name }} movies – Watch2D">
-        <span class="cat-icon" aria-hidden="true">
-          {% if 'nollywood' in cat.name|lower %}🎭
-          {% elif 'hollywood' in cat.name|lower %}🎬
-          {% elif 'korean' in cat.name|lower or 'kdrama' in cat.name|lower %}🇰🇷
-          {% elif 'chinese' in cat.name|lower %}🇨🇳
-          {% elif 'anime' in cat.name|lower %}⛩️
-          {% elif 'thai' in cat.name|lower %}🇹🇭
-          {% elif 'bollywood' in cat.name|lower %}🎵
-          {% elif 'series' in cat.name|lower or 'tv' in cat.name|lower %}📺
-          {% elif 'horror' in cat.name|lower %}👻
-          {% elif 'comedy' in cat.name|lower %}😂
-          {% elif 'romance' in cat.name|lower %}❤️
-          {% elif 'action' in cat.name|lower %}💥
-          {% elif 'wrestling' in cat.name|lower %}🏆
-          {% elif '18' in cat.name %}🔞
-          {% else %}🎬
-          {% endif %}
-        </span>
-        <span class="cat-name">{{ cat.name }}</span>
-      </a>
-      {% endif %}
-      {% endfor %}
-    </div>
+    {% include 'movies/components/category_tiles.html' with categories=other_categories %}
   </section>
   {% endif %}
 

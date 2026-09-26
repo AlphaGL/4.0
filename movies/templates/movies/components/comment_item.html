@@ -1,112 +1,82 @@
 {# movies/templates/movies/components/comment_item.html #}
-<div class="comment-item bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 transition-all duration-300 hover:shadow-lg" data-comment-id="{{ comment.id }}">
-  
-  {# Comment Header #}
-  <div class="flex items-start justify-between mb-4">
-    <div class="flex items-center space-x-3">
-      {# Avatar #}
-      <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-        {% if comment.user %}
-          <span class="text-white font-semibold text-sm">
-            {{ comment.user.username|slice:":1"|upper }}
-          </span>
-        {% else %}
-          <span class="text-white font-semibold text-sm">
-            {{ comment.guest_name|slice:":1"|upper }}
-          </span>
+{% load movie_extras %}
+<div class="gist-post" data-comment-id="{{ comment.id }}">
+  <div class="gist-post-row">
+    {% if comment.user %}
+      <img src="{{ comment.user.profile.avatar_url }}" alt="" class="gist-avatar">
+    {% else %}
+      <div class="gist-avatar gist-avatar-fallback">{{ comment.guest_name|slice:":1"|upper }}</div>
+    {% endif %}
+
+    <div class="gist-post-body">
+      <div class="gist-post-head">
+        <span class="gist-name">
+          {% if comment.user %}{{ comment.user.profile.display_name }}{% else %}{{ comment.guest_name }}{% endif %}
+        </span>
+        {% if comment.user and comment.user.is_staff %}
+          <span class="gist-staff-badge"><i class="fas fa-star"></i></span>
+        {% endif %}
+        <span class="gist-dot">·</span>
+        <span class="gist-time">{{ comment.created_at|shorttime }}</span>
+      </div>
+
+      <p class="gist-content">{{ comment.content }}</p>
+
+      <div class="gist-actions">
+        {% with active=comment|user_reaction:user %}
+        {% for emoji in "🔥😂😮💀😍" %}
+          {% with count=comment.reaction_counts|get_item:emoji %}
+          <button type="button"
+                  class="js-react-btn gist-reaction{% if active == emoji %} active{% endif %}"
+                  data-comment-id="{{ comment.id }}" data-emoji="{{ emoji }}"
+                  data-authenticated="{% if user.is_authenticated %}1{% else %}0{% endif %}">
+            {{ emoji }}{% if count %}<span class="gist-reaction-count">{{ count }}</span>{% endif %}
+          </button>
+          {% endwith %}
+        {% endfor %}
+        {% endwith %}
+
+        <button class="reply-btn gist-action-link" data-comment-id="{{ comment.id }}">
+          <i class="fas fa-reply"></i> Reply
+        </button>
+
+        {% if user.is_authenticated and user == comment.user or user.is_staff %}
+          <button class="delete-comment-btn gist-action-link gist-action-danger" data-comment-id="{{ comment.id }}">
+            <i class="fas fa-trash"></i>
+          </button>
         {% endif %}
       </div>
-      
-      {# User Info #}
-      <div>
-        <div class="flex items-center space-x-2">
-          <h4 class="font-semibold text-gray-900 dark:text-white">
-            {% if comment.user %}
-              {{ comment.user.username }}
-            {% else %}
-              {{ comment.guest_name }}
-            {% endif %}
-          </h4>
-          {% if comment.user and comment.user.is_staff %}
-            <span class="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs rounded-full">
-              <i class="fas fa-star mr-1"></i>Staff
-            </span>
-          {% endif %}
+
+      {# Reply Form (hidden by default) #}
+      <div id="reply-form-{{ comment.id }}" class="reply-form gist-reply-form">
+        {% if not user.is_authenticated %}
+        <div class="gist-login-prompt">
+          <button type="button" data-mode="login" class="js-open-auth gist-login-link">
+            <i class="fas fa-sign-in-alt mr-1"></i>Log in to reply
+          </button>
         </div>
-        <p class="text-xs text-gray-500 dark:text-gray-400">
-          <i class="fas fa-clock mr-1"></i>
-          {{ comment.created_at|timesince }} ago
-        </p>
+        {% else %}
+        <form action="{% url 'movies:add_reply' movie.pk comment.id %}"
+              method="post"
+              class="reply-form-submit gist-reply-form-inner">
+          {% csrf_token %}
+          <textarea name="content" required rows="2" placeholder="Write your reply..." class="gist-reply-textarea"></textarea>
+          <div class="gist-reply-actions">
+            <button type="submit" class="gist-reply-submit"><i class="fas fa-paper-plane mr-1"></i>Reply</button>
+            <button type="button" class="gist-reply-cancel" onclick="this.closest('.reply-form').classList.remove('active')">Cancel</button>
+          </div>
+        </form>
+        {% endif %}
       </div>
-    </div>
-  </div>
-  
-  {# Comment Content #}
-  <div class="mb-4">
-    <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
-      {{ comment.content }}
-    </p>
-  </div>
-  
-  {# Comment Actions #}
-  <div class="flex items-center space-x-4 text-sm">
-    <button class="reply-btn flex items-center text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            data-comment-id="{{ comment.id }}">
-      <i class="fas fa-reply mr-2"></i>
-      Reply
-    </button>
-    
-    {% if user.is_authenticated and user == comment.user or user.is_staff %}
-      <button class="delete-comment-btn flex items-center text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-              data-comment-id="{{ comment.id }}">
-        <i class="fas fa-trash mr-2"></i>
-        Delete
-      </button>
-    {% endif %}
-  </div>
-  
-  {# Reply Form (Hidden by default) #}
-  <div id="reply-form-{{ comment.id }}" class="reply-form mt-4">
-    <form action="{% url 'movies:add_reply' movie.pk comment.id %}" 
-          method="post" 
-          class="reply-form-submit space-y-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-      {% csrf_token %}
-      
-      {% if not user.is_authenticated %}
-        <input type="text" 
-               name="name"
-               required
-               placeholder="Your name..."
-               class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-gray-100 text-sm">
+
+      {# Replies #}
+      {% if comment.replies.all %}
+        <div class="gist-replies">
+          {% for reply in comment.replies.all %}
+            {% include 'movies/components/comment_item.html' with comment=reply %}
+          {% endfor %}
+        </div>
       {% endif %}
-      
-      <textarea name="content"
-                required
-                rows="2"
-                placeholder="Write your reply..."
-                class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-gray-100 text-sm resize-none"></textarea>
-      
-      <div class="flex items-center space-x-2">
-        <button type="submit" 
-                class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-lg text-sm font-semibold transition-all duration-300">
-          <i class="fas fa-paper-plane mr-2"></i>
-          <span>Post Reply</span>
-        </button>
-        <button type="button" 
-                class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-300 dark:hover:bg-gray-500 transition-all duration-300"
-                onclick="this.closest('.reply-form').classList.remove('active')">
-          Cancel
-        </button>
-      </div>
-    </form>
-  </div>
-  
-  {# Replies Container #}
-  {% if comment.replies.all %}
-    <div class="replies-container ml-8 mt-4 space-y-4 border-l-2 border-indigo-200 dark:border-indigo-800 pl-4">
-      {% for reply in comment.replies.all %}
-        {% include 'movies/components/comment_item.html' with comment=reply %}
-      {% endfor %}
     </div>
-  {% endif %}
+  </div>
 </div>

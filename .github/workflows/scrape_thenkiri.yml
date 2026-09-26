@@ -246,6 +246,10 @@ jobs:
           R2_PUBLIC_URL=${{ vars.R2_PUBLIC_URL }}
           GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
           GEMINI_API_KEYS=${{ secrets.GEMINI_API_KEYS }}
+          OMDB_API_KEY=${{ secrets.OMDB_API_KEY }}
+          BREVO_API_KEY=${{ secrets.BREVO_API_KEY }}
+          BREVO_SENDER_EMAIL=${{ secrets.BREVO_SENDER_EMAIL }}
+          BREVO_SENDER_NAME=${{ secrets.BREVO_SENDER_NAME }}
           ENVEOF
       - name: Run cleanse_db
         run: python manage.py cleanse_db
@@ -292,6 +296,37 @@ jobs:
       - name: Refresh Coming Soon
         continue-on-error: true
         run: python manage.py fetch_upcoming --pages 3
+      # IMDb + Rotten Tomatoes (via OMDb) + Letterboxd critic scores — only
+      # runs for the web-DB account (DATA_ONLY unset), since that's the one
+      # the movies:// review UI reads from. Needs OMDB_API_KEY (free tier).
+      - name: Refresh IMDb/Rotten Tomatoes/Letterboxd ratings
+        if: ${{ vars.DATA_ONLY != 'true' }}
+        continue-on-error: true
+        run: python manage.py fetch_external_ratings --limit 300
+
+      # "Trending This Week" resets every Monday — web-DB only (that's what
+      # the homepage reads). This job runs every 6h; only the first run on
+      # a Monday actually resets, the rest are no-ops.
+      - name: Reset weekly views (Mondays only)
+        if: ${{ vars.DATA_ONLY != 'true' }}
+        continue-on-error: true
+        run: |
+          DOW=$(date -u +%u)
+          HOUR=$(date -u +%H)
+          if [ "$DOW" = "1" ] && [ "$HOUR" -lt "06" ]; then
+            python manage.py reset_weekly_views
+          else
+            echo "Skipping — only resets Monday 00:00-06:00 UTC."
+          fi
+
+      # Website's "Notify Me" on Coming Soon titles — emails users once their
+      # tracked title actually enters the catalogue. Web-DB only (that's what
+      # the site's NotifyRequest rows live in); runs after fetch_upcoming above
+      # so the Movie rows it checks for are already enriched.
+      - name: Email users whose "Notify Me" title has arrived
+        if: ${{ vars.DATA_ONLY != 'true' }}
+        continue-on-error: true
+        run: python manage.py notify_web_arrivals
 
       # One batched "new titles added" push to all app users.
       # Only the app-DB account (DATA_ONLY=true) sends it, so users get it once.
