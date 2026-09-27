@@ -326,7 +326,33 @@ WHITENOISE_AUTOREFRESH = DEBUG
 
 _REDIS_URL = config('REDIS_URL', default='')
 
-if _REDIS_URL and _REDIS_URL not in ('', 'redis://localhost:6379/0'):
+
+def _redis_reachable(url, timeout=1.5):
+    """
+    A REDIS_URL being set doesn't mean THIS machine can reach it — e.g. a
+    shared .env pointing at the production Redis Cloud instance, opened on a
+    laptop with no network path to it. Committing to the cache-backed session
+    engine in that case breaks every session-touching request (login, Gist,
+    watchlist toggles...) with a 500, since Django's session backend refuses
+    to proceed once it can't confirm the cache actually accepted a write —
+    IGNORE_EXCEPTIONS swallows the connection error but still leaves the
+    write unconfirmed. A cheap TCP probe here lets local dev fall back to the
+    file cache automatically instead of silently breaking every session.
+    """
+    import socket
+    from urllib.parse import urlparse
+    try:
+        parsed = urlparse(url)
+        host, port = parsed.hostname, parsed.port or 6379
+        if not host:
+            return False
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+if _REDIS_URL and _REDIS_URL not in ('', 'redis://localhost:6379/0') and _redis_reachable(_REDIS_URL):
     # ── Redis Cloud (or any real Redis) ──────────────────────────────
     # Requires:  pip install django-redis
     CACHES = {

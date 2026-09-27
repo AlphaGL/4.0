@@ -16,10 +16,12 @@ Config (server-side only):
 import base64
 import io
 import json
+from datetime import date
 
 import requests
 from bs4 import BeautifulSoup
 from decouple import config
+from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -28,6 +30,66 @@ from django.views.decorators.http import require_POST
 from . import tmdb
 
 GEMINI_MODEL = config('GEMINI_MODEL', default='gemini-2.5-flash')
+
+# ── Daily scan quota ─────────────────────────────────────────────────────────
+# 3 free scans/day per user. Watching 3 ads unlocks 1 more scan (repeatable).
+# Cache-based (not a DB model) since this is a soft, resettable-daily limit —
+# matches the IP-throttle pattern already used below for the same reason.
+FREE_SCANS_PER_DAY = 3
+ADS_PER_BONUS_SCAN = 3
+
+
+def _quota_keys(user_id):
+    today = date.today().isoformat()
+    return (f'scan_used_{user_id}_{today}',
+            f'scan_bonus_{user_id}_{today}',
+            f'scan_ad_progress_{user_id}_{today}')
+
+
+def get_scan_quota(user_id):
+    """Returns {'used', 'limit', 'remaining', 'ad_progress', 'ads_needed'}."""
+    used_key, bonus_key, ad_key = _quota_keys(user_id)
+    used = cache.get(used_key, 0)
+    bonus = cache.get(bonus_key, 0)
+    ad_progress = cache.get(ad_key, 0)
+    limit = FREE_SCANS_PER_DAY + bonus
+    return {
+        'used': used,
+        'limit': limit,
+        'remaining': max(0, limit - used),
+        'ad_progress': ad_progress,
+        'ads_needed': ADS_PER_BONUS_SCAN,
+    }
+
+
+def _consume_scan(user_id):
+    used_key, _, _ = _quota_keys(user_id)
+    cache.set(used_key, cache.get(used_key, 0) + 1, 86400)
+
+
+def register_ad_click(user_id):
+    """One ad click toward the next bonus scan. Every ADS_PER_BONUS_SCAN
+    clicks grants +1 scan for today. Returns the same shape as get_scan_quota."""
+    used_key, bonus_key, ad_key = _quota_keys(user_id)
+    progress = cache.get(ad_key, 0) + 1
+    if progress >= ADS_PER_BONUS_SCAN:
+        progress = 0
+        cache.set(bonus_key, cache.get(bonus_key, 0) + 1, 86400)
+    cache.set(ad_key, progress, 86400)
+    return get_scan_quota(user_id)
+
+
+@login_required
+@require_POST
+def scan_ad_click(request):
+    """Called once per ad the user watches/clicks through to unlock a bonus scan."""
+    return JsonResponse({'ok': True, 'quota': register_ad_click(request.user.id)})
+
+
+@login_required
+def scan_quota_status(request):
+    """Read-only — lets the widget show remaining scans before the first attempt."""
+    return JsonResponse({'ok': True, 'quota': get_scan_quota(request.user.id)})
 MAX_IMAGES = 4
 MAX_DIM = 1280  # downscale frames before sending (higher = better detail for
 #                 identification, still small enough for quota + bandwidth)
@@ -260,12 +322,17 @@ def _enrich_match(m):
 
 
 # ── HTTP endpoint ────────────────────────────────────────────────────────────
-@csrf_exempt
+@login_required
 @require_POST
 def identify_scene(request):
     if not is_configured():
         return JsonResponse({'ok': False, 'error': 'not_configured'},
                             status=503)
+
+    quota = get_scan_quota(request.user.id)
+    if quota['remaining'] <= 0:
+        return JsonResponse({'ok': False, 'error': 'quota_exceeded', 'quota': quota},
+                            status=429)
 
     # Light per-IP throttle to protect the free vision quota from abuse.
     ip = request.META.get('HTTP_X_FORWARDED_FOR',
@@ -275,6 +342,8 @@ def identify_scene(request):
     if n >= 30:
         return JsonResponse({'ok': False, 'error': 'rate_limited'}, status=429)
     cache.set(ck, n + 1, 3600)
+
+    _consume_scan(request.user.id)
 
     # 0) Quote branch — identify a title from a famous line of dialogue (text).
     quote = (request.POST.get('quote') or '').strip()
@@ -325,4 +394,5 @@ def identify_scene(request):
         'results': results,
         'note': parsed.get('note') or (
             '' if results else "Couldn't confidently identify this scene."),
+        'quota': get_scan_quota(request.user.id),
     })

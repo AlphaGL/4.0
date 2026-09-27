@@ -8,22 +8,39 @@
   .w2d { background: #f8fafc; color: #111827; min-height: 100vh; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
   .dark .w2d { background: #141414; color: #e5e5e5; }
 
-  .profile-header { padding: 2rem 4% 1.5rem; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-  .profile-avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; background: #e5e7eb; }
-  .dark .profile-avatar { background: #242424; }
-  .profile-name { font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+  .profile-header {
+    padding: 2.5rem 4% 1.75rem; display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(99,102,241,.08), rgba(236,72,153,.06));
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+  .dark .profile-header { background: linear-gradient(135deg, rgba(99,102,241,.14), rgba(236,72,153,.1)); border-bottom-color: rgba(255,255,255,.06); }
+  .profile-avatar {
+    width: 100px; height: 100px; border-radius: 50%; object-fit: cover; background: #e5e7eb;
+    box-shadow: 0 0 0 4px #fff, 0 0 0 6px rgba(99,102,241,.3), 0 8px 24px rgba(0,0,0,.12);
+  }
+  .dark .profile-avatar { background: #242424; box-shadow: 0 0 0 4px #141414, 0 0 0 6px rgba(99,102,241,.4), 0 8px 24px rgba(0,0,0,.3); }
+  .profile-name { font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
   .nickname-edit-btn {
     width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0,0,0,.1);
     background: rgba(0,0,0,.04); color: #6b7280; font-size: .68rem; cursor: pointer;
   }
   .dark .nickname-edit-btn { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: #9ca3af; }
   .nickname-edit-btn:hover { background: rgba(99,102,241,.12); color: #6366f1; }
-  .profile-stats { display: flex; gap: 18px; margin-top: 8px; flex-wrap: wrap; }
-  .profile-stat { font-size: .78rem; color: #6b7280; }
-  .dark .profile-stat { color: #9ca3af; }
-  .profile-stat b { color: inherit; font-weight: 700; }
+  .profile-member-since { font-size: .74rem; color: #9ca3af; margin-top: 3px; }
+
+  .profile-stats { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .profile-stat {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-width: 76px; padding: 8px 14px; border-radius: 12px;
+    background: #fff; border: 1px solid rgba(0,0,0,.07); box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  }
+  .dark .profile-stat { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.08); }
+  .profile-stat b { font-size: 1.1rem; font-weight: 800; color: #111827; line-height: 1.1; }
+  .dark .profile-stat b { color: #f3f4f6; }
+  .profile-stat span { font-size: .64rem; color: #9ca3af; text-transform: uppercase; letter-spacing: .03em; margin-top: 2px; }
 
   .section-s { padding: 0 4% 2.5rem; }
+  .section-s.section-s-top { padding-top: 2rem; }
   .section-hd { font-size: 1.05rem; font-weight: 700; margin-bottom: .8rem; display: flex; align-items: center; gap: 8px; }
 
   .review-row { display: flex; gap: 12px; align-items: flex-start; background: #fff; border: 1px solid rgba(0,0,0,.08); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
@@ -36,6 +53,23 @@
   .dark .review-text { color: #9ca3af; }
 
   .empty-note { font-size: .8rem; color: #9ca3af; padding: 1rem 0; }
+
+  .verify-card { background: #fff; border: 1px solid rgba(0,0,0,.08); border-radius: 14px; padding: 16px 18px; }
+  .dark .verify-card { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.08); }
+  .verify-card-head { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: .9rem; margin-bottom: 4px; }
+  .verify-card-hint { font-size: .78rem; color: #6b7280; margin-bottom: 14px; }
+  .dark .verify-card-hint { color: #9ca3af; }
+  .verify-card-done { font-size: .85rem; font-weight: 600; color: #2563eb; }
+  .verify-req { margin-bottom: 12px; }
+  .verify-req:last-child { margin-bottom: 0; }
+  .verify-req-label { display: flex; justify-content: space-between; font-size: .76rem; color: #6b7280; margin-bottom: 4px; }
+  .dark .verify-req-label { color: #9ca3af; }
+  .verify-req-label b { color: #111827; font-weight: 600; }
+  .dark .verify-req-label b { color: #f3f4f6; }
+  .verify-bar { height: 6px; border-radius: 999px; background: rgba(0,0,0,.07); overflow: hidden; }
+  .dark .verify-bar { background: rgba(255,255,255,.1); }
+  .verify-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg,#60a5fa,#2563eb); transition: width .3s ease; }
+  .verify-bar-fill.met { background: linear-gradient(90deg,#34d399,#059669); }
 </style>
 
 <div class="w2d">
@@ -44,20 +78,56 @@
     <div>
       <div class="profile-name">
         {{ profile_user.profile.display_name }}
+        {% include 'movies/components/verified_tick.html' with profile=profile_user.profile %}
         {% if request.user == profile_user %}
           <button type="button" onclick="openNicknameModal()" class="nickname-edit-btn" title="Change nickname"><i class="fas fa-pen"></i></button>
         {% endif %}
       </div>
+      <p class="profile-member-since"><i class="far fa-clock"></i> Member since {{ profile_user.profile.created_at|date:"M Y" }}</p>
       <div class="profile-stats">
-        <span class="profile-stat"><b>{{ review_count }}</b> review{{ review_count|pluralize }}</span>
-        <span class="profile-stat"><b>{{ watched_count }}</b> watched</span>
-        <span class="profile-stat"><b>{{ watchlist_count }}</b> watchlisted</span>
-        <span class="profile-stat"><b>{{ liked_count }}</b> liked</span>
+        <div class="profile-stat"><b>{{ review_count }}</b><span>Review{{ review_count|pluralize }}</span></div>
+        <div class="profile-stat"><b>{{ watched_count }}</b><span>Watched</span></div>
+        <div class="profile-stat"><b>{{ watchlist_count }}</b><span>Watchlist</span></div>
+        <div class="profile-stat"><b>{{ liked_count }}</b><span>Liked</span></div>
       </div>
     </div>
   </div>
 
-  <section class="section-s">
+  {% if blue_tick_progress %}
+  <section class="section-s section-s-top">
+    <div class="verify-card">
+      <div class="verify-card-head">
+        <span class="verified-tick verified-tick-blue verified-tick-sm"><i class="fas fa-check"></i></span>
+        Blue tick
+      </div>
+      {% if profile_user.profile.verification_tier == 'blue' %}
+        <p class="verify-card-done"><i class="fas fa-circle-check"></i> You've earned the blue tick!</p>
+      {% else %}
+        <p class="verify-card-hint">Earn the blue tick by being a real, active Watch2D member — meet all three:</p>
+        <div class="verify-req">
+          <div class="verify-req-label"><span>Written reviews</span><b>{{ blue_tick_progress.reviews }}/{{ blue_tick_progress.reviews_needed }}</b></div>
+          <div class="verify-bar"><div class="verify-bar-fill{% if blue_tick_progress.reviews_met %} met{% endif %}" style="width:{{ blue_tick_progress.reviews_pct }}%"></div></div>
+        </div>
+        <div class="verify-req">
+          <div class="verify-req-label"><span>Account age</span><b>{{ blue_tick_progress.age_days }}/{{ blue_tick_progress.age_needed }} days</b></div>
+          <div class="verify-bar"><div class="verify-bar-fill{% if blue_tick_progress.age_met %} met{% endif %}" style="width:{{ blue_tick_progress.age_pct }}%"></div></div>
+        </div>
+        <div class="verify-req">
+          <div class="verify-req-label"><span>Movies watched</span><b>{{ blue_tick_progress.watched }}/{{ blue_tick_progress.watched_needed }}</b></div>
+          <div class="verify-bar"><div class="verify-bar-fill{% if blue_tick_progress.watched_met %} met{% endif %}" style="width:{{ blue_tick_progress.watched_pct }}%"></div></div>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if request.user == profile_user %}
+  <section class="section-s{% if not blue_tick_progress %} section-s-top{% endif %}">
+    {% include 'movies/components/scan_scene.html' %}
+  </section>
+  {% endif %}
+
+  <section class="section-s{% if request.user != profile_user %} section-s-top{% endif %}">
     <div class="section-hd"><i class="fas fa-star text-yellow-400"></i> Reviews</div>
     {% for review in reviews %}
       <div class="review-row">

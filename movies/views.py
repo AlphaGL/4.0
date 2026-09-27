@@ -2087,6 +2087,7 @@ def add_review(request, pk):
     )
     movie.watched_by.add(request.user)  # rating it implies you've seen it
     cache.delete(f'movie_review_agg_{movie.id}_v1')
+    cache.delete(f'movie_rating_hist_{movie.id}_v1')
 
     if is_ajax:
         html = render_to_string('movies/components/review_item.html', {
@@ -2114,6 +2115,7 @@ def delete_review(request, pk):
     if request.user == review.user or request.user.is_staff:
         review.delete()
         cache.delete(f'movie_review_agg_{movie.id}_v1')
+        cache.delete(f'movie_rating_hist_{movie.id}_v1')
         if is_ajax:
             return JsonResponse({'success': True, 'message': 'Review deleted'})
         messages.success(request, 'Review deleted')
@@ -2866,6 +2868,11 @@ class ProfileView(DetailView):
         context['liked_count'] = profile_user.liked_movies.count()
         context['watched_count'] = profile_user.watched_movies.count()
         context['categories'] = get_sidebar_categories()
+
+        # Blue-tick progress — only needed on your own profile, to show how
+        # close you are. Skip the extra queries entirely for other viewers.
+        if self.request.user == profile_user and not profile_user.is_staff:
+            context['blue_tick_progress'] = profile_user.profile.blue_tick_progress()
 
         movie_fields = ('id', 'title', 'slug', 'image_url', 'rating', 'trailer_url')
         context['watchlist_preview'] = (

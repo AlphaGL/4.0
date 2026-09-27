@@ -1,0 +1,13 @@
+{% comment %}
+Usage: {% include 'movies/components/verified_tick.html' with profile=some_user.profile %}
+Add size='sm' for compact contexts (nav, comments). Renders nothing if the
+profile has no tick. Styles (.verified-tick*) live in base.html so this
+partial can be dropped in anywhere.
+{% endcomment %}
+{% with tier=profile.verification_tier %}
+  {% if tier == 'gold' %}
+    <span class="verified-tick verified-tick-gold{% if size == 'sm' %} verified-tick-sm{% endif %}" title="Official Watch2D account"><i class="fas fa-check"></i></span>
+  {% elif tier == 'blue' %}
+    <span class="verified-tick verified-tick-blue{% if size == 'sm' %} verified-tick-sm{% endif %}" title="Verified Watch2D member"><i class="fas fa-check"></i></span>
+  {% endif %}
+{% endwith %}

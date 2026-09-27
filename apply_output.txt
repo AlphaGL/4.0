@@ -1,0 +1,1574 @@
+System check identified some issues:
+
+WARNINGS:
+?: (staticfiles.W004) The directory 'C:\Users\Ibeawuchi\Desktop\film\4.0\pwa_static' in the STATICFILES_DIRS setting does not exist.
+?: (urls.W005) URL namespace 'main' isn't unique. You may not be able to reverse all URLs in this namespace
+======================================================================
+🔍  Scanning for merged-season download links (APPLYING CHANGES)
+======================================================================
+
+📦 Shows affected: 621
+   → 55 target seasons already exist (304 links to move)
+   → 566 target seasons need a new Movie created (6663 links to move)
+
+──────────────────────────────────────────────────────────────────────
+BUCKET 1 — move to an existing season record
+──────────────────────────────────────────────────────────────────────
+
+  'tomb-of-fallen-gods' → Season 1 (existing record pk=7988, 'Tomb Of Fallen Gods Season 1 (Complete)'): 2 link(s)
+      ➡  move link 216642 (S01E49) from pk=3224 → pk=7988: https://loadedfiles.net/3e7a307638f28eee/Tomb.of.Fallen.Gods.S01E49.540p.x265.AAC.[9jaRock
+      ➡  move link 216643 (S01E50) from pk=3224 → pk=7988: https://loadedfiles.net/a9b429c4aa5836de/Tomb.of.Fallen.Gods.S01E50.540p.x265.AAC.[9jaRock
+
+  'the-imperial-coroner' → Season 1 (existing record pk=3466, 'The Imperial Coroner Season 1 (Complete)'): 4 link(s)
+      ➡  move link 16101 (S01E09) from pk=5548 → pk=3466: https://loadedfiles.net/28df82e27b29d830/The.Imperial.Coroner.S01E09.540p.x265.AAC.[9jaRoc
+      ➡  move link 16102 (S01E10) from pk=5548 → pk=3466: https://loadedfiles.net/b728bc55bd2df3d2/The.Imperial.Coroner.S01E10.540p.x265.AAC.[9jaRoc
+      ➡  move link 19117 (S01E25) from pk=5548 → pk=3466: https://loadedfiles.net/7c0dde313e8617f9/The.Imperial.Coroner.S01E25.540p.x265.AAC.[9jaRoc
+      ➡  move link 19118 (S01E26) from pk=5548 → pk=3466: https://loadedfiles.net/d502fa031867deeb/The.Imperial.Coroner.S01E26.540p.x265.AAC.[9jaRoc
+
+  'transcend-the-gods-the-black-troop' → Season 1 (existing record pk=4712, 'Transcend the Gods: The Black Troop Season 1 (Complete)'): 1 link(s)
+      ➡  move link 51826 (S01E01) from pk=4681 → pk=4712: https://loadedfiles.net/e70ed6bf1c1dce8a/Transcend.The.Gods.LEITING.WAN.JUN.S01E1-26.zip
+
+  'shoresy' → Season 2 (existing record pk=16216, 'Shoresy S02'): 1 link(s)
+      ➡  move link 14827 (S02E03) from pk=1166 → pk=16216: https://sabishares.com/Movie/Sanctuary-A-Witchs-Tale-S02E03.(FZTVSERIES.NG).mkv?preview
+
+  'the-great-ruler' → Season 1 (existing record pk=8241, 'The Great Ruler Season 1 (Complete)'): 3 link(s)
+      ➡  move link 38756 (S01E12) from pk=3529 → pk=8241: https://loadedfiles.net/635d233528a2aeed/The.Great.Ruler.S01E12.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 38759 (S01E13) from pk=3529 → pk=8241: https://loadedfiles.net/f60f941e603bc0a8/The.Great.Ruler.S01E13.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 38795 (S01E21) from pk=3529 → pk=8241: https://loadedfiles.net/769c25f92c68c914/The.Great.Ruler.S01E21.540p.x265.AAC.[9jaRocks.Co
+
+  'a-man-who-defies-the-world-of-bl' → Season 1 (existing record pk=3758, 'A Man Who Defies the World of BL Season 1 (Complete)'): 1 link(s)
+      ➡  move link 39499 (S01E06) from pk=3586 → pk=3758: https://loadedfiles.net/3382d238419d8c25/A.Man.Who.Defies.the.World.of.BL.3.S01E06.540p.x2
+
+  'attack-on-titan' → Season 4 (existing record pk=17773, 'Attack On Titan S04 (Complete)'): 30 link(s)
+      ➡  move link 74249 (S04E01) from pk=6538 → pk=17773: https://loadedfiles.net/b2a7f9636dece6a5/Attack.On.Titan.S04E01.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74250 (S04E02) from pk=6538 → pk=17773: https://loadedfiles.net/2f612ee72263bc77/Attack.On.Titan.S04E02.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74251 (S04E03) from pk=6538 → pk=17773: https://loadedfiles.net/f7274889ec8532d8/Attack.On.Titan.S04E03.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74252 (S04E04) from pk=6538 → pk=17773: https://loadedfiles.net/60e68d5fff510513/Attack.On.Titan.S04E04.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74253 (S04E05) from pk=6538 → pk=17773: https://loadedfiles.net/3165d29e23206ba1/Attack.On.Titan.S04E05.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74254 (S04E06) from pk=6538 → pk=17773: https://loadedfiles.net/3090ee22e85ac008/Attack.On.Titan.S04E06.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74255 (S04E07) from pk=6538 → pk=17773: https://loadedfiles.net/a805422a1bcd397c/Attack.On.Titan.S04E07.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74256 (S04E08) from pk=6538 → pk=17773: https://loadedfiles.net/dac36192db72a8a2/Attack.On.Titan.S04E08.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74257 (S04E09) from pk=6538 → pk=17773: https://loadedfiles.net/a5b7d481717f8edb/Attack.On.Titan.S04E09.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74258 (S04E10) from pk=6538 → pk=17773: https://loadedfiles.net/74dfd4183306b35b/Attack.On.Titan.S04E10.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74259 (S04E11) from pk=6538 → pk=17773: https://loadedfiles.net/b7333eeb50d0b042/Attack.On.Titan.S04E11.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74260 (S04E12) from pk=6538 → pk=17773: https://loadedfiles.net/e7540352346f6dc1/Attack.On.Titan.S04E12.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74261 (S04E13) from pk=6538 → pk=17773: https://loadedfiles.net/390088ab6df0d37f/Attack.On.Titan.S04E13.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74262 (S04E14) from pk=6538 → pk=17773: https://loadedfiles.net/02ec33fcac5eb877/Attack.On.Titan.S04E14.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74263 (S04E15) from pk=6538 → pk=17773: https://loadedfiles.net/295d07ad1537e66a/Attack.On.Titan.S04E15.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74264 (S04E16) from pk=6538 → pk=17773: https://loadedfiles.net/51227c796a57b6de/Attack.On.Titan.S04E16.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74265 (S04E17) from pk=6538 → pk=17773: https://loadedfiles.net/0f6b6e6c45032eb0/Attack.On.Titan.S04E17.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74266 (S04E18) from pk=6538 → pk=17773: https://loadedfiles.net/871b19ef74fa837c/Attack.On.Titan.S04E18.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74267 (S04E19) from pk=6538 → pk=17773: https://loadedfiles.net/0943f0dbcb970c7c/Attack.On.Titan.S04E19.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74268 (S04E20) from pk=6538 → pk=17773: https://loadedfiles.net/7185fc4050946a39/Attack.On.Titan.S04E20.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74269 (S04E21) from pk=6538 → pk=17773: https://loadedfiles.net/07271dfaaf82dbdf/Attack.On.Titan.S04E21.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74270 (S04E22) from pk=6538 → pk=17773: https://loadedfiles.net/2d242930f46b5e16/Attack.On.Titan.S04E22.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74271 (S04E23) from pk=6538 → pk=17773: https://loadedfiles.net/3b2c6641d809f62f/Attack.On.Titan.S04E23.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74272 (S04E24) from pk=6538 → pk=17773: https://loadedfiles.net/a229256fdcf0b59e/Attack.On.Titan.S04E24.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74273 (S04E25) from pk=6538 → pk=17773: https://loadedfiles.net/795909638b407bf0/Attack.On.Titan.S04E25.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74274 (S04E26) from pk=6538 → pk=17773: https://loadedfiles.net/8178cdebde5963b1/Attack.On.Titan.S04E26.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74275 (S04E27) from pk=6538 → pk=17773: https://loadedfiles.net/bda0bdcb03ba41ac/Attack.On.Titan.S04E27.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74276 (S04E28) from pk=6538 → pk=17773: https://loadedfiles.net/b7b3bf9f691381aa/Attack.On.Titan.S04E28.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74278 (S04E29) from pk=6538 → pk=17773: https://loadedfiles.net/03d6773288d9682f/Attack.On.Titan.S04E29.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74280 (S04E30) from pk=6538 → pk=17773: https://loadedfiles.net/02366fe0be23f003/Attack.On.Titan.S04E30.540p.x265.AAC.[9jaRocks.Co
+
+  'attack-on-titan' → Season 2 (existing record pk=17823, 'Attack On Titan S02 (Complete)'): 12 link(s)
+      ➡  move link 74169 (S02E01) from pk=6538 → pk=17823: https://loadedfiles.net/1aa5aa2a1a393f2f/Attack.On.Titan.S02E01.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74171 (S02E02) from pk=6538 → pk=17823: https://loadedfiles.net/91b76ffba2689834/Attack.On.Titan.S02E02.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74173 (S02E03) from pk=6538 → pk=17823: https://loadedfiles.net/ce72e7adc351116c/Attack.On.Titan.S02E03.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74174 (S02E04) from pk=6538 → pk=17823: https://loadedfiles.net/5c332694d082d574/Attack.On.Titan.S02E04.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74177 (S02E05) from pk=6538 → pk=17823: https://loadedfiles.net/e2525f037be447f2/Attack.On.Titan.S02E05.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74180 (S02E06) from pk=6538 → pk=17823: https://loadedfiles.net/3497efd1b2f57831/Attack.On.Titan.S02E06.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74183 (S02E07) from pk=6538 → pk=17823: https://loadedfiles.net/387cedf7b3783a1e/Attack.On.Titan.S02E07.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74186 (S02E08) from pk=6538 → pk=17823: https://loadedfiles.net/b587fe898be6e483/Attack.On.Titan.S02E08.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74189 (S02E09) from pk=6538 → pk=17823: https://loadedfiles.net/9948f0d741a384bd/Attack.On.Titan.S02E09.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74192 (S02E10) from pk=6538 → pk=17823: https://loadedfiles.net/f0ee1aa3e573986b/Attack.On.Titan.S02E10.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74196 (S02E11) from pk=6538 → pk=17823: https://loadedfiles.net/f3e7ca159babdcc0/Attack.On.Titan.S02E11.540p.x265.AAC.[9jaRocks.Co
+      ➡  move link 74200 (S02E12) from pk=6538 → pk=17823: https://loadedfiles.net/caaaf036b017b553/Attack.On.Titan.S02E12.540p.x265.AAC.[9jaRocks.Co
+
+  'to-my-star' → Season 2 (existing record pk=3837, 'To My Star Season 2 (Complete)'): 10 link(s)
+      ➡  move link 157534 (S02E01) from pk=15255 → pk=3837: https://wetafiles.com/q63mfugsg3fm/To.My.Star.S02E01.(NKIRI.COM).dfiodfvuibfdvv.mkv.html
+      ➡  move link 157535 (S02E02) from pk=15255 → pk=3837: https://wetafiles.com/ggg9w62zp6pk/To.My.Star.S02E02.(NKIRI.COM).vfduibfdvuibdfv.mkv.html
+      ➡  move link 157536 (S02E03) from pk=15255 → pk=3837: https://wetafiles.com/e8q6puqdsiuv/To.My.Star.S02E03.(NKIRI.COM).vfduidfvubidfvuu.mkv.html
+      ➡  move link 157537 (S02E04) from pk=15255 → pk=3837: https://wetafiles.com/iwu7o9bhtccs/To.My.Star.S02E04.(NKIRI.COM).vuibfdvuibdfvubv.mkv.html
+      ➡  move link 157539 (S02E05) from pk=15255 → pk=3837: https://wetafiles.com/386wy4ixxj7x/To.My.Star.S02E05.(NKIRI.COM).vfibfvduibfdvbuiu.mkv.htm
+      ➡  move link 157540 (S02E06) from pk=15255 → pk=3837: https://wetafiles.com/mx55ul7pvzl0/To.My.Star.S02E06.(NKIRI.COM).vfdibdfiuvbdfvubu.mkv.htm
+      ➡  move link 157541 (S02E07) from pk=15255 → pk=3837: https://wetafiles.com/vsby0ujbsfyl/To.My.Star.S02E07.(NKIRI.COM).vdfubdfvuifdvuibvu.mkv.ht
+      ➡  move link 157542 (S02E08) from pk=15255 → pk=3837: https://wetafiles.com/sl4qlo406y3c/To.My.Star.S02E08.(NKIRI.COM).vdfibfdvubidfvuibvv.mkv.h
+      ➡  move link 157543 (S02E09) from pk=15255 → pk=3837: https://wetafiles.com/simorl0w2h8g/To.My.Star.S02E09.(NKIRI.COM).vuibdfviubdfuibdfviu.mkv.
+      ➡  move link 157544 (S02E10) from pk=15255 → pk=3837: https://wetafiles.com/dc0pvp49mhaj/To.My.Star.S02E10.(NKIRI.COM).vdfoindfvifdvnofdvio.mkv.
+
+  'kingdom' → Season 2 (existing record pk=7558, 'Kingdom Season 2 (Complete)'): 6 link(s)
+      ➡  move link 174619 (S02E01) from pk=7531 → pk=7558: https://downloadwella.com/0cjn9kobw6nq/Kingdom.2019.S02E01.(NKIRI.COM).vodnfifdionvoinfvio
+      ➡  move link 174620 (S02E02) from pk=7531 → pk=7558: https://downloadwella.com/ibapoa53hfdp/Kingdom.2019.S02E02.(NKIRI.COM).vfdniodfviodfviondf
+      ➡  move link 174621 (S02E03) from pk=7531 → pk=7558: https://downloadwella.com/ksi2tp7mtpt9/Kingdom.2019.S02E03.(NKIRI.COM).vdfndfvnoinfdgbiong
+      ➡  move link 174622 (S02E04) from pk=7531 → pk=7558: https://downloadwella.com/2m16j6vfcyxx/Kingdom.2019.S02E04.(NKIRI.COM).vdfoindfvoindfvionv
+      ➡  move link 174623 (S02E05) from pk=7531 → pk=7558: https://downloadwella.com/tjzu5aswnxgf/Kingdom.2019.S02E05.(NKIRI.COM).vdnodfvinodfvinvfi.
+      ➡  move link 174624 (S02E06) from pk=7531 → pk=7558: https://downloadwella.com/adhb8xgzswry/Kingdom.2019.S02E06.(NKIRI.COM).vdnfvidofvfdiovnvf.
+
+  'dragon-ball-z-kai' → Season 5 (existing record pk=28750, 'Dragon Ball Z Kai Season 5 (Complete)'): 2 link(s)
+      ➡  move link 27705 (S05E01) from pk=6304 → pk=28750: https://loadedfiles.net/a021f252a8541889/Immortality.S05E01.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 27715 (S05E11) from pk=6304 → pk=28750: https://loadedfiles.net/2dde3bef00b08efc/Immortality.S05E11.540p.x265.AAC.[9jaRocks.Com].m
+
+  'i-was-reincarnated-as-the-7th-prince-so-i-can-take-my-time-perfecting-my-magical-ability' → Season 1 (existing record pk=8552, 'I Was Reincarnated as the 7th Prince so I Can Take My Time Perfecting My Magical Ability Season 1 (Complete)'): 1 link(s)
+      ➡  move link 10072 (S01E12) from pk=864 → pk=8552: https://loadedfiles.net/14d271aa998a1a9d/Was.Reincarnated.as.the.7th.Prince.S01E12.540p.x2
+
+  'martial-universe' → Season 2 (existing record pk=528, 'Martial Universe S02 (Complete)'): 12 link(s)
+      ⏭  DUPLICATE, would delete from pk=6534: https://loadedfiles.net/63d1620b10a376f1/Martial.Universe.S02E01.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=6534: https://loadedfiles.net/a8d2b27089c11c86/Martial.Universe.S02E02.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=6534: https://loadedfiles.net/70e6b012c29b167d/Martial.Universe.S02E03.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=6534: https://loadedfiles.net/11559431b56c02da/Martial.Universe.S02E04.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=6534: https://loadedfiles.net/bc289d9924136ba4/Martial.Universe.S02E05.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=6534: https://loadedfiles.net/e9b5f78507abbf17/Martial.Universe.S02E06.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=6534: https://loadedfiles.net/efa0a2d22bb33009/Martial.Universe.S02E07.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=6534: https://loadedfiles.net/6ac79831fab54e26/Martial.Universe.S02E08.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=6534: https://loadedfiles.net/43cb7101353e9c94/Martial.Universe.S02E09.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=6534: https://loadedfiles.net/f06be264095a2979/Martial.Universe.S02E10.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=6534: https://loadedfiles.net/5a513374b824b6d1/Martial.Universe.S02E11.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=6534: https://loadedfiles.net/b4a65ddc43a26ee6/Martial.Universe.S02E12.540p.x265.AAC.[9jaRocks.C
+
+  'color-rush' → Season 2 (existing record pk=15701, 'Color Rush S02 (Complete)'): 8 link(s)
+      ➡  move link 274743 (S02E01) from pk=27615 → pk=15701: https://loadedfiles.net/899838f6b8cac783/Color.Rush.S02E01.540p.x265.AAC.[9jaRocks.Com].mk
+      ➡  move link 274744 (S02E02) from pk=27615 → pk=15701: https://loadedfiles.net/771105f5c606d916/Color.Rush.S02E02.540p.x265.AAC.[9jaRocks.Com].mk
+      ➡  move link 274745 (S02E03) from pk=27615 → pk=15701: https://loadedfiles.net/d2efe213058e47a8/Color.Rush.S02E03.540p.x265.AAC.[9jaRocks.Com].mk
+      ➡  move link 274746 (S02E04) from pk=27615 → pk=15701: https://loadedfiles.net/76a477b64cb18f4c/Color.Rush.S02E04.540p.x265.AAC.[9jaRocks.Com].mk
+      ➡  move link 274747 (S02E05) from pk=27615 → pk=15701: https://loadedfiles.net/45d1c3d2df150315/Color.Rush.S02E05.540p.x265.AAC.[9jaRocks.Com].mk
+      ➡  move link 274748 (S02E06) from pk=27615 → pk=15701: https://loadedfiles.net/bfbc61e27a4fb8b8/Color.Rush.S02E06.540p.x265.AAC.[9jaRocks.Com].mk
+      ➡  move link 274749 (S02E07) from pk=27615 → pk=15701: https://loadedfiles.net/c26b3b5f6e0a9e9a/Color.Rush.S02E07.540p.x265.AAC.[9jaRocks.Com].mk
+      ➡  move link 274750 (S02E08) from pk=27615 → pk=15701: https://loadedfiles.net/01207ddaa9707e1f/Color.Rush.S02E08.540p.x265.AAC.[9jaRocks.Com].mk
+
+  'love-is-better-the-second-time-around' → Season 1 (existing record pk=29013, 'Love Is Better the Second Time Around Season 1 (Complete)'): 2 link(s)
+      ➡  move link 305063 (S01E01) from pk=29012 → pk=29013: https://loadedfiles.net/feff43014bbdc78b/Love.Is.Better.The.Second.Time.Around.2.S01E01.54
+      ➡  move link 305064 (S01E02) from pk=29012 → pk=29013: https://loadedfiles.net/4d706edc2cca7d2e/Love.Is.Better.The.Second.Time.Around.2.S01E02.54
+
+  'all-the-queen-s-men' → Season 5 (existing record pk=25661, "All the Queen's Men Season 5"): 3 link(s)
+      ⏭  DUPLICATE, would delete from pk=18489: https://downloadwella.com/sk73bmf9t0up/All.The.Queens.Men.S05E01.(THENKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=18489: https://downloadwella.com/anlkjfjqrgec/All.The.Queens.Men.S05E02.(THENKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=18489: https://downloadwella.com/ghn3i91yiv1e/All.The.Queens.Men.S05E03.(THENKIRI.COM).mkv.html
+
+  'money-heist' → Season 3 (existing record pk=622, 'Money Heist S03 (Complete)'): 8 link(s)
+      ⏭  DUPLICATE, would delete from pk=623: https://downloadwella.com/n8anepsxeri6/La_Casa_De_Papel_S03E01.(NKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=623: https://downloadwella.com/0wq3qunf9f4s/La_Casa_De_Papel_S03E02.(NKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=623: https://downloadwella.com/wgxjdvrlk8z7/La_Casa_De_Papel_S03E03.(NKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=623: https://downloadwella.com/hzwy4iyz3anr/La_Casa_De_Papel_S03E04.(NKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=623: https://downloadwella.com/plia7dftw9yb/La_Casa_De_Papel_S03E05.(NKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=623: https://downloadwella.com/tkx82m2iiu93/La_Casa_De_Papel_S03E06.(NKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=623: https://downloadwella.com/odwb8fagah0s/La_Casa_De_Papel_S03E07.(NKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=623: https://downloadwella.com/z7aq7hvotw7r/La_Casa_De_Papel_S03E08.(NKIRI.COM).mkv.html
+
+  'power-book-iii-raising-kanan' → Season 3 (existing record pk=16092, 'Power Book III: Raising Kanan S03'): 1 link(s)
+      ➡  move link 177581 (S03E01) from pk=17223 → pk=16092: https://downloadwella.com/l35orfnifec1/Power.Book.III.Raising.Kanan.S03E01.(NKIRI.COM).mkv
+
+  'magilumiere-magical-girls-inc' → Season 1 (existing record pk=9598, 'Magilumiere Magical Girls Inc Season 1'): 1 link(s)
+      ➡  move link 304069 (S01E09) from pk=24517 → pk=9598: https://loadedfiles.net/0392d21e635013ed/Magilumiere.Co.Ltd.S01E09.540p.x265.AAC.[9jaRocks
+
+  'chicago-p-d' → Season 13 (existing record pk=2232, 'Chicago P.D. S13'): 17 link(s)
+      ⏭  DUPLICATE, would delete from pk=1274: https://sabishares.com/Series01.26/Chicago-PD-S13E09.(FZTVSERIES.NG).mkv?preview
+      ⏭  DUPLICATE, would delete from pk=1274: https://sabishares.com/Series01.26/Chicago-PD-S13E08.(FZTVSERIES.NG).mkv?preview
+      ⏭  DUPLICATE, would delete from pk=1274: https://sabishares.com/Series01.26/Chicago-PD-S13E07.(FZTVSERIES.NG).mkv?preview
+      ⏭  DUPLICATE, would delete from pk=1274: https://sabishares.com/Series01.26/Chicago-PD-S13E06.(FZTVSERIES.NG).mkv?preview
+      ⏭  DUPLICATE, would delete from pk=1274: https://sabishares.com/Series01.26/Chicago-PD-S13E05.(FZTVSERIES.NG).mkv?preview
+      ⏭  DUPLICATE, would delete from pk=1274: https://sabishares.com/Series01.26/Chicago-PD-S13E04.(FZTVSERIES.NG).mkv?preview
+      ⏭  DUPLICATE, would delete from pk=1274: https://sabishares.com/Series01.26/Chicago-PD-S13E03.(FZTVSERIES.NG).mkv?preview
+      ⏭  DUPLICATE, would delete from pk=1274: https://sabishares.com/Series01.26/Chicago-PD-S13E02.(FZTVSERIES.NG).mkv?preview
+      ⏭  DUPLICATE, would delete from pk=1274: https://sabishares.com/Series01.26/Chicago-PD-S13E01.(FZTVSERIES.NG).mkv?preview
+      ⏭  DUPLICATE, would delete from pk=1274: https://ww1.sabishares.com/37k/Chicago-PD-S13E16-Fztvseries-ng.mkv
+      ⏭  DUPLICATE, would delete from pk=1274: https://ww1.sabishares.com/3by/Chicago-PD-S13E17-Fztvseries-ng.mkv
+      ⏭  DUPLICATE, would delete from pk=1274: https://sabishares.com/Series02.26/Chicago-PD-S13E11.(FZTVSERIES.NG).mkv?preview
+      ⏭  DUPLICATE, would delete from pk=1274: https://sabishares.com/Series02.26/Chicago-PD-S13E12.(FZTVSERIES.NG).mkv?preview
+      ⏭  DUPLICATE, would delete from pk=1274: https://sabishares.com/Series01.26/Chicago-PD-S13E10.(FZTVSERIES.NG).mkv?preview
+      ⏭  DUPLICATE, would delete from pk=1274: https://ww1.sabishares.com/5y4/Chicago-PD-S13E13-Fztvseries-ng.mkv
+      ⏭  DUPLICATE, would delete from pk=1274: https://ww1.sabishares.com/5Be/Chicago-PD-S13E14-Fztvseries-ng.mkv
+      ⏭  DUPLICATE, would delete from pk=1274: https://ww1.sabishares.com/327/Chicago-P-D-S13E15-Fztvseries-ng.mkv
+
+  'jiandao-di-yi-xian' → Season 1 (existing record pk=4359, 'Jiandao Di Yi Xian Season 1 (Complete)'): 13 link(s)
+      ➡  move link 47768 (S01E41) from pk=4297 → pk=4359: https://loadedfiles.net/f4283a2c1a5487ca/Jiandao.Di.Yi.Xian.S01E41.540p.x265.AAC.[9jaRocks
+      ➡  move link 47770 (S01E44) from pk=4297 → pk=4359: https://loadedfiles.net/9cefa5564d25d12c/Jiandao.Di.Yi.Xian.S01E44.540p.x265.AAC.[9jaRocks
+      ➡  move link 47771 (S01E45) from pk=4297 → pk=4359: https://loadedfiles.net/a3e8bb82e08c4b9b/Jiandao.Di.Yi.Xian.S01E45.540p.x265.AAC.[9jaRocks
+      ➡  move link 47772 (S01E46) from pk=4297 → pk=4359: https://loadedfiles.net/b53a58f75954ceec/Jiandao.Di.Yi.Xian.S01E46.540p.x265.AAC.[9jaRocks
+      ➡  move link 47773 (S01E47) from pk=4297 → pk=4359: https://loadedfiles.net/f4353d052ddd2fcc/Jiandao.Di.Yi.Xian.S01E47.540p.x265.AAC.[9jaRocks
+      ➡  move link 47774 (S01E48) from pk=4297 → pk=4359: https://loadedfiles.net/108886250b3a3b2b/Jiandao.Di.Yi.Xian.S01E48.540p.x265.AAC.[9jaRocks
+      ➡  move link 47775 (S01E49) from pk=4297 → pk=4359: https://loadedfiles.net/2fce60b983be9637/Jiandao.Di.Yi.Xian.S01E49.540p.x265.AAC.[9jaRocks
+      ➡  move link 47776 (S01E50) from pk=4297 → pk=4359: https://loadedfiles.net/bb5aea21d7ce4898/Jiandao.Di.Yi.Xian.S01E50.540p.x265.AAC.[9jaRocks
+      ➡  move link 47777 (S01E51) from pk=4297 → pk=4359: https://loadedfiles.net/792f2b4ba6c93cec/Jiandao.Di.Yi.Xian.S01E51.540p.x265.AAC.[9jaRocks
+      ➡  move link 47778 (S01E52) from pk=4297 → pk=4359: https://loadedfiles.net/2b715be67173a0e0/Jiandao.Di.Yi.Xian.S01E52.540p.x265.AAC.[9jaRocks
+      ➡  move link 47779 (S01E53) from pk=4297 → pk=4359: https://loadedfiles.net/d012588397d8542f/Jiandao.Di.Yi.Xian.S01E53.540p.x265.AAC.[9jaRocks
+      ➡  move link 47780 (S01E54) from pk=4297 → pk=4359: https://loadedfiles.net/fe141e56a2e7c5c1/Jiandao.Di.Yi.Xian.S01E54.540p.x265.AAC.[9jaRocks
+      ➡  move link 47769 (S01E42) from pk=4297 → pk=4359: https://loadedfiles.net/97d903e52fc7fb1f/Jiandao.Di.Yi.Xian.S01E42-43.540p.x265.AAC.[9jaRo
+
+  'the-island-of-siliang' → Season 1 (existing record pk=7689, 'The Island of Siliang Season 1 (Complete)'): 2 link(s)
+      ➡  move link 73731 (S01E14) from pk=6502 → pk=7689: https://loadedfiles.net/78a830f7a36fa978/The.Island.of.Siliang.S01E14.540p.x265.AAC.[9jaRo
+      ➡  move link 73732 (S01E15) from pk=6502 → pk=7689: https://loadedfiles.net/b99bb59152520e14/The.Island.of.Siliang.S01E15.540p.x265.AAC.[9jaRo
+
+  'that-time-i-got-reincarnated-as-a-slime' → Season 1 (existing record pk=11268, 'That Time I Got Reincarnated as a Slime Season 1 (Complete)'): 1 link(s)
+      ➡  move link 219021 (S01E14) from pk=3663 → pk=11268: https://loadedfiles.net/da29fd9c986130c3/That.Time.I.Got.Reincarnated.as.a.Slime.S01E14.54
+
+  'gelboys' → Season 1 (existing record pk=4826, 'Gelboys Season 1 (Complete)'): 1 link(s)
+      ➡  move link 305008 (S01E05) from pk=28412 → pk=4826: https://loadedfiles.net/80ad4f35d5730017/Gelboys.S01E05.540p.x265.AAC.[9jaRocks.Com].mkv
+
+  'kakuriyo-bed-breakfast-for-spirits' → Season 1 (existing record pk=7542, 'Kakuriyo -Bed & Breakfast for Spirits Season 1 (Complete)'): 1 link(s)
+      ➡  move link 80179 (S01E12) from pk=7034 → pk=7542: https://loadedfiles.net/0f6531f0b2dd672a/Kakuriyo.S01E12.Finale.540p.x265.AAC.[9jaRocks.Co
+
+  'the-legend-and-the-hero' → Season 1 (existing record pk=5503, 'The Legend and the Hero Season 1 (Complete)'): 1 link(s)
+      ➡  move link 57837 (S01E25) from pk=5270 → pk=5503: https://loadedfiles.net/ca0c09225dc6ca24/The.Legend.And.The.Hero.S01E25-42.zip
+
+  'wistoria-wand-and-sword' → Season 1 (existing record pk=10016, 'Wistoria: Wand and Sword Season 1 (Complete)'): 12 link(s)
+      ➡  move link 226049 (S01E01) from pk=3408 → pk=10016: https://downloadwella.com/5znmb3suw7f2/Wistoria.Wand.and.Sword.S01E01.(THENKIRI.COM).mkv.h
+      ➡  move link 226050 (S01E02) from pk=3408 → pk=10016: https://downloadwella.com/mnejocgoxc69/Wistoria.Wand.and.Sword.S01E02.(THENKIRI.COM).mkv.h
+      ➡  move link 226051 (S01E03) from pk=3408 → pk=10016: https://downloadwella.com/ldckr76th621/Wistoria.Wand.and.Sword.S01E03.(THENKIRI.COM).mkv.h
+      ➡  move link 226052 (S01E04) from pk=3408 → pk=10016: https://downloadwella.com/n4aughxjfqyz/Wistoria.Wand.and.Sword.S01E04.(THENKIRI.COM).mkv.h
+      ➡  move link 226053 (S01E05) from pk=3408 → pk=10016: https://downloadwella.com/aewe802x86jx/Wistoria.Wand.and.Sword.S01E05.(THENKIRI.COM).mkv.h
+      ➡  move link 226054 (S01E06) from pk=3408 → pk=10016: https://downloadwella.com/n4pim6zbp26h/Wistoria.Wand.and.Sword.S01E06.(THENKIRI.COM).mkv.h
+      ➡  move link 226055 (S01E07) from pk=3408 → pk=10016: https://downloadwella.com/9n7r2inmo7hm/Wistoria.Wand.and.Sword.S01E07.(THENKIRI.COM).mkv.h
+      ➡  move link 226056 (S01E08) from pk=3408 → pk=10016: https://downloadwella.com/oc2fvpo5lzzl/Wistoria.Wand.and.Sword.S01E08.(THENKIRI.COM).mkv.h
+      ➡  move link 226057 (S01E09) from pk=3408 → pk=10016: https://downloadwella.com/52l9ziibnxtd/Wistoria.Wand.and.Sword.S01E09.(THENKIRI.COM).mkv.h
+      ➡  move link 226058 (S01E10) from pk=3408 → pk=10016: https://downloadwella.com/weo290h8y188/Wistoria.Wand.and.Sword.S01E10.(THENKIRI.COM).mkv.h
+      ➡  move link 226059 (S01E11) from pk=3408 → pk=10016: https://downloadwella.com/w13mo7av8k9w/Wistoria.Wand.and.Sword.S01E11.(THENKIRI.COM).mkv.h
+      ➡  move link 226060 (S01E12) from pk=3408 → pk=10016: https://downloadwella.com/3cjgwuegyxob/Wistoria.Wand.and.Sword.S01E12.(THENKIRI.COM).mkv.h
+
+  'only-friends-dream-on' → Season 1 (existing record pk=1758, 'Only Friends: Dream On S01'): 1 link(s)
+      ⏭  DUPLICATE, would delete from pk=3097: https://loadedfiles.net/a6add8971781fe99/Only.Friends.Dream.On.S01E06.540p.x265.AAC.[9jaRo
+
+  'the-success-of-empyrean-xuan' → Season 2 (existing record pk=7801, 'The Success Of Empyrean Xuan Season 2 (Complete)'): 14 link(s)
+      ➡  move link 80979 (S02E41) from pk=7108 → pk=7801: https://loadedfiles.net/b88ce6dd2f1c6cf7/Senior.High.S02E41.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80980 (S02E42) from pk=7108 → pk=7801: https://loadedfiles.net/fa6df25865d613e6/Senior.High.S02E42.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80981 (S02E43) from pk=7108 → pk=7801: https://loadedfiles.net/bd9a94c483546953/Senior.High.S02E43.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80982 (S02E44) from pk=7108 → pk=7801: https://loadedfiles.net/90154ae8dd39f0c2/Senior.High.S02E44.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80983 (S02E45) from pk=7108 → pk=7801: https://loadedfiles.net/0e128a06137fb78d/Senior.High.S02E45.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80984 (S02E46) from pk=7108 → pk=7801: https://loadedfiles.net/15698341bca0b964/Senior.High.S02E46.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80987 (S02E47) from pk=7108 → pk=7801: https://loadedfiles.net/1f6d232307a199f6/Senior.High.S02E47.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80989 (S02E48) from pk=7108 → pk=7801: https://loadedfiles.net/09d1fea55fe8d12e/Senior.High.S02E48.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80991 (S02E49) from pk=7108 → pk=7801: https://loadedfiles.net/8d9de0f5336d46a8/Senior.High.S02E49.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80993 (S02E50) from pk=7108 → pk=7801: https://loadedfiles.net/a259f12116bc5724/Senior.High.S02E50.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80995 (S02E51) from pk=7108 → pk=7801: https://loadedfiles.net/0c5cdd9f0c5ae6ea/Senior.High.S02E51.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80997 (S02E52) from pk=7108 → pk=7801: https://loadedfiles.net/84b74254268d3b58/Senior.High.S02E52.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80998 (S02E53) from pk=7108 → pk=7801: https://loadedfiles.net/07863bfb47b22826/Senior.High.S02E53.540p.x265.AAC.[9jaRocks.Com].m
+      ➡  move link 80999 (S02E54) from pk=7108 → pk=7801: https://loadedfiles.net/760b6b1b5c4e146d/Senior.High.S02E54.540p.x265.AAC.[9jaRocks.Com].m
+
+  'only-friends-dream-on' → Season 2 (existing record pk=3097, 'Only Friends: Dream On Season 2 (Complete)'): 5 link(s)
+      ⏭  DUPLICATE, would delete from pk=1758: https://loadedfiles.net/0ca4679d97a6445f/Only.Friends.Dream.On.S02E02.540p.x265.AAC.[9jaRo
+      ⏭  DUPLICATE, would delete from pk=1758: https://loadedfiles.net/0a1a9b9bc06f0350/Only.Friends.Dream.On.S02E05.540p.x265.AAC.[9jaRo
+      ⏭  DUPLICATE, would delete from pk=1758: https://loadedfiles.net/5555316932553cb2/Only.Friends.Dream.On.S02E03.540p.x265.AAC.[9jaRo
+      ⏭  DUPLICATE, would delete from pk=1758: https://loadedfiles.net/e02c949954405df5/Only.Friends.Dream.On.S02E01.540p.x265.AAC.[9jaRo
+      ⏭  DUPLICATE, would delete from pk=1758: https://loadedfiles.net/8d5e333e31e677d8/Only.Friends.S02E04.540p.x265.AAC.[9jaRocks.Com].
+
+  'too-hot-to-handle' → Season 2 (existing record pk=17783, 'Too Hot to Handle S02 (Complete)'): 1 link(s)
+      ➡  move link 175873 (S02E390) from pk=16885 → pk=17783: https://downloadwella.com/ui58tys2e390/Too.Hot.to.Handle.S04E04.(NKIRI.COM).mkv.html
+
+  'maxton-hall-the-world-between-us' → Season 1 (existing record pk=1104, 'Maxton Hall: The World Between Us S01 (Complete)'): 6 link(s)
+      ⏭  DUPLICATE, would delete from pk=1103: https://downloadwella.com/bmfmamdiv96r/Maxton.Hall.The.World.Between.Us.S01E01.(NKIRI.COM)
+      ⏭  DUPLICATE, would delete from pk=1103: https://downloadwella.com/vlyflkcoyfjw/Maxton.Hall.The.World.Between.Us.S01E02.(NKIRI.COM)
+      ⏭  DUPLICATE, would delete from pk=1103: https://downloadwella.com/elejta1dqcyw/Maxton.Hall.The.World.Between.Us.S01E03.(NKIRI.COM)
+      ⏭  DUPLICATE, would delete from pk=1103: https://downloadwella.com/36l2vel9sr5h/Maxton.Hall.The.World.Between.Us.S01E04.(NKIRI.COM)
+      ⏭  DUPLICATE, would delete from pk=1103: https://downloadwella.com/fnxkoay3x8cn/Maxton.Hall.The.World.Between.Us.S01E05.(NKIRI.COM)
+      ⏭  DUPLICATE, would delete from pk=1103: https://downloadwella.com/os9c0bjxtdvy/Maxton.Hall.The.World.Between.Us.S01E06.(NKIRI.COM)
+
+  'checkered-shirt' → Season 2 (existing record pk=4152, 'Checkered Shirt Season 2 (Complete)'): 8 link(s)
+      ⏭  DUPLICATE, would delete from pk=6927: https://loadedfiles.net/015df86326d0d18a/Checkered.Shirt.S02E01.540p.x265.AAC.[9jaRocks.Co
+      ⏭  DUPLICATE, would delete from pk=6927: https://loadedfiles.net/eb5f54c35e24ff72/Checkered.Shirt.S02E02.540p.x265.AAC.[9jaRocks.Co
+      ⏭  DUPLICATE, would delete from pk=6927: https://loadedfiles.net/77c94eb4a13b70ff/Checkered.Shirt.S02E03.540p.x265.AAC.[9jaRocks.Co
+      ⏭  DUPLICATE, would delete from pk=6927: https://loadedfiles.net/60d22aa420567872/Checkered.Shirt.S02E04.540p.x265.AAC.[9jaRocks.Co
+      ⏭  DUPLICATE, would delete from pk=6927: https://loadedfiles.net/39f4c5932b146b1c/Checkered.Shirt.S02E05.540p.x265.AAC.[9jaRocks.Co
+      ⏭  DUPLICATE, would delete from pk=6927: https://loadedfiles.net/64422a3bbb8b90af/Checkered.Shirt.S02E06.540p.x265.AAC.[9jaRocks.Co
+      ⏭  DUPLICATE, would delete from pk=6927: https://loadedfiles.net/50ca1fab40d6892a/Checkered.Shirt.S02E07.540p.x265.AAC.[9jaRocks.Co
+      ⏭  DUPLICATE, would delete from pk=6927: https://loadedfiles.net/586197afb61f929a/Checkered.Shirt.S02E08.540p.x265.AAC.[9jaRocks.Co
+
+  'the-great-ruler' → Season 2 (existing record pk=3529, 'The Great Ruler Season 2'): 4 link(s)
+      ⏭  DUPLICATE, would delete from pk=8241: https://loadedfiles.net/34d5b58e4967863b/The.Great.Ruler.S02E01.540p.x265.AAC.[9jaRocks.Co
+      ⏭  DUPLICATE, would delete from pk=8241: https://loadedfiles.net/c15e1bd963cee31a/The.Great.Ruler.S02E02.540p.x265.AAC.[9jaRocks.Co
+      ⏭  DUPLICATE, would delete from pk=8241: https://loadedfiles.net/abe7e6640e898aba/The.Great.Ruler.S02E03.540p.x265.AAC.[9jaRocks.Co
+      ⏭  DUPLICATE, would delete from pk=8241: https://loadedfiles.net/8cece4da2f55e01f/The.Great.Ruler.S02E04.540p.x265.AAC.[9jaRocks.Co
+
+  'let-this-grieving-soul-retire' → Season 2 (existing record pk=7010, 'Let This Grieving Soul Retire Season 2 (Complete)'): 1 link(s)
+      ⏭  DUPLICATE, would delete from pk=9533: https://loadedfiles.net/b7eaa7156183ec42/Let.This.Grieving.Soul.Retire.S02E01.540p.x265.AA
+
+  'forever-young' → Season 1 (existing record pk=18365, 'Forever Young Season 1 (Complete)'): 2 link(s)
+      ⏭  DUPLICATE, would delete from pk=1298: https://downloadwella.com/n4qh6mx5odsi/Forever.Young.S01E02.(THENKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=1298: https://downloadwella.com/ce2r5svdgtuk/Forever.Young.S01E01.(THENKIRI.COM).mkv.html
+
+  'the-lincoln-lawyer' → Season 4 (existing record pk=1645, 'The Lincoln Lawyer S04 (Complete)'): 10 link(s)
+      ➡  move link 150041 (S04E01) from pk=14605 → pk=1645: https://downloadwella.com/j53t11oal5y8/The_Lincoln_Lawyer_S04E01.(THENKIRI.COM).mkv.html
+      ➡  move link 150042 (S04E02) from pk=14605 → pk=1645: https://downloadwella.com/t91a0gk8qx2r/The_Lincoln_Lawyer_S04E02.(THENKIRI.COM).mkv.html
+      ➡  move link 150043 (S04E03) from pk=14605 → pk=1645: https://downloadwella.com/bkjn95025z3i/The_Lincoln_Lawyer_S04E03.(THENKIRI.COM).mkv.html
+      ➡  move link 150044 (S04E04) from pk=14605 → pk=1645: https://downloadwella.com/3w5n1qfptzck/The_Lincoln_Lawyer_S04E04.(THENKIRI.COM).mkv.html
+      ➡  move link 150045 (S04E05) from pk=14605 → pk=1645: https://downloadwella.com/ougcb8pga79b/The_Lincoln_Lawyer_S04E05.(THENKIRI.COM).mkv.html
+      ➡  move link 150047 (S04E06) from pk=14605 → pk=1645: https://downloadwella.com/gptoadvfwtyw/The_Lincoln_Lawyer_S04E06.(THENKIRI.COM).mkv.html
+      ➡  move link 150048 (S04E07) from pk=14605 → pk=1645: https://downloadwella.com/jue66o4t1v1p/The_Lincoln_Lawyer_S04E07.(THENKIRI.COM).mkv.html
+      ➡  move link 150049 (S04E08) from pk=14605 → pk=1645: https://downloadwella.com/h0ypga5m11vd/The_Lincoln_Lawyer_S04E08.(THENKIRI.COM).mkv.html
+      ➡  move link 150050 (S04E09) from pk=14605 → pk=1645: https://downloadwella.com/z6ou1dkjce6i/The_Lincoln_Lawyer_S04E09.(THENKIRI.COM).mkv.html
+      ➡  move link 150051 (S04E10) from pk=14605 → pk=1645: https://downloadwella.com/zkus82k0vton/The_Lincoln_Lawyer_S04E10.(THENKIRI.COM).mkv.html
+
+  'the-last-thing-he-told-me' → Season 2 (existing record pk=1787, 'The Last Thing He Told Me S02'): 8 link(s)
+      ➡  move link 182499 (S02E01) from pk=14546 → pk=1787: https://downloadwella.com/exd95le09mw9/The.Last.Thing.He.Told.Me.S02E01.(THENKIRI.COM).mkv
+      ➡  move link 182500 (S02E02) from pk=14546 → pk=1787: https://downloadwella.com/3dl4gphiqhgr/The.last.Thing.He.Told.Me.S02E02.(THENKIRI.COM).mkv
+      ➡  move link 182501 (S02E03) from pk=14546 → pk=1787: https://downloadwella.com/vap2d1r3oz04/The.Last.Thing.He.Told.Me.S02E03.(THENKIRI.COM).mkv
+      ➡  move link 182502 (S02E04) from pk=14546 → pk=1787: https://downloadwella.com/nhbi5etdy3rh/The.Last.Thing.He.Told.Me.S02E04.(THENKIRI.COM).mkv
+      ➡  move link 182503 (S02E05) from pk=14546 → pk=1787: https://downloadwella.com/o4964r9cjquq/The.Last.Thing.He.Told.Me.S02E05.(THENKIRI.COM).mkv
+      ➡  move link 182504 (S02E06) from pk=14546 → pk=1787: https://downloadwella.com/2btaj3fg05ki/The.Last.Thing.He.Told.Me.S02E06.(THENKIRI.COM).mkv
+      ➡  move link 182505 (S02E07) from pk=14546 → pk=1787: https://downloadwella.com/yo0a9q6nn1sr/The.Last.Thing.He.Told.Me.S02E07.(THENKIRI.COM).mkv
+      ➡  move link 182506 (S02E08) from pk=14546 → pk=1787: https://downloadwella.com/vs2f3j7s9914/The.Last.Thing.He.Told.Me.S02E08.(THENKIRI.COM).mkv
+
+  'good-omens' → Season 2 (existing record pk=2403, 'Good Omens S02 (Complete)'): 6 link(s)
+      ➡  move link 171088 (S02E01) from pk=16392 → pk=2403: https://downloadwella.com/mhgp325qkffg/Good.Omens.S02E01.(NKIRI.COM).mkv.html
+      ➡  move link 171091 (S02E02) from pk=16392 → pk=2403: https://downloadwella.com/ynw02kgcnj0s/Good.Omens.S02E02.(NKIRI.COM).mkv.html
+      ➡  move link 171094 (S02E03) from pk=16392 → pk=2403: https://downloadwella.com/pap6q32p2jiq/Good.Omens.S02E03.(NKIRI.COM).mkv.html
+      ➡  move link 171096 (S02E04) from pk=16392 → pk=2403: https://downloadwella.com/6j3ii278k2a0/Good.Omens.S02E04.(NKIRI.COM).mkv.html
+      ➡  move link 171098 (S02E05) from pk=16392 → pk=2403: https://downloadwella.com/zmslbkez907c/Good.Omens.S02E05.(NKIRI.COM).mkv.html
+      ➡  move link 171100 (S02E06) from pk=16392 → pk=2403: https://downloadwella.com/qrjsluwsrfjo/Good.Omens.S02E06.(NKIRI.COM).mkv.html
+
+  'my-first-first-love' → Season 2 (existing record pk=5243, 'My First First Love Season 2 (Complete)'): 8 link(s)
+      ➡  move link 167203 (S02E01) from pk=16052 → pk=5243: https://downloadwella.com/dlxmdfhbxeq2/My.First.First.Love.S02E01.(NKIRI.COM).mkv.html
+      ➡  move link 167204 (S02E02) from pk=16052 → pk=5243: https://downloadwella.com/ujyoexj8bnv5/My.First.First.Love.S02E02.(NKIRI.COM).mkv.html
+      ➡  move link 167205 (S02E03) from pk=16052 → pk=5243: https://downloadwella.com/laebxwqwtlhc/My.First.First.Love.S02E03.(NKIRI.COM).mkv.html
+      ➡  move link 167206 (S02E04) from pk=16052 → pk=5243: https://downloadwella.com/c9wsmk9c7gq6/My.First.First.Love.S02E04.(NKIRI.COM).mkv.html
+      ➡  move link 167208 (S02E05) from pk=16052 → pk=5243: https://downloadwella.com/dh91n4o5n5n3/My.First.First.Love.S02E05.(NKIRI.COM).mkv.html
+      ➡  move link 167209 (S02E06) from pk=16052 → pk=5243: https://downloadwella.com/vs1afp5bux17/My.First.First.Love.S02E06.(NKIRI.COM).mkv.html
+      ➡  move link 167212 (S02E07) from pk=16052 → pk=5243: https://downloadwella.com/tjh6f303xmca/My.First.First.Love.S02E07.(NKIRI.COM).mkv.html
+      ➡  move link 167213 (S02E08) from pk=16052 → pk=5243: https://downloadwella.com/ehend17rjg3x/My.First.First.Love.S02E08.(NKIRI.COM).mkv.html
+
+  'lupin' → Season 2 (existing record pk=1535, 'Lupin S02 (Complete)'): 5 link(s)
+      ⏭  DUPLICATE, would delete from pk=1536: https://downloadwella.com/az3lj13y6gq9/Lupin.S02E01.(NKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=1536: https://downloadwella.com/epzaj71wrrgi/Lupin.S02E02.(NKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=1536: https://downloadwella.com/dxcuu08jci2g/Lupin.S02E03.(NKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=1536: https://downloadwella.com/9e51rtpvqcm7/Lupin.S02E04.(NKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=1536: https://downloadwella.com/6lluhqoz5b5w/Lupin.S02E05.(NKIRI.COM).mkv.html
+
+  'going-dutch' → Season 2 (existing record pk=1421, 'Going Dutch S02 (Complete)'): 1 link(s)
+      ⏭  DUPLICATE, would delete from pk=15425: https://downloadwella.com/n7bbg63uk4v5/Going.Dutch.S02E11.(THENKIRI.COM).mkv.html
+
+  'golden-kamuy' → Season 5 (existing record pk=5494, 'Golden Kamuy Season 5'): 9 link(s)
+      ⏭  DUPLICATE, would delete from pk=6699: https://loadedfiles.net/e79b4bb85b83a862/Golden.Kamuy.S05E01.540p.x265.AAC.[9jaRocks.Com].
+      ⏭  DUPLICATE, would delete from pk=6699: https://loadedfiles.net/bfd147d67315963f/Golden.Kamuy.S05E02.540p.x265.AAC.[9jaRocks.Com].
+      ⏭  DUPLICATE, would delete from pk=6699: https://loadedfiles.net/cfec23e05b2a4bfe/Golden.Kamuy.S05E03.540p.x265.AAC.[9jaRocks.Com].
+      ⏭  DUPLICATE, would delete from pk=6699: https://loadedfiles.net/4239123cd5b1c88b/Golden.Kamuy.S05E04.540p.x265.AAC.[9jaRocks.Com].
+      ⏭  DUPLICATE, would delete from pk=6699: https://loadedfiles.net/6ecf661a82d62034/Golden.Kamuy.S05E05.540p.x265.AAC.[9jaRocks.Com].
+      ⏭  DUPLICATE, would delete from pk=6699: https://loadedfiles.net/c7b74e136f49bdae/Golden.Kamuy.S05E06.540p.x265.AAC.[9jaRocks.Com].
+      ⏭  DUPLICATE, would delete from pk=6699: https://loadedfiles.net/161c05130629f354/Golden.Kamuy.S05E07.540p.x265.AAC.[9jaRocks.Com].
+      ⏭  DUPLICATE, would delete from pk=6699: https://loadedfiles.net/3411c978c907a125/Golden.Kamuy.S05E08.540p.x265.AAC.[9jaRocks.Com].
+      ⏭  DUPLICATE, would delete from pk=6699: https://loadedfiles.net/d61104980cb56229/Golden.Kamuy.S05E09.540p.x265.AAC.[9jaRocks.Com].
+
+  'rivals' → Season 2 (existing record pk=2374, 'Rivals S02'): 6 link(s)
+      ➡  move link 145060 (S02E01) from pk=13899 → pk=2374: https://downloadwella.com/neosusfl06sm/Rivals.S02E01.(THENKIRI.COM).mkv.html
+      ➡  move link 145063 (S02E02) from pk=13899 → pk=2374: https://downloadwella.com/0g4p3fumt2m1/Rivals.S02E02.(THENKIRI.COM).mkv.html
+      ➡  move link 145066 (S02E03) from pk=13899 → pk=2374: https://downloadwella.com/7jczdxvlks64/Rivals.S02E03.(THENKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=13899: https://downloadwella.com/2hfqfxzhtrl2/Rivals.S02E04.(THENKIRI.COM).mkv.html
+      ➡  move link 182349 (S02E05) from pk=13899 → pk=2374: https://downloadwella.com/7blyk5qqe33g/Rivals.S02E05.(THENKIRI.COM).mkv.html
+      ➡  move link 183523 (S02E06) from pk=13899 → pk=2374: https://downloadwella.com/tz0fu9trw7tq/Rivals.S02E06.(THENKIRI.COM).mkv.html
+
+  'wura' → Season 1 (existing record pk=11372, 'Wura Season 1 (Complete)'): 11 link(s)
+      ➡  move link 299969 (S01E106) from pk=10652 → pk=11372: https://loadedfiles.net/b28d06c0f04c44a7/Wura.S01E106.540p.x265.AAC.[9jaRocks.Com].mkv
+      ➡  move link 299970 (S01E107) from pk=10652 → pk=11372: https://loadedfiles.net/33406f55da9a3d42/Wura.S01E107.540p.x265.AAC.[9jaRocks.Com].mkv
+      ➡  move link 299971 (S01E108) from pk=10652 → pk=11372: https://loadedfiles.net/24de44d36b9868e5/Wura.S01E108.540p.x265.AAC.[9jaRocks.Com].mkv
+      ➡  move link 299972 (S01E109) from pk=10652 → pk=11372: https://loadedfiles.net/052277a06cf86a37/Wura.S01E109.540p.x265.AAC.[9jaRocks.Com].mkv
+      ➡  move link 299973 (S01E110) from pk=10652 → pk=11372: https://loadedfiles.net/c2e4c9d853de4b5d/Wura.S01E110.540p.x265.AAC.[9jaRocks.Com].mkv
+      ➡  move link 304555 (S01E111) from pk=10652 → pk=11372: https://loadedfiles.net/60105b4e6bfdb5e4/Wura.S01E111.540p.x265.AAC.[9jaRocks.Com].mkv
+      ➡  move link 304556 (S01E112) from pk=10652 → pk=11372: https://loadedfiles.net/2d34737296bfc737/Wura.S01E112.540p.x265.AAC.[9jaRocks.Com].mkv
+      ➡  move link 304557 (S01E113) from pk=10652 → pk=11372: https://loadedfiles.net/5981d04d8ced181c/Wura.S01E113.540p.x265.AAC.[9jaRocks.Com].mkv
+      ➡  move link 304558 (S01E114) from pk=10652 → pk=11372: https://loadedfiles.net/40f87273e5f8aaad/Wura.S01E114.540p.x265.AAC.[9jaRocks.Com].mkv
+      ➡  move link 304559 (S01E115) from pk=10652 → pk=11372: https://loadedfiles.net/307952155f024319/Wura.S01E115.540p.x265.AAC.[9jaRocks.Com].mkv
+      ➡  move link 304560 (S01E116) from pk=10652 → pk=11372: https://loadedfiles.net/5149a868e3253afb/Wura.S01E116.540p.x265.AAC.[9jaRocks.Com].mkv
+
+  'tales-of-wedding-rings' → Season 2 (existing record pk=6869, 'Tales of Wedding Rings Season 2 (Complete)'): 10 link(s)
+      ⏭  DUPLICATE, would delete from pk=11228: https://loadedfiles.net/4a95a334e8ec153c/Tales.of.Wedding.Rings.S02E01.540p.x265.AAC.[9jaR
+      ⏭  DUPLICATE, would delete from pk=11228: https://loadedfiles.net/378f6f23a6f5c8cb/Tales.of.Wedding.Rings.S02E02.540p.x265.AAC.[9jaR
+      ⏭  DUPLICATE, would delete from pk=11228: https://loadedfiles.net/fd5d3f752749da23/Tales.of.Wedding.Rings.S02E03.540p.x265.AAC.[9jaR
+      ⏭  DUPLICATE, would delete from pk=11228: https://loadedfiles.net/38474f03f7ab5d72/Tales.of.Wedding.Rings.S02E04.540p.x265.AAC.[9jaR
+      ⏭  DUPLICATE, would delete from pk=11228: https://loadedfiles.net/4ed64420edcb5823/Tales.of.Wedding.Rings.S02E05.540p.x265.AAC.[9jaR
+      ⏭  DUPLICATE, would delete from pk=11228: https://loadedfiles.net/0f54ccab98839e66/Tales.of.Wedding.Rings.S02E06.540p.x265.AAC.[9jaR
+      ⏭  DUPLICATE, would delete from pk=11228: https://loadedfiles.net/a65a586296f63f10/Tales.of.Wedding.Rings.S02E07.540p.x265.AAC.[9jaR
+      ⏭  DUPLICATE, would delete from pk=11228: https://loadedfiles.net/00b18e0a3261112c/Tales.of.Wedding.Rings.S02E08.540p.x265.AAC.[9jaR
+      ⏭  DUPLICATE, would delete from pk=11228: https://loadedfiles.net/8c3f8f46108c0297/Tales.of.Wedding.Rings.S02E09.540p.x265.AAC.[9jaR
+      ⏭  DUPLICATE, would delete from pk=11228: https://loadedfiles.net/37631949d6580c91/Tales.of.Wedding.Rings.S02E10.540p.x265.AAC.[9jaR
+
+  'prison-break' → Season 5 (existing record pk=626, 'Prison Break S05 (Complete)'): 1 link(s)
+      ➡  move link 7900 (S05E07) from pk=628 → pk=626: https://downloadwella.com/rm0i7hgs05e7/pb.s03e08.(THENKIRI.COM).mkv.html
+
+  'the-most-heretical-last-boss-queen-from-villainess-to-savior' → Season 1 (existing record pk=10596, 'The Most Heretical Last Boss Queen: From Villainess to Savior Season 1 (Complete)'): 3 link(s)
+      ➡  move link 45465 (S01E06) from pk=4080 → pk=10596: https://loadedfiles.net/ee03c809e8c52634/The.Most.Heretical.Last.Boss.Queen.S01E06.540p.x2
+      ➡  move link 184530 (S01E09) from pk=4080 → pk=10596: https://loadedfiles.net/db09972694f67f2c/The.Most.Heretical.Last.Boss.Queen.S01E09.540p.x2
+      ➡  move link 194444 (S01E10) from pk=4080 → pk=10596: https://loadedfiles.net/a40d7d65e7ba0461/I.Want.to.End.This.Love.Game.S01E10.540p.x265.AAC
+
+  'jojo-s-bizarre-adventure' → Season 3 (existing record pk=1834, 'JoJo’s Bizarre Adventure S03 (Complete)'): 1 link(s)
+      ⏭  DUPLICATE, would delete from pk=5976: https://loadedfiles.net/05b7f9ea638c04dd/JoJo.s.Bizarre.Adventure.S03E13.540p.x265.AAC.[9j
+
+  'scissor-seven' → Season 1 (existing record pk=6150, 'Scissor Seven Season 1 (Complete)'): 1 link(s)
+      ⏭  DUPLICATE, would delete from pk=6052: https://loadedfiles.net/eb7e3fe0794e228f/Scissor.Seven.S01E01.540p.x265.AAC.[9jaRocks.Com]
+
+  'the-rookie' → Season 2 (existing record pk=14429, 'The Rookie S02 (Complete)'): 1 link(s)
+      ⏭  DUPLICATE, would delete from pk=14446: https://downloadwella.com/nbf9ck8yhxsa/The.Rookie.S02E20.(THENKIRI.COM).mkv.html
+
+  'dark' → Season 2 (existing record pk=683, 'Dark S02 (Complete)'): 8 link(s)
+      ⏭  DUPLICATE, would delete from pk=684: https://downloadwella.com/qy7vrkg6u416/Dark.S02E01.(THENKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=684: https://downloadwella.com/s7mobtt348cf/Dark.S02E02.(THENKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=684: https://downloadwella.com/9azw6gs5xr82/Dark.S02E03.(THENKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=684: https://downloadwella.com/s1bgu3uvpf29/Dark.S02E04.(THENKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=684: https://downloadwella.com/bbua2zytqbb6/Dark.S02E05.(THENKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=684: https://downloadwella.com/emm1yhdset8o/Dark.S02E06.(THENKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=684: https://downloadwella.com/bat3k3febv3k/Dark.S02E07.(THENKIRI.COM).mkv.html
+      ⏭  DUPLICATE, would delete from pk=684: https://downloadwella.com/2q3ena3ges8f/Dark.S02E08.(THENKIRI.COM).mkv.html
+
+  'jujutsu-kaisen' → Season 1 (existing record pk=11293, 'Jujutsu Kaisen Season 1 (Complete)'): 4 link(s)
+      ➡  move link 64612 (S01E07) from pk=5763 → pk=11293: https://loadedfiles.net/4940dcc4a8ba00cc/Jujutsu.Kaisen.The.Culling.Game.S01E07.540p.x265.
+      ➡  move link 64616 (S01E07) from pk=5763 → pk=11293: https://loadedfiles.net/18cd7c02ea695558/Jujutsu.Kaisen.The.Culling.Game.S01E7.5.540p.x265
+      ➡  move link 64626 (S01E10) from pk=5763 → pk=11293: https://loadedfiles.net/c9762767c63efcf2/Jujutsu.Kaisen.S01E10.540p.x265.AAC.[9jaRocks.Com
+      ➡  move link 64629 (S01E11) from pk=5763 → pk=11293: https://loadedfiles.net/dd64c27418d8fcfd/Jujutsu.Kaisen.The.Culling.Game.S01E11.540p.x265.
+
+  'martial-universe' → Season 4 (existing record pk=527, 'Martial Universe S04 (Complete)'): 12 link(s)
+      ⏭  DUPLICATE, would delete from pk=7291: https://loadedfiles.net/9435decaef681251/Martial.Universe.S04E01.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=7291: https://loadedfiles.net/a64c90bf2997bcee/Martial.Universe.S04E02.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=7291: https://loadedfiles.net/9b7de5a169121203/Martial.Universe.S04E03.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=7291: https://loadedfiles.net/7758f9e3d99568a3/Martial.Universe.S04E04.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=7291: https://loadedfiles.net/dc4d0ac4215554c4/Martial.Universe.S04E05.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=7291: https://loadedfiles.net/7f126bb97bdbf0e6/Martial.Universe.S04E06.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=7291: https://loadedfiles.net/5cc6f838cbbe884c/Martial.Universe.S04E07.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=7291: https://loadedfiles.net/25ff0cc9ebe6f8b5/Martial.Universe.S04E08.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=7291: https://loadedfiles.net/5c60c3459d854245/Martial.Universe.S04E09.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=7291: https://loadedfiles.net/7b5b3ba172ce0aab/Martial.Universe.S04E10.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=7291: https://loadedfiles.net/c93ab20b37a79c49/Martial.Universe.S04E11.540p.x265.AAC.[9jaRocks.C
+      ⏭  DUPLICATE, would delete from pk=7291: https://loadedfiles.net/dc394791365a4421/Martial.Universe.S04E12.540p.x265.AAC.[9jaRocks.C
+
+  'castle-castle' → Season 1 (existing record pk=12575, 'Castle & Castle Season 1'): 1 link(s)
+      ➡  move link 134345 (S01E01) from pk=11670 → pk=12575: https://www.mirrored.to/files/0ULRYJJS/Castle.And.Castle.S01E01.720p.Esub.[9jaRocks.com].m
+
+──────────────────────────────────────────────────────────────────────
+BUCKET 2 — create a new season record
+──────────────────────────────────────────────────────────────────────
+
+  'magia-record-puella-magi-madoka-magica-side-story' → Season 2 (NEW): 8 link(s), title='Magia Record: Puella Magi Madoka Magica Side Story Season 2 (Complete)', cloned from pk=26302 ('Magia Record: Puella Magi Madoka Magica Side Story Season 1 (Complete)')
+
+  'magia-record-puella-magi-madoka-magica-side-story' → Season 3 (NEW): 4 link(s), title='Magia Record: Puella Magi Madoka Magica Side Story Season 3 (Complete)', cloned from pk=26302 ('Magia Record: Puella Magi Madoka Magica Side Story Season 1 (Complete)')
+
+  'the-bear' → Season 2 (NEW): 10 link(s), title='The Bear S02 (Complete)', cloned from pk=16416 ('The Bear S01 (Complete)')
+
+  'top-boy' → Season 4 (NEW): 8 link(s), title='Top Boy S04 (Complete)', cloned from pk=17602 ('Top Boy S03 (Complete)')
+
+  'owarimonogatari' → Season 2 (NEW): 7 link(s), title='Owarimonogatari Season 2 (Complete)', cloned from pk=4746 ('Owarimonogatari Season 1 (Complete)')
+
+  'cupid-s-chocolates' → Season 2 (NEW): 15 link(s), title='Cupid’s Chocolates Season 2 (Complete)', cloned from pk=28228 ('Cupid’s Chocolates Season 1 (Complete)')
+
+  'the-end-of-the-fucking-world' → Season 2 (NEW): 8 link(s), title='The End of the Fucking World S02 (Complete)', cloned from pk=17374 ('The End of the Fucking World S01 (Complete)')
+
+  'stellar-transformation' → Season 6 (NEW): 28 link(s), title='Stellar Transformation Season 6 (Complete)', cloned from pk=7506 ('Stellar Transformation Season 5 (Complete)')
+
+  'community' → Season 6 (NEW): 13 link(s), title='Community Season 6 (Complete)', cloned from pk=26266 ('Community Season 3 (Complete)')
+
+  'community' → Season 5 (NEW): 13 link(s), title='Community Season 5 (Complete)', cloned from pk=26266 ('Community Season 3 (Complete)')
+
+  'community' → Season 4 (NEW): 13 link(s), title='Community Season 4 (Complete)', cloned from pk=26266 ('Community Season 3 (Complete)')
+
+  'castlevania' → Season 3 (NEW): 10 link(s), title='Castlevania Season 3 (Complete)', cloned from pk=23730 ('Castlevania Season 1 (Complete)')
+
+  'castlevania' → Season 4 (NEW): 10 link(s), title='Castlevania Season 4 (Complete)', cloned from pk=23730 ('Castlevania Season 1 (Complete)')
+
+  'castlevania' → Season 2 (NEW): 8 link(s), title='Castlevania Season 2 (Complete)', cloned from pk=23730 ('Castlevania Season 1 (Complete)')
+
+  'bungou-stray-dogs' → Season 5 (NEW): 11 link(s), title='Bungou Stray Dogs Season 5 (Complete)', cloned from pk=24344 ('Bungou Stray Dogs Season 1 (Complete)')
+
+  'bungou-stray-dogs' → Season 4 (NEW): 12 link(s), title='Bungou Stray Dogs Season 4 (Complete)', cloned from pk=24344 ('Bungou Stray Dogs Season 1 (Complete)')
+
+  'bungou-stray-dogs' → Season 2 (NEW): 12 link(s), title='Bungou Stray Dogs Season 2 (Complete)', cloned from pk=24344 ('Bungou Stray Dogs Season 1 (Complete)')
+
+  'bungou-stray-dogs' → Season 3 (NEW): 12 link(s), title='Bungou Stray Dogs Season 3 (Complete)', cloned from pk=24344 ('Bungou Stray Dogs Season 1 (Complete)')
+
+  'frankie-vs-the-internet' → Season 2 (NEW): 6 link(s), title='Frankie vs the Internet Season 2 (Complete)', cloned from pk=27750 ('Frankie vs the Internet Season 1 (Complete)')
+
+  'broken-bread' → Season 2 (NEW): 6 link(s), title='Broken Bread Season 2 (Complete)', cloned from pk=26619 ('Broken Bread Season 1 (Complete)')
+
+  'disaster-decks' → Season 3 (NEW): 14 link(s), title='Disaster Decks Season 3 (Complete)', cloned from pk=25276 ('Disaster Decks Season 1 (Complete)')
+
+  'disaster-decks' → Season 2 (NEW): 10 link(s), title='Disaster Decks Season 2 (Complete)', cloned from pk=25276 ('Disaster Decks Season 1 (Complete)')
+
+  'workaholics' → Season 3 (NEW): 20 link(s), title='Workaholics Season 3 (Complete)', cloned from pk=26330 ('Workaholics Season 2 (Complete)')
+
+  'workaholics' → Season 4 (NEW): 13 link(s), title='Workaholics Season 4 (Complete)', cloned from pk=26330 ('Workaholics Season 2 (Complete)')
+
+  'one-punch-man' → Season 2 (NEW): 12 link(s), title='One Punch Man S02 (Complete)', cloned from pk=730 ('One Punch Man S01 (Complete)')
+
+  'sleeper-cell' → Season 2 (NEW): 8 link(s), title='Sleeper Cell Season 2 (Complete)', cloned from pk=24312 ('Sleeper Cell Season 1 (Complete)')
+
+  'parks-and-recreation' → Season 7 (NEW): 12 link(s), title='Parks and Recreation Season 7 (Complete)', cloned from pk=26650 ('Parks and Recreation Season 1 (Complete)')
+
+  'parks-and-recreation' → Season 6 (NEW): 20 link(s), title='Parks and Recreation Season 6 (Complete)', cloned from pk=26650 ('Parks and Recreation Season 1 (Complete)')
+
+  'parks-and-recreation' → Season 5 (NEW): 22 link(s), title='Parks and Recreation Season 5 (Complete)', cloned from pk=26650 ('Parks and Recreation Season 1 (Complete)')
+
+  'parks-and-recreation' → Season 4 (NEW): 22 link(s), title='Parks and Recreation Season 4 (Complete)', cloned from pk=26650 ('Parks and Recreation Season 1 (Complete)')
+
+  'parks-and-recreation' → Season 3 (NEW): 16 link(s), title='Parks and Recreation Season 3 (Complete)', cloned from pk=26650 ('Parks and Recreation Season 1 (Complete)')
+
+  'parks-and-recreation' → Season 2 (NEW): 24 link(s), title='Parks and Recreation Season 2 (Complete)', cloned from pk=26650 ('Parks and Recreation Season 1 (Complete)')
+
+  'dark-side-of-the-ring' → Season 2 (NEW): 10 link(s), title='Dark Side of the Ring Season 2 (Complete)', cloned from pk=26072 ('Dark Side of the Ring Season 1 (Complete)')
+
+  'everlasting-immortal-firmament' → Season 2 (NEW): 11 link(s), title='Everlasting Immortal Firmament Season 2 (Complete)', cloned from pk=28596 ('Everlasting Immortal Firmament Season 1 (Complete)')
+
+  'spawn' → Season 2 (NEW): 6 link(s), title='Spawn Season 2 (Complete)', cloned from pk=24495 ('Spawn Season 1 (Complete)')
+
+  'spawn' → Season 3 (NEW): 6 link(s), title='Spawn Season 3 (Complete)', cloned from pk=24495 ('Spawn Season 1 (Complete)')
+
+  'adventure-time' → Season 3 (NEW): 26 link(s), title='Adventure Time Season 3 (Complete)', cloned from pk=18502 ('Adventure Time Season 1 (Complete)')
+
+  'adventure-time' → Season 4 (NEW): 26 link(s), title='Adventure Time Season 4 (Complete)', cloned from pk=18502 ('Adventure Time Season 1 (Complete)')
+
+  'adventure-time' → Season 2 (NEW): 26 link(s), title='Adventure Time Season 2 (Complete)', cloned from pk=18502 ('Adventure Time Season 1 (Complete)')
+
+  'mob-psycho-100' → Season 3 (NEW): 12 link(s), title='Mob Psycho 100 Season 3 (Complete)', cloned from pk=8179 ('Mob Psycho 100 Season 1 (Complete)')
+
+  'mob-psycho-100' → Season 2 (NEW): 13 link(s), title='Mob Psycho 100 Season 2 (Complete)', cloned from pk=8179 ('Mob Psycho 100 Season 1 (Complete)')
+
+  'banished-from-the-hero-s-party' → Season 2 (NEW): 12 link(s), title='Banished from the Hero’s Party Season 2 (Complete)', cloned from pk=26252 ('Banished from the Hero’s Party Season 1 (Complete)')
+
+  'godfather-of-harlem' → Season 8 (NEW): 1 link(s), title='Godfather of Harlem S08 (Complete)', cloned from pk=17820 ('Godfather of Harlem S01 (Complete)')
+
+  'the-crystal-maze' → Season 2 (NEW): 13 link(s), title='The Crystal Maze Season 2 (Complete)', cloned from pk=26267 ('The Crystal Maze Season 1 (Complete)')
+
+  'the-crystal-maze' → Season 3 (NEW): 13 link(s), title='The Crystal Maze Season 3 (Complete)', cloned from pk=26267 ('The Crystal Maze Season 1 (Complete)')
+
+  'dark-side-of-the-ring' → Season 4 (NEW): 10 link(s), title='Dark Side of the Ring Season 4 (Complete)', cloned from pk=26115 ('Dark Side of the Ring Season 3 (Complete)')
+
+  'dark-side-of-the-ring' → Season 5 (NEW): 10 link(s), title='Dark Side of the Ring Season 5 (Complete)', cloned from pk=26115 ('Dark Side of the Ring Season 3 (Complete)')
+
+  'dark-side-of-the-ring' → Season 6 (NEW): 10 link(s), title='Dark Side of the Ring Season 6 (Complete)', cloned from pk=26115 ('Dark Side of the Ring Season 3 (Complete)')
+
+  'nodame-cantabile' → Season 3 (NEW): 12 link(s), title='Nodame Cantabile Season 3 (Complete)', cloned from pk=18513 ('Nodame Cantabile Season 2 (Complete)')
+
+  'strike-witches' → Season 2 (NEW): 11 link(s), title='Strike Witches Season 2 (Complete)', cloned from pk=26505 ('Strike Witches Season 1 (Complete)')
+
+  'andrew-zimmern-s-wild-game-kitchen' → Season 3 (NEW): 10 link(s), title='Andrew Zimmern’s Wild Game Kitchen Season 3 (Complete)', cloned from pk=26405 ('Andrew Zimmern’s Wild Game Kitchen Season 1 (Complete)')
+
+  'andrew-zimmern-s-wild-game-kitchen' → Season 4 (NEW): 10 link(s), title='Andrew Zimmern’s Wild Game Kitchen Season 4 (Complete)', cloned from pk=26405 ('Andrew Zimmern’s Wild Game Kitchen Season 1 (Complete)')
+
+  'andrew-zimmern-s-wild-game-kitchen' → Season 5 (NEW): 10 link(s), title='Andrew Zimmern’s Wild Game Kitchen Season 5 (Complete)', cloned from pk=26405 ('Andrew Zimmern’s Wild Game Kitchen Season 1 (Complete)')
+
+  'andrew-zimmern-s-wild-game-kitchen' → Season 2 (NEW): 5 link(s), title='Andrew Zimmern’s Wild Game Kitchen Season 2 (Complete)', cloned from pk=26405 ('Andrew Zimmern’s Wild Game Kitchen Season 1 (Complete)')
+
+  'quanzhi-fashi' → Season 4 (NEW): 12 link(s), title='Quanzhi Fashi Season 4 (Complete)', cloned from pk=5170 ('Quanzhi Fashi Season 3 (Complete)')
+
+  'the-dry' → Season 3 (NEW): 8 link(s), title='The Dry Season 3 (Complete)', cloned from pk=29185 ('The Dry Season 2 (Complete)')
+
+  'don-t-toy-with-me-miss-nagatoro' → Season 2 (NEW): 12 link(s), title='DON’T TOY WITH ME, MISS NAGATORO Season 2 (Complete)', cloned from pk=28600 ('DON’T TOY WITH ME, MISS NAGATORO Season 1 (Complete)')
+
+  'the-sex-lives-of-college-girls' → Season 8 (NEW): 1 link(s), title='The Sex Lives of College Girls S08 (Complete)', cloned from pk=16988 ('The Sex Lives of College Girls S02 (Complete)')
+
+  'the-chosen' → Season 4 (NEW): 8 link(s), title='The Chosen S04 (Complete)', cloned from pk=657 ('The Chosen S03 (Complete)')
+
+  'god-troubles-me' → Season 2 (NEW): 12 link(s), title='God Troubles Me Season 2 (Complete)', cloned from pk=23558 ('God Troubles Me Season 1 (Complete)')
+
+  'god-troubles-me' → Season 3 (NEW): 12 link(s), title='God Troubles Me Season 3 (Complete)', cloned from pk=23558 ('God Troubles Me Season 1 (Complete)')
+
+  'the-misfit-of-demo-king-academy' → Season 2 (NEW): 12 link(s), title='The Misfit of Demo .King Academy Season 2 (Complete)', cloned from pk=8384 ('The Misfit of Demo .King Academy Season 1 (Complete)')
+
+  'pacific-rim-the-black' → Season 2 (NEW): 7 link(s), title='Pacific Rim: The Black Season 2 (Complete)', cloned from pk=23542 ('Pacific Rim: The Black Season 1 (Complete)')
+
+  'ascendance-of-a-bookworm' → Season 3 (NEW): 11 link(s), title='Ascendance of a Bookworm Season 3 (Complete)', cloned from pk=6100 ('Ascendance of a Bookworm Season 1 (Complete)')
+
+  'ascendance-of-a-bookworm' → Season 2 (NEW): 12 link(s), title='Ascendance of a Bookworm Season 2 (Complete)', cloned from pk=6100 ('Ascendance of a Bookworm Season 1 (Complete)')
+
+  'key-peele' → Season 5 (NEW): 11 link(s), title='Key & Peele Season 5 (Complete)', cloned from pk=22992 ('Key & Peele Season 4 (Complete)')
+
+  'baki' → Season 3 (NEW): 13 link(s), title='BAKI Season 3 (Complete)', cloned from pk=22839 ('BAKI Season 1 (Complete)')
+
+  'lost-in-space' → Season 2 (NEW): 10 link(s), title='Lost in Space S02 (Complete)', cloned from pk=17637 ('Lost in Space S01 (Complete)')
+
+  'all-up-in-my-grill' → Season 5 (NEW): 8 link(s), title='All Up In My Grill Season 5 (Complete)', cloned from pk=26407 ('All Up In My Grill Season 1 (Complete)')
+
+  'all-up-in-my-grill' → Season 4 (NEW): 8 link(s), title='All Up In My Grill Season 4 (Complete)', cloned from pk=26407 ('All Up In My Grill Season 1 (Complete)')
+
+  'all-up-in-my-grill' → Season 3 (NEW): 15 link(s), title='All Up In My Grill Season 3 (Complete)', cloned from pk=26407 ('All Up In My Grill Season 1 (Complete)')
+
+  'all-up-in-my-grill' → Season 2 (NEW): 8 link(s), title='All Up In My Grill Season 2 (Complete)', cloned from pk=26407 ('All Up In My Grill Season 1 (Complete)')
+
+  'the-chihayafuru' → Season 1 (NEW): 24 link(s), title='The Chihayafuru Season 1 (Complete)', cloned from pk=27018 ('The Chihayafuru Season 2 (Complete)')
+
+  'curb-your-enthusiasm' → Season 12 (NEW): 10 link(s), title='Curb Your Enthusiasm Season 12 (Complete)', cloned from pk=27668 ('Curb Your Enthusiasm Season 10 (Complete)')
+
+  'curb-your-enthusiasm' → Season 11 (NEW): 10 link(s), title='Curb Your Enthusiasm Season 11 (Complete)', cloned from pk=27668 ('Curb Your Enthusiasm Season 10 (Complete)')
+
+  'black-summer' → Season 2 (NEW): 8 link(s), title='Black Summer S02 (Complete)', cloned from pk=14623 ('Black Summer S01 (Complete)')
+
+  'skins' → Season 5 (NEW): 8 link(s), title='Skins Season 5 (Complete)', cloned from pk=27421 ('Skins Season 1 (Complete)')
+
+  'skins' → Season 7 (NEW): 6 link(s), title='Skins Season 7 (Complete)', cloned from pk=27421 ('Skins Season 1 (Complete)')
+
+  'skins' → Season 6 (NEW): 10 link(s), title='Skins Season 6 (Complete)', cloned from pk=27421 ('Skins Season 1 (Complete)')
+
+  'skins' → Season 4 (NEW): 8 link(s), title='Skins Season 4 (Complete)', cloned from pk=27421 ('Skins Season 1 (Complete)')
+
+  'skins' → Season 3 (NEW): 10 link(s), title='Skins Season 3 (Complete)', cloned from pk=27421 ('Skins Season 1 (Complete)')
+
+  'skins' → Season 2 (NEW): 10 link(s), title='Skins Season 2 (Complete)', cloned from pk=27421 ('Skins Season 1 (Complete)')
+
+  'kamisama-kiss' → Season 2 (NEW): 12 link(s), title='Kamisama Kiss Season 2 (Complete)', cloned from pk=7779 ('Kamisama Kiss Season 1 (Complete)')
+
+  'teen-titans-2003' → Season 5 (NEW): 13 link(s), title='Teen Titans (2003) Season 5 (Complete)', cloned from pk=24882 ('Teen Titans (2003) Season 1 (Complete)')
+
+  'teen-titans-2003' → Season 4 (NEW): 13 link(s), title='Teen Titans (2003) Season 4 (Complete)', cloned from pk=24882 ('Teen Titans (2003) Season 1 (Complete)')
+
+  'teen-titans-2003' → Season 3 (NEW): 13 link(s), title='Teen Titans (2003) Season 3 (Complete)', cloned from pk=24882 ('Teen Titans (2003) Season 1 (Complete)')
+
+  'teen-titans-2003' → Season 2 (NEW): 13 link(s), title='Teen Titans (2003) Season 2 (Complete)', cloned from pk=24882 ('Teen Titans (2003) Season 1 (Complete)')
+
+  'blue-mountain-state' → Season 2 (NEW): 13 link(s), title='Blue Mountain State Season 2 (Complete)', cloned from pk=28397 ('Blue Mountain State Season 1 (Complete)')
+
+  'the-x-files' → Season 10 (NEW): 6 link(s), title='The X-Files Season 10 (Complete)', cloned from pk=4856 ('The X-Files Season 5 (Complete)')
+
+  'the-x-files' → Season 9 (NEW): 19 link(s), title='The X-Files Season 9 (Complete)', cloned from pk=4856 ('The X-Files Season 5 (Complete)')
+
+  'the-x-files' → Season 7 (NEW): 22 link(s), title='The X-Files Season 7 (Complete)', cloned from pk=4856 ('The X-Files Season 5 (Complete)')
+
+  'the-x-files' → Season 11 (NEW): 10 link(s), title='The X-Files Season 11 (Complete)', cloned from pk=4856 ('The X-Files Season 5 (Complete)')
+
+  'the-x-files' → Season 8 (NEW): 21 link(s), title='The X-Files Season 8 (Complete)', cloned from pk=4856 ('The X-Files Season 5 (Complete)')
+
+  'the-x-files' → Season 6 (NEW): 22 link(s), title='The X-Files Season 6 (Complete)', cloned from pk=4856 ('The X-Files Season 5 (Complete)')
+
+  'master-of-none' → Season 2 (NEW): 10 link(s), title='Master of None Season 2 (Complete)', cloned from pk=28151 ('Master of None Season 1 (Complete)')
+
+  'master-of-none' → Season 3 (NEW): 5 link(s), title='Master of None Season 3 (Complete)', cloned from pk=28151 ('Master of None Season 1 (Complete)')
+
+  'baking-the-holidays' → Season 2 (NEW): 10 link(s), title='Baking the Holidays Season 2 (Complete)', cloned from pk=26366 ('Baking the Holidays Season 1 (Complete)')
+
+  'the-chi' → Season 3 (NEW): 10 link(s), title='The Chi S03 (Complete)', cloned from pk=17356 ('The Chi S01 (Complete)')
+
+  'the-chi' → Season 2 (NEW): 10 link(s), title='The Chi S02 (Complete)', cloned from pk=17356 ('The Chi S01 (Complete)')
+
+  'cobra-kai' → Season 2 (NEW): 10 link(s), title='Cobra Kai S02 (Complete)', cloned from pk=17337 ('Cobra Kai S01 (Complete)')
+
+  'how-did-they-build-that' → Season 3 (NEW): 10 link(s), title='How Did They Build That? Season 3 (Complete)', cloned from pk=26403 ('How Did They Build That? Season 1 (Complete)')
+
+  'how-did-they-build-that' → Season 4 (NEW): 10 link(s), title='How Did They Build That? Season 4 (Complete)', cloned from pk=26403 ('How Did They Build That? Season 1 (Complete)')
+
+  'how-did-they-build-that' → Season 2 (NEW): 10 link(s), title='How Did They Build That? Season 2 (Complete)', cloned from pk=26403 ('How Did They Build That? Season 1 (Complete)')
+
+  'assassination-classroom' → Season 2 (NEW): 25 link(s), title='Assassination Classroom Season 2 (Complete)', cloned from pk=26088 ('Assassination Classroom Season 1 (Complete)')
+
+  'zombie-land-saga' → Season 2 (NEW): 12 link(s), title='Zombie Land SAGA Season 2 (Complete)', cloned from pk=22879 ('Zombie Land SAGA Season 1 (Complete)')
+
+  'the-unparalleled-black-white' → Season 2 (NEW): 12 link(s), title='The Unparalleled Black & White Season 2 (Complete)', cloned from pk=29160 ('The Unparalleled Black & White Season 1 (Complete)')
+
+  'the-unparalleled-black-white' → Season 3 (NEW): 12 link(s), title='The Unparalleled Black & White Season 3 (Complete)', cloned from pk=29160 ('The Unparalleled Black & White Season 1 (Complete)')
+
+  'manifest' → Season 2 (NEW): 13 link(s), title='Manifest S02 (Complete)', cloned from pk=17187 ('Manifest S01 (Complete)')
+
+  'why-women-kill' → Season 2 (NEW): 10 link(s), title='Why Women Kill S02 (Complete)', cloned from pk=16598 ('Why Women Kill S01 (Complete)')
+
+  'baby-daddy' → Season 6 (NEW): 11 link(s), title='Baby Daddy Season 6 (Complete)', cloned from pk=24669 ('Baby Daddy Season 1 (Complete)')
+
+  'baby-daddy' → Season 5 (NEW): 20 link(s), title='Baby Daddy Season 5 (Complete)', cloned from pk=24669 ('Baby Daddy Season 1 (Complete)')
+
+  'baby-daddy' → Season 4 (NEW): 22 link(s), title='Baby Daddy Season 4 (Complete)', cloned from pk=24669 ('Baby Daddy Season 1 (Complete)')
+
+  'baby-daddy' → Season 3 (NEW): 21 link(s), title='Baby Daddy Season 3 (Complete)', cloned from pk=24669 ('Baby Daddy Season 1 (Complete)')
+
+  'baby-daddy' → Season 2 (NEW): 16 link(s), title='Baby Daddy Season 2 (Complete)', cloned from pk=24669 ('Baby Daddy Season 1 (Complete)')
+
+  'cute-high-earth-defense-club-love' → Season 2 (NEW): 12 link(s), title='Cute High Earth Defense Club LOVE Season 2 (Complete)', cloned from pk=27619 ('Cute High Earth Defense Club LOVE Season 1 (Complete)')
+
+  'cute-high-earth-defense-club-love' → Season 3 (NEW): 12 link(s), title='Cute High Earth Defense Club LOVE Season 3 (Complete)', cloned from pk=27619 ('Cute High Earth Defense Club LOVE Season 1 (Complete)')
+
+  'kbs-drama-special' → Season 15 (NEW): 5 link(s), title='KBS Drama Special S15', cloned from pk=14142 ('KBS Drama Special S01')
+
+  'graceland' → Season 3 (NEW): 13 link(s), title='Graceland Season 3 (Complete)', cloned from pk=29184 ('Graceland Season 1 (Complete)')
+
+  'graceland' → Season 2 (NEW): 13 link(s), title='Graceland Season 2 (Complete)', cloned from pk=29184 ('Graceland Season 1 (Complete)')
+
+  'eureka-2006' → Season 2 (NEW): 13 link(s), title='Eureka (2006) Season 2 (Complete)', cloned from pk=26848 ('Eureka (2006) Season 1 (Complete)')
+
+  'eureka-2006' → Season 4 (NEW): 21 link(s), title='Eureka (2006) Season 4 (Complete)', cloned from pk=26848 ('Eureka (2006) Season 1 (Complete)')
+
+  'eureka-2006' → Season 5 (NEW): 13 link(s), title='Eureka (2006) Season 5 (Complete)', cloned from pk=26848 ('Eureka (2006) Season 1 (Complete)')
+
+  'eureka-2006' → Season 3 (NEW): 18 link(s), title='Eureka (2006) Season 3 (Complete)', cloned from pk=26848 ('Eureka (2006) Season 1 (Complete)')
+
+  'all-american' → Season 2 (NEW): 16 link(s), title='All American S02 (Complete)', cloned from pk=17897 ('All American S01 (Complete)')
+
+  'esref-s-dream' → Season 1 (NEW): 31 link(s), title='Esref’s Dream Season 1 (Complete)', cloned from pk=23007 ('Esref’s Dream Season 2 (Complete)')
+
+  'salish-jordan-matter' → Season 3 (NEW): 8 link(s), title='Salish & Jordan Matter Season 3 (Complete)', cloned from pk=28321 ('Salish & Jordan Matter Season 2 (Complete)')
+
+  'the-king-s-avatar' → Season 2 (NEW): 12 link(s), title='The King’s Avatar Season 2 (Complete)', cloned from pk=5079 ('The King’s Avatar Season 1 (Complete)')
+
+  'la-brea' → Season 2 (NEW): 14 link(s), title='La Brea Season 2 (Complete)', cloned from pk=26917 ('La Brea Season 1 (Complete)')
+
+  'fox-spirit-matchmaker-sword-and-beloved' → Season 1 (NEW): 2 link(s), title='Fox Spirit Matchmaker: Sword and Beloved Season 1 (Complete)', cloned from pk=7073 ('Fox Spirit Matchmaker: Sword and Beloved Season 3 (Complete)')
+
+  'attack-on-titan' → Season 3 (NEW): 22 link(s), title='Attack on Titan Season 3 (Complete)', cloned from pk=6538 ('Attack on Titan Season 1 (Complete)')
+
+  'slow-horses' → Season 2 (NEW): 6 link(s), title='Slow Horses S02 (Complete)', cloned from pk=14819 ('Slow Horses S01 (Complete)')
+
+  'kuroko-s-basketball' → Season 2 (NEW): 27 link(s), title='Kuroko’s Basketball Season 2 (Complete)', cloned from pk=6136 ('Kuroko’s Basketball Season 1 (Complete)')
+
+  'the-demonic-king-who-chases-his-wife' → Season 3 (NEW): 16 link(s), title='The Demonic King Who Chases His Wife Season 3 (Complete)', cloned from pk=28763 ('The Demonic King Who Chases His Wife Season 2 (Complete)')
+
+  'mental-coach-jegal' → Season 9 (NEW): 1 link(s), title='Mental Coach Jegal S09 (Complete)', cloned from pk=15184 ('Mental Coach Jegal S01 (Complete)')
+
+  'the-gilded-age' → Season 2 (NEW): 8 link(s), title='The Gilded Age S02 (Complete)', cloned from pk=15082 ('The Gilded Age S01 (Complete)')
+
+  'sex-life' → Season 2 (NEW): 6 link(s), title='Sex/Life S02 (Complete)', cloned from pk=16628 ('Sex/Life S01 (Complete)')
+
+  'welcome-to-demon-school-iruma-kun' → Season 2 (NEW): 21 link(s), title='Welcome to Demon School! Iruma-kun Season 2 (Complete)', cloned from pk=5399 ('Welcome to Demon School! Iruma-kun Season 1 (Complete)')
+
+  'griselda-blanco-the-black-widow' → Season 2 (NEW): 66 link(s), title='Griselda Blanco: The Black Widow Season 2 (Complete)', cloned from pk=28109 ('Griselda Blanco: The Black Widow Season 1 (Complete)')
+
+  'mrs-brown-s-boys' → Season 5 (NEW): 4 link(s), title='Mrs Brown’s Boys Season 5 (Complete)', cloned from pk=24946 ('Mrs Brown’s Boys Season 1 (Complete)')
+
+  'mrs-brown-s-boys' → Season 4 (NEW): 4 link(s), title='Mrs Brown’s Boys Season 4 (Complete)', cloned from pk=24946 ('Mrs Brown’s Boys Season 1 (Complete)')
+
+  'mrs-brown-s-boys' → Season 3 (NEW): 6 link(s), title='Mrs Brown’s Boys Season 3 (Complete)', cloned from pk=24946 ('Mrs Brown’s Boys Season 1 (Complete)')
+
+  'mrs-brown-s-boys' → Season 2 (NEW): 6 link(s), title='Mrs Brown’s Boys Season 2 (Complete)', cloned from pk=24946 ('Mrs Brown’s Boys Season 1 (Complete)')
+
+  '7th-heaven' → Season 2 (NEW): 22 link(s), title='7th Heaven Season 2 (Complete)', cloned from pk=28204 ('7th Heaven Season 1 (Complete)')
+
+  '7th-heaven' → Season 3 (NEW): 22 link(s), title='7th Heaven Season 3 (Complete)', cloned from pk=28204 ('7th Heaven Season 1 (Complete)')
+
+  '7th-heaven' → Season 6 (NEW): 22 link(s), title='7th Heaven Season 6 (Complete)', cloned from pk=28204 ('7th Heaven Season 1 (Complete)')
+
+  '7th-heaven' → Season 7 (NEW): 22 link(s), title='7th Heaven Season 7 (Complete)', cloned from pk=28204 ('7th Heaven Season 1 (Complete)')
+
+  '7th-heaven' → Season 8 (NEW): 23 link(s), title='7th Heaven Season 8 (Complete)', cloned from pk=28204 ('7th Heaven Season 1 (Complete)')
+
+  '7th-heaven' → Season 9 (NEW): 22 link(s), title='7th Heaven Season 9 (Complete)', cloned from pk=28204 ('7th Heaven Season 1 (Complete)')
+
+  '7th-heaven' → Season 5 (NEW): 22 link(s), title='7th Heaven Season 5 (Complete)', cloned from pk=28204 ('7th Heaven Season 1 (Complete)')
+
+  '7th-heaven' → Season 4 (NEW): 22 link(s), title='7th Heaven Season 4 (Complete)', cloned from pk=28204 ('7th Heaven Season 1 (Complete)')
+
+  'she-s-gotta-have-it' → Season 2 (NEW): 9 link(s), title='She’s Gotta Have It Season 2 (Complete)', cloned from pk=28200 ('She’s Gotta Have It Season 1 (Complete)')
+
+  'armor-shop-for-ladies-gentlemen' → Season 2 (NEW): 12 link(s), title='Armor Shop for Ladies & Gentlemen Season 2 (Complete)', cloned from pk=26126 ('Armor Shop for Ladies & Gentlemen Season 1 (Complete)')
+
+  'strange-tales-of-tang-dynasty-iii-to-changan' → Season 3 (NEW): 8 link(s), title='STRANGE TALES OF TANG DYNASTY III TO CHANGAN Season 3 (Complete)', cloned from pk=6945 ('STRANGE TALES OF TANG DYNASTY III TO CHANGAN Season 1 (Complete)')
+
+  'i-will-find-you' → Season 4 (NEW): 1 link(s), title='I Will Find You Season 4 (Complete)', cloned from pk=18566 ('I Will Find You Season 1 (Complete)')
+
+  'the-world-of-the-married' → Season 13 (NEW): 1 link(s), title='The World of the Married Season 13 (Complete)', cloned from pk=10390 ('The World of the Married Season 1 (Complete)')
+
+  'full-time-magister' → Season 2 (NEW): 12 link(s), title='Full-Time Magister Season 2 (Complete)', cloned from pk=26379 ('Full-Time Magister Season 1 (Complete)')
+
+  'full-time-magister' → Season 3 (NEW): 12 link(s), title='Full-Time Magister Season 3 (Complete)', cloned from pk=26379 ('Full-Time Magister Season 1 (Complete)')
+
+  'the-witness' → Season 1 (NEW): 3 link(s), title='The Witness S01 (Complete)', cloned from pk=18459 ('The Witness S08 (Complete)')
+
+  'hudson-038-rex' → Season 5 (NEW): 19 link(s), title='Hudson &#038; Rex S05 (Complete)', cloned from pk=1663 ('Hudson &#038; Rex S04 (Complete)')
+
+  'the-girlfriend-experience' → Season 3 (NEW): 10 link(s), title='The Girlfriend Experience Season 3 (Complete)', cloned from pk=26649 ('The Girlfriend Experience Season 2 (Complete)')
+
+  'harrow' → Season 3 (NEW): 10 link(s), title='Harrow Season 3 (Complete)', cloned from pk=28150 ('Harrow Season 1 (Complete)')
+
+  'harrow' → Season 2 (NEW): 10 link(s), title='Harrow Season 2 (Complete)', cloned from pk=28150 ('Harrow Season 1 (Complete)')
+
+  'amaim-warrior-at-the-borderline' → Season 2 (NEW): 10 link(s), title='AMAIM Warrior at the Borderline Season 2 (Complete)', cloned from pk=29346 ('AMAIM Warrior at the Borderline Season 1 (Complete)')
+
+  'full-time-magister' → Season 5 (NEW): 12 link(s), title='Full-Time Magister Season 5 (Complete)', cloned from pk=26371 ('Full-Time Magister Season 4 (Complete)')
+
+  'full-time-magister' → Season 6 (NEW): 12 link(s), title='Full-Time Magister Season 6 (Complete)', cloned from pk=26371 ('Full-Time Magister Season 4 (Complete)')
+
+  'psycho-pass' → Season 3 (NEW): 8 link(s), title='Psycho Pass Season 3 (Complete)', cloned from pk=5654 ('Psycho Pass Season 2 (Complete)')
+
+  'decked-out' → Season 2 (NEW): 14 link(s), title='Decked Out Season 2 (Complete)', cloned from pk=25396 ('Decked Out Season 1 (Complete)')
+
+  'decked-out' → Season 4 (NEW): 10 link(s), title='Decked Out Season 4 (Complete)', cloned from pk=25396 ('Decked Out Season 1 (Complete)')
+
+  'decked-out' → Season 3 (NEW): 13 link(s), title='Decked Out Season 3 (Complete)', cloned from pk=25396 ('Decked Out Season 1 (Complete)')
+
+  'secrets-of-sulphur-springs' → Season 3 (NEW): 8 link(s), title='Secrets of Sulphur Springs Season 3 (Complete)', cloned from pk=24057 ('Secrets of Sulphur Springs Season 1 (Complete)')
+
+  'secrets-of-sulphur-springs' → Season 2 (NEW): 8 link(s), title='Secrets of Sulphur Springs Season 2 (Complete)', cloned from pk=24057 ('Secrets of Sulphur Springs Season 1 (Complete)')
+
+  'deep-state' → Season 2 (NEW): 8 link(s), title='Deep State Season 2 (Complete)', cloned from pk=29197 ('Deep State Season 1 (Complete)')
+
+  'outer-banks' → Season 2 (NEW): 10 link(s), title='Outer Banks S02 (Complete)', cloned from pk=17757 ('Outer Banks S01 (Complete)')
+
+  'you-and-idol-pretty-cure' → Season 10 (NEW): 1 link(s), title='You And Idol Pretty Cure Season 10 (Complete)', cloned from pk=6438 ('You And Idol Pretty Cure Season 1 (Complete)')
+
+  'fate-stay-night-unlimited-blade-works' → Season 2 (NEW): 13 link(s), title='Fate/stay night [Unlimited Blade Works] Season 2 (Complete)', cloned from pk=6955 ('Fate/stay night [Unlimited Blade Works] Season 1 (Complete)')
+
+  'kevin-can-f-k-himself' → Season 2 (NEW): 8 link(s), title='Kevin Can F**K Himself Season 2 (Complete)', cloned from pk=26632 ('Kevin Can F**K Himself Season 1 (Complete)')
+
+  'hudson-038-rex' → Season 2 (NEW): 19 link(s), title='Hudson &#038; Rex S02 (Complete)', cloned from pk=1664 ('Hudson &#038; Rex S01 (Complete)')
+
+  'hudson-038-rex' → Season 3 (NEW): 16 link(s), title='Hudson &#038; Rex S03 (Complete)', cloned from pk=1664 ('Hudson &#038; Rex S01 (Complete)')
+
+  'chewing-gum' → Season 2 (NEW): 6 link(s), title='Chewing Gum Season 2 (Complete)', cloned from pk=27253 ('Chewing Gum Season 1 (Complete)')
+
+  'metalocalypse' → Season 4 (NEW): 13 link(s), title='Metalocalypse Season 4 (Complete)', cloned from pk=27371 ('Metalocalypse Season 2 (Complete)')
+
+  'metalocalypse' → Season 3 (NEW): 10 link(s), title='Metalocalypse Season 3 (Complete)', cloned from pk=27371 ('Metalocalypse Season 2 (Complete)')
+
+  'monsuno' → Season 2 (NEW): 26 link(s), title='Monsuno Season 2 (Complete)', cloned from pk=28703 ('Monsuno Season 1 (Complete)')
+
+  'showa-genroku-rakugo-shinju' → Season 2 (NEW): 12 link(s), title='Showa Genroku Rakugo Shinju Season 2 (Complete)', cloned from pk=3191 ('Showa Genroku Rakugo Shinju Season 1 (Complete)')
+
+  'er' → Season 2 (NEW): 22 link(s), title='ER Season 2 (Complete)', cloned from pk=22998 ('ER Season 1 (Complete)')
+
+  'hip-high-intellectual-potential' → Season 3 (NEW): 8 link(s), title='HIP – High Intellectual Potential Season 3 (Complete)', cloned from pk=23020 ('HIP – High Intellectual Potential Season 1 (Complete)')
+
+  'hip-high-intellectual-potential' → Season 4 (NEW): 8 link(s), title='HIP – High Intellectual Potential Season 4 (Complete)', cloned from pk=23020 ('HIP – High Intellectual Potential Season 1 (Complete)')
+
+  'hip-high-intellectual-potential' → Season 2 (NEW): 8 link(s), title='HIP – High Intellectual Potential Season 2 (Complete)', cloned from pk=23020 ('HIP – High Intellectual Potential Season 1 (Complete)')
+
+  'the-strain' → Season 4 (NEW): 10 link(s), title='The Strain Season 4 (Complete)', cloned from pk=27422 ('The Strain Season 1 (Complete)')
+
+  'the-strain' → Season 3 (NEW): 10 link(s), title='The Strain Season 3 (Complete)', cloned from pk=27422 ('The Strain Season 1 (Complete)')
+
+  'the-strain' → Season 2 (NEW): 13 link(s), title='The Strain Season 2 (Complete)', cloned from pk=27422 ('The Strain Season 1 (Complete)')
+
+  'dickinson' → Season 2 (NEW): 10 link(s), title='Dickinson Season 2 (Complete)', cloned from pk=28170 ('Dickinson Season 1 (Complete)')
+
+  'dickinson' → Season 3 (NEW): 10 link(s), title='Dickinson Season 3 (Complete)', cloned from pk=28170 ('Dickinson Season 1 (Complete)')
+
+  'fog-hills-of-the-five-elements' → Season 2 (NEW): 4 link(s), title='Fog Hills Of The Five Elements Season 2 (Complete)', cloned from pk=7316 ('Fog Hills Of The Five Elements Season 1 (Complete)')
+
+  'a-trap-called-desire' → Season 4 (NEW): 4 link(s), title='A Trap Called Desire Season 4', cloned from pk=27706 ('A Trap Called Desire Season 1')
+
+  'travel-man-48-hours-in' → Season 7 (NEW): 4 link(s), title='Travel Man: 48 Hours in… Season 7 (Complete)', cloned from pk=26295 ('Travel Man: 48 Hours in… Season 1 (Complete)')
+
+  'travel-man-48-hours-in' → Season 6 (NEW): 4 link(s), title='Travel Man: 48 Hours in… Season 6 (Complete)', cloned from pk=26295 ('Travel Man: 48 Hours in… Season 1 (Complete)')
+
+  'travel-man-48-hours-in' → Season 5 (NEW): 4 link(s), title='Travel Man: 48 Hours in… Season 5 (Complete)', cloned from pk=26295 ('Travel Man: 48 Hours in… Season 1 (Complete)')
+
+  'travel-man-48-hours-in' → Season 2 (NEW): 8 link(s), title='Travel Man: 48 Hours in… Season 2 (Complete)', cloned from pk=26295 ('Travel Man: 48 Hours in… Season 1 (Complete)')
+
+  'travel-man-48-hours-in' → Season 4 (NEW): 4 link(s), title='Travel Man: 48 Hours in… Season 4 (Complete)', cloned from pk=26295 ('Travel Man: 48 Hours in… Season 1 (Complete)')
+
+  'travel-man-48-hours-in' → Season 3 (NEW): 4 link(s), title='Travel Man: 48 Hours in… Season 3 (Complete)', cloned from pk=26295 ('Travel Man: 48 Hours in… Season 1 (Complete)')
+
+  'how-it-s-made-dream-cars' → Season 5 (NEW): 5 link(s), title='How It’s Made: Dream Cars Season 5 (Complete)', cloned from pk=28449 ('How It’s Made: Dream Cars Season 2 (Complete)')
+
+  'how-it-s-made-dream-cars' → Season 4 (NEW): 6 link(s), title='How It’s Made: Dream Cars Season 4 (Complete)', cloned from pk=28449 ('How It’s Made: Dream Cars Season 2 (Complete)')
+
+  'how-it-s-made-dream-cars' → Season 3 (NEW): 8 link(s), title='How It’s Made: Dream Cars Season 3 (Complete)', cloned from pk=28449 ('How It’s Made: Dream Cars Season 2 (Complete)')
+
+  'quanzhi-fashi' → Season 6 (NEW): 12 link(s), title='Quanzhi Fashi Season 6 (Complete)', cloned from pk=4949 ('Quanzhi Fashi Season 5 (Complete)')
+
+  'date-a-live' → Season 3 (NEW): 12 link(s), title='Date A Live Season 3 (Complete)', cloned from pk=28158 ('Date A Live Season 1 (Complete)')
+
+  'date-a-live' → Season 4 (NEW): 12 link(s), title='Date A Live Season 4 (Complete)', cloned from pk=28158 ('Date A Live Season 1 (Complete)')
+
+  'date-a-live' → Season 5 (NEW): 12 link(s), title='Date A Live Season 5 (Complete)', cloned from pk=28158 ('Date A Live Season 1 (Complete)')
+
+  'date-a-live' → Season 2 (NEW): 11 link(s), title='Date A Live Season 2 (Complete)', cloned from pk=28158 ('Date A Live Season 1 (Complete)')
+
+  'active-raid' → Season 2 (NEW): 12 link(s), title='Active Raid Season 2 (Complete)', cloned from pk=25345 ('Active Raid Season 1 (Complete)')
+
+  '100-foot-wave' → Season 2 (NEW): 6 link(s), title='100 Foot Wave Season 2 (Complete)', cloned from pk=28639 ('100 Foot Wave Season 1 (Complete)')
+
+  'home-before-dark' → Season 2 (NEW): 10 link(s), title='Home Before Dark Season 2 (Complete)', cloned from pk=27735 ('Home Before Dark Season 1 (Complete)')
+
+  'hardcore-carnivore' → Season 2 (NEW): 10 link(s), title='Hardcore Carnivore Season 2 (Complete)', cloned from pk=28642 ('Hardcore Carnivore Season 1 (Complete)')
+
+  'entourage' → Season 8 (NEW): 8 link(s), title='Entourage Season 8 (Complete)', cloned from pk=29082 ('Entourage Season 1 (Complete)')
+
+  'entourage' → Season 7 (NEW): 10 link(s), title='Entourage Season 7 (Complete)', cloned from pk=29082 ('Entourage Season 1 (Complete)')
+
+  'entourage' → Season 6 (NEW): 12 link(s), title='Entourage Season 6 (Complete)', cloned from pk=29082 ('Entourage Season 1 (Complete)')
+
+  'entourage' → Season 5 (NEW): 12 link(s), title='Entourage Season 5 (Complete)', cloned from pk=29082 ('Entourage Season 1 (Complete)')
+
+  'entourage' → Season 4 (NEW): 12 link(s), title='Entourage Season 4 (Complete)', cloned from pk=29082 ('Entourage Season 1 (Complete)')
+
+  'entourage' → Season 3 (NEW): 20 link(s), title='Entourage Season 3 (Complete)', cloned from pk=29082 ('Entourage Season 1 (Complete)')
+
+  'entourage' → Season 2 (NEW): 14 link(s), title='Entourage Season 2 (Complete)', cloned from pk=29082 ('Entourage Season 1 (Complete)')
+
+  'sense8' → Season 2 (NEW): 12 link(s), title='Sense8 Season 2 (Complete)', cloned from pk=28149 ('Sense8 Season 1 (Complete)')
+
+  'penny-dreadful' → Season 3 (NEW): 9 link(s), title='Penny Dreadful Season 3 (Complete)', cloned from pk=28137 ('Penny Dreadful Season 2 (Complete)')
+
+  'fairies-albums' → Season 4 (NEW): 12 link(s), title='Fairies Albums Season 4 (Complete)', cloned from pk=5102 ('Fairies Albums Season 1 (Complete)')
+
+  'fairies-albums' → Season 2 (NEW): 12 link(s), title='Fairies Albums Season 2 (Complete)', cloned from pk=5102 ('Fairies Albums Season 1 (Complete)')
+
+  'fairies-albums' → Season 3 (NEW): 12 link(s), title='Fairies Albums Season 3 (Complete)', cloned from pk=5102 ('Fairies Albums Season 1 (Complete)')
+
+  'fairies-albums' → Season 5 (NEW): 12 link(s), title='Fairies Albums Season 5 (Complete)', cloned from pk=5102 ('Fairies Albums Season 1 (Complete)')
+
+  'charmed-1998' → Season 8 (NEW): 22 link(s), title='Charmed (1998) Season 8 (Complete)', cloned from pk=23818 ('Charmed (1998) Season 3 (Complete)')
+
+  'charmed-1998' → Season 7 (NEW): 22 link(s), title='Charmed (1998) Season 7 (Complete)', cloned from pk=23818 ('Charmed (1998) Season 3 (Complete)')
+
+  'charmed-1998' → Season 6 (NEW): 21 link(s), title='Charmed (1998) Season 6 (Complete)', cloned from pk=23818 ('Charmed (1998) Season 3 (Complete)')
+
+  'charmed-1998' → Season 4 (NEW): 21 link(s), title='Charmed (1998) Season 4 (Complete)', cloned from pk=23818 ('Charmed (1998) Season 3 (Complete)')
+
+  'charmed-1998' → Season 5 (NEW): 21 link(s), title='Charmed (1998) Season 5 (Complete)', cloned from pk=23818 ('Charmed (1998) Season 3 (Complete)')
+
+  'game-of-thrones' → Season 2 (NEW): 9 link(s), title='Game of Thrones S02 (Complete)', cloned from pk=490 ('Game of Thrones S01 (Complete)')
+
+  'mayday' → Season 2 (NEW): 6 link(s), title='Mayday Season 2 (Complete)', cloned from pk=22965 ('Mayday Season 1 (Complete)')
+
+  'the-fall' → Season 2 (NEW): 6 link(s), title='The Fall Season 2 (Complete)', cloned from pk=26265 ('The Fall Season 1 (Complete)')
+
+  'the-fall' → Season 3 (NEW): 6 link(s), title='The Fall Season 3 (Complete)', cloned from pk=26265 ('The Fall Season 1 (Complete)')
+
+  'transcend-the-gods-super-seminary' → Season 3 (NEW): 10 link(s), title='Transcend The Gods – Super Seminary Season 3 (Complete)', cloned from pk=4824 ('Transcend The Gods – Super Seminary Season 2 (Complete)')
+
+  'get-shorty' → Season 3 (NEW): 7 link(s), title='Get Shorty Season 3 (Complete)', cloned from pk=23533 ('Get Shorty Season 1 (Complete)')
+
+  'get-shorty' → Season 2 (NEW): 10 link(s), title='Get Shorty Season 2 (Complete)', cloned from pk=23533 ('Get Shorty Season 1 (Complete)')
+
+  'the-traitors' → Season 4 (NEW): 2 link(s), title='The Traitors S04', cloned from pk=1641 ('The Traitors S02')
+
+  'quanzhi-fashi' → Season 2 (NEW): 12 link(s), title='Quanzhi Fashi Season 2 (Complete)', cloned from pk=5301 ('Quanzhi Fashi Season 1 (Complete)')
+
+  'all-saints-street' → Season 3 (NEW): 12 link(s), title='All Saints Street Season 3 (Complete)', cloned from pk=18510 ('All Saints Street Season 1 (Complete)')
+
+  'all-saints-street' → Season 2 (NEW): 12 link(s), title='All Saints Street Season 2 (Complete)', cloned from pk=18510 ('All Saints Street Season 1 (Complete)')
+
+  'the-borgias' → Season 2 (NEW): 10 link(s), title='The Borgias Season 2 (Complete)', cloned from pk=26497 ('The Borgias Season 1 (Complete)')
+
+  'the-borgias' → Season 3 (NEW): 10 link(s), title='The Borgias Season 3 (Complete)', cloned from pk=26497 ('The Borgias Season 1 (Complete)')
+
+  'what-s-new-scooby-doo' → Season 2 (NEW): 14 link(s), title='What’s New, Scooby-Doo? Season 2 (Complete)', cloned from pk=26294 ('What’s New, Scooby-Doo? Season 1 (Complete)')
+
+  'what-s-new-scooby-doo' → Season 3 (NEW): 14 link(s), title='What’s New, Scooby-Doo? Season 3 (Complete)', cloned from pk=26294 ('What’s New, Scooby-Doo? Season 1 (Complete)')
+
+  'black-butler' → Season 3 (NEW): 10 link(s), title='Black Butler Season 3 (Complete)', cloned from pk=4379 ('Black Butler Season 2 (Complete)')
+
+  'link-click' → Season 4 (NEW): 1 link(s), title='Link Click Season 4', cloned from pk=27879 ('Link Click Season 3')
+
+  'bubble-guppies' → Season 2 (NEW): 19 link(s), title='Bubble Guppies Season 2 (Complete)', cloned from pk=28367 ('Bubble Guppies Season 1 (Complete)')
+
+  'bubble-guppies' → Season 3 (NEW): 25 link(s), title='Bubble Guppies Season 3 (Complete)', cloned from pk=28367 ('Bubble Guppies Season 1 (Complete)')
+
+  'bubble-guppies' → Season 4 (NEW): 13 link(s), title='Bubble Guppies Season 4 (Complete)', cloned from pk=28367 ('Bubble Guppies Season 1 (Complete)')
+
+  'bubble-guppies' → Season 5 (NEW): 26 link(s), title='Bubble Guppies Season 5 (Complete)', cloned from pk=28367 ('Bubble Guppies Season 1 (Complete)')
+
+  'bubble-guppies' → Season 6 (NEW): 34 link(s), title='Bubble Guppies Season 6 (Complete)', cloned from pk=28367 ('Bubble Guppies Season 1 (Complete)')
+
+  'good-girls-2018' → Season 2 (NEW): 13 link(s), title='Good Girls (2018) Season 2 (Complete)', cloned from pk=28085 ('Good Girls (2018) Season 1 (Complete)')
+
+  'good-girls-2018' → Season 3 (NEW): 11 link(s), title='Good Girls (2018) Season 3 (Complete)', cloned from pk=28085 ('Good Girls (2018) Season 1 (Complete)')
+
+  'good-girls-2018' → Season 4 (NEW): 16 link(s), title='Good Girls (2018) Season 4 (Complete)', cloned from pk=28085 ('Good Girls (2018) Season 1 (Complete)')
+
+  'the-croods-family-tree' → Season 2 (NEW): 7 link(s), title='The Croods Family Tree S02 (Complete)', cloned from pk=17596 ('The Croods Family Tree S01 (Complete)')
+
+  'barbecue-life-of-fire' → Season 2 (NEW): 10 link(s), title='Barbecue: Life of Fire Season 2 (Complete)', cloned from pk=26453 ('Barbecue: Life of Fire Season 1 (Complete)')
+
+  'the-last-kingdom' → Season 2 (NEW): 8 link(s), title='The Last Kingdom S02 (Complete)', cloned from pk=17508 ('The Last Kingdom S01 (Complete)')
+
+  'community' → Season 2 (NEW): 24 link(s), title='Community Season 2 (Complete)', cloned from pk=26076 ('Community Season 1 (Complete)')
+
+  'fairy-tail-final-series' → Season 1 (NEW): 26 link(s), title='Fairy Tail Final Series Season 1', cloned from pk=5468 ('Fairy Tail Final Series Season 3')
+
+  'coroner' → Season 2 (NEW): 8 link(s), title='Coroner Season 2 (Complete)', cloned from pk=28138 ('Coroner Season 1 (Complete)')
+
+  'coroner' → Season 4 (NEW): 12 link(s), title='Coroner Season 4 (Complete)', cloned from pk=28138 ('Coroner Season 1 (Complete)')
+
+  'coroner' → Season 3 (NEW): 10 link(s), title='Coroner Season 3 (Complete)', cloned from pk=28138 ('Coroner Season 1 (Complete)')
+
+  '7th-heaven' → Season 11 (NEW): 22 link(s), title='7th Heaven Season 11 (Complete)', cloned from pk=28202 ('7th Heaven Season 10 (Complete)')
+
+  'the-traitors-uk' → Season 2 (NEW): 6 link(s), title='The Traitors UK S02', cloned from pk=1279 ('The Traitors UK S04')
+
+  'the-chosen' → Season 2 (NEW): 8 link(s), title='The Chosen S02 (Complete)', cloned from pk=658 ('The Chosen S01 (Complete)')
+
+  'backyard-builds' → Season 3 (NEW): 11 link(s), title='Backyard Builds Season 3 (Complete)', cloned from pk=26422 ('Backyard Builds Season 1 (Complete)')
+
+  'backyard-builds' → Season 4 (NEW): 8 link(s), title='Backyard Builds Season 4 (Complete)', cloned from pk=26422 ('Backyard Builds Season 1 (Complete)')
+
+  'backyard-builds' → Season 2 (NEW): 14 link(s), title='Backyard Builds Season 2 (Complete)', cloned from pk=26422 ('Backyard Builds Season 1 (Complete)')
+
+  'the-testaments' → Season 1 (NEW): 4 link(s), title='The Testaments S01', cloned from pk=1895 ('The Testaments S03')
+
+  'romanzo-criminale-the-series' → Season 2 (NEW): 10 link(s), title='Romanzo Criminale: The Series Season 2 (Complete)', cloned from pk=24041 ('Romanzo Criminale: The Series Season 1 (Complete)')
+
+  'bobby-flay-s-barbecue-addiction' → Season 4 (NEW): 15 link(s), title='Bobby Flay’s Barbecue Addiction Season 4 (Complete)', cloned from pk=26452 ('Bobby Flay’s Barbecue Addiction Season 1 (Complete)')
+
+  'bobby-flay-s-barbecue-addiction' → Season 2 (NEW): 12 link(s), title='Bobby Flay’s Barbecue Addiction Season 2 (Complete)', cloned from pk=26452 ('Bobby Flay’s Barbecue Addiction Season 1 (Complete)')
+
+  'bobby-flay-s-barbecue-addiction' → Season 3 (NEW): 13 link(s), title='Bobby Flay’s Barbecue Addiction Season 3 (Complete)', cloned from pk=26452 ('Bobby Flay’s Barbecue Addiction Season 1 (Complete)')
+
+  'the-bridge-2011' → Season 2 (NEW): 10 link(s), title='The Bridge (2011) Season 2 (Complete)', cloned from pk=26538 ('The Bridge (2011) Season 1 (Complete)')
+
+  'the-bridge-2011' → Season 3 (NEW): 10 link(s), title='The Bridge (2011) Season 3 (Complete)', cloned from pk=26538 ('The Bridge (2011) Season 1 (Complete)')
+
+  'the-bridge-2011' → Season 4 (NEW): 8 link(s), title='The Bridge (2011) Season 4 (Complete)', cloned from pk=26538 ('The Bridge (2011) Season 1 (Complete)')
+
+  'seinfeld' → Season 6 (NEW): 23 link(s), title='Seinfeld Season 6 (Complete)', cloned from pk=28909 ('Seinfeld Season 5 (Complete)')
+
+  'stillwater' → Season 2 (NEW): 7 link(s), title='Stillwater Season 2 (Complete)', cloned from pk=25275 ('Stillwater Season 1 (Complete)')
+
+  'stillwater' → Season 3 (NEW): 10 link(s), title='Stillwater Season 3 (Complete)', cloned from pk=25275 ('Stillwater Season 1 (Complete)')
+
+  'knightfall' → Season 2 (NEW): 8 link(s), title='Knightfall Season 2 (Complete)', cloned from pk=26070 ('Knightfall Season 1 (Complete)')
+
+  'crazy-ex-girlfriend' → Season 2 (NEW): 13 link(s), title='Crazy Ex-Girlfriend Season 2 (Complete)', cloned from pk=28248 ('Crazy Ex-Girlfriend Season 1 (Complete)')
+
+  'crazy-ex-girlfriend' → Season 3 (NEW): 13 link(s), title='Crazy Ex-Girlfriend Season 3 (Complete)', cloned from pk=28248 ('Crazy Ex-Girlfriend Season 1 (Complete)')
+
+  'crazy-ex-girlfriend' → Season 4 (NEW): 18 link(s), title='Crazy Ex-Girlfriend Season 4 (Complete)', cloned from pk=28248 ('Crazy Ex-Girlfriend Season 1 (Complete)')
+
+  'magic-move' → Season 2 (NEW): 1 link(s), title='Magic Move Season 2 (Complete)', cloned from pk=2168 ('Magic Move Season 1 (Complete)')
+
+  'sonic-boom' → Season 2 (NEW): 52 link(s), title='Sonic Boom Season 2 (Complete)', cloned from pk=28419 ('Sonic Boom Season 1 (Complete)')
+
+  'a-song-of-sword-as-pillow' → Season 2 (NEW): 14 link(s), title='A Song of Sword as Pillow Season 2 (Complete)', cloned from pk=27204 ('A Song of Sword as Pillow Season 1 (Complete)')
+
+  'ugly-betty' → Season 4 (NEW): 20 link(s), title='Ugly Betty Season 4 (Complete)', cloned from pk=29178 ('Ugly Betty Season 1 (Complete)')
+
+  'ugly-betty' → Season 3 (NEW): 24 link(s), title='Ugly Betty Season 3 (Complete)', cloned from pk=29178 ('Ugly Betty Season 1 (Complete)')
+
+  'ugly-betty' → Season 2 (NEW): 18 link(s), title='Ugly Betty Season 2 (Complete)', cloned from pk=29178 ('Ugly Betty Season 1 (Complete)')
+
+  'happy-valley' → Season 2 (NEW): 6 link(s), title='Happy Valley Season 2 (Complete)', cloned from pk=27874 ('Happy Valley Season 1 (Complete)')
+
+  'happy-valley' → Season 3 (NEW): 6 link(s), title='Happy Valley Season 3 (Complete)', cloned from pk=27874 ('Happy Valley Season 1 (Complete)')
+
+  'future-man' → Season 2 (NEW): 13 link(s), title='Future Man Season 2 (Complete)', cloned from pk=29200 ('Future Man Season 1 (Complete)')
+
+  'future-man' → Season 3 (NEW): 8 link(s), title='Future Man Season 3 (Complete)', cloned from pk=29200 ('Future Man Season 1 (Complete)')
+
+  'detective-chinatown' → Season 2 (NEW): 16 link(s), title='Detective Chinatown S02 (Complete)', cloned from pk=1754 ('Detective Chinatown S01 (Complete)')
+
+  'miss-hammurabi' → Season 2 (NEW): 1 link(s), title='Miss Hammurabi Season 2 (Complete)', cloned from pk=3435 ('Miss Hammurabi Season 1 (Complete)')
+
+  'hart-of-dixie' → Season 2 (NEW): 22 link(s), title='Hart of Dixie Season 2 (Complete)', cloned from pk=28074 ('Hart of Dixie Season 1 (Complete)')
+
+  'hart-of-dixie' → Season 3 (NEW): 22 link(s), title='Hart of Dixie Season 3 (Complete)', cloned from pk=28074 ('Hart of Dixie Season 1 (Complete)')
+
+  'hart-of-dixie' → Season 4 (NEW): 10 link(s), title='Hart of Dixie Season 4 (Complete)', cloned from pk=28074 ('Hart of Dixie Season 1 (Complete)')
+
+  'satisfaction-2007' → Season 2 (NEW): 10 link(s), title='Satisfaction (2007) Season 2 (Complete)', cloned from pk=28789 ('Satisfaction (2007) Season 1 (Complete)')
+
+  'satisfaction-2007' → Season 3 (NEW): 10 link(s), title='Satisfaction (2007) Season 3 (Complete)', cloned from pk=28789 ('Satisfaction (2007) Season 1 (Complete)')
+
+  'clarence' → Season 3 (NEW): 40 link(s), title='Clarence Season 3 (Complete)', cloned from pk=29094 ('Clarence Season 1 (Complete)')
+
+  'clarence' → Season 2 (NEW): 21 link(s), title='Clarence Season 2 (Complete)', cloned from pk=29094 ('Clarence Season 1 (Complete)')
+
+  'high-school-dxd' → Season 2 (NEW): 12 link(s), title='High School DxD Season 2 (Complete)', cloned from pk=22611 ('High School DxD Season 1 (Complete)')
+
+  'the-world-owes-me-a-first-love' → Season 2 (NEW): 1 link(s), title='The World Owes Me a First Love Season 2 (Complete)', cloned from pk=7528 ('The World Owes Me a First Love Season 1 (Complete)')
+
+  'outer-banks-2020' → Season 2 (NEW): 10 link(s), title='Outer Banks (2020) Season 2 (Complete)', cloned from pk=28792 ('Outer Banks (2020) Season 1 (Complete)')
+
+  'made-in-abyss' → Season 2 (NEW): 12 link(s), title='Made in Abyss Season 2 (Complete)', cloned from pk=23575 ('Made in Abyss Season 1 (Complete)')
+
+  'please-take-my-brother-away' → Season 2 (NEW): 24 link(s), title='Please Take My Brother Away Season 2 (Complete)', cloned from pk=8137 ('Please Take My Brother Away Season 1 (Complete)')
+
+  'please-take-my-brother-away' → Season 3 (NEW): 12 link(s), title='Please Take My Brother Away Season 3 (Complete)', cloned from pk=8137 ('Please Take My Brother Away Season 1 (Complete)')
+
+  'please-take-my-brother-away' → Season 4 (NEW): 12 link(s), title='Please Take My Brother Away Season 4 (Complete)', cloned from pk=8137 ('Please Take My Brother Away Season 1 (Complete)')
+
+  'please-take-my-brother-away' → Season 5 (NEW): 12 link(s), title='Please Take My Brother Away Season 5 (Complete)', cloned from pk=8137 ('Please Take My Brother Away Season 1 (Complete)')
+
+  'acapulco' → Season 2 (NEW): 10 link(s), title='Acapulco S02 (Complete)', cloned from pk=16947 ('Acapulco S01 (Complete)')
+
+  'from-me-to-you' → Season 3 (NEW): 6 link(s), title='From Me to You Season 3 (Complete)', cloned from pk=7983 ('From Me to You Season 2 (Complete)')
+
+  'better-call-saul' → Season 5 (NEW): 10 link(s), title='Better Call Saul S05 (Complete)', cloned from pk=17525 ('Better Call Saul S04 (Complete)')
+
+  'ice-road-rescue' → Season 10 (NEW): 1 link(s), title='Ice Road Rescue Season 10', cloned from pk=23546 ('Ice Road Rescue Season 20')
+
+  'on-my-block' → Season 3 (NEW): 8 link(s), title='On My Block Season 3 (Complete)', cloned from pk=26130 ('On My Block Season 1 (Complete)')
+
+  'on-my-block' → Season 2 (NEW): 10 link(s), title='On My Block Season 2 (Complete)', cloned from pk=26130 ('On My Block Season 1 (Complete)')
+
+  'hanma-baki-son-of-ogre' → Season 2 (NEW): 27 link(s), title='Hanma Baki Son Of Ogre Season 2 (Complete)', cloned from pk=22834 ('Hanma Baki Son Of Ogre Season 1 (Complete)')
+
+  'charmed-1998' → Season 2 (NEW): 22 link(s), title='Charmed (1998) Season 2 (Complete)', cloned from pk=23660 ('Charmed (1998) Season 1 (Complete)')
+
+  'drop-dead-diva' → Season 4 (NEW): 13 link(s), title='Drop Dead Diva Season 4 (Complete)', cloned from pk=23593 ('Drop Dead Diva Season 1 (Complete)')
+
+  'drop-dead-diva' → Season 5 (NEW): 13 link(s), title='Drop Dead Diva Season 5 (Complete)', cloned from pk=23593 ('Drop Dead Diva Season 1 (Complete)')
+
+  'drop-dead-diva' → Season 2 (NEW): 13 link(s), title='Drop Dead Diva Season 2 (Complete)', cloned from pk=23593 ('Drop Dead Diva Season 1 (Complete)')
+
+  'drop-dead-diva' → Season 3 (NEW): 13 link(s), title='Drop Dead Diva Season 3 (Complete)', cloned from pk=23593 ('Drop Dead Diva Season 1 (Complete)')
+
+  'drop-dead-diva' → Season 6 (NEW): 13 link(s), title='Drop Dead Diva Season 6 (Complete)', cloned from pk=23593 ('Drop Dead Diva Season 1 (Complete)')
+
+  'gomorrah' → Season 3 (NEW): 12 link(s), title='Gomorrah Season 3 (Complete)', cloned from pk=23001 ('Gomorrah Season 1 (Complete)')
+
+  'gomorrah' → Season 5 (NEW): 10 link(s), title='Gomorrah Season 5 (Complete)', cloned from pk=23001 ('Gomorrah Season 1 (Complete)')
+
+  'gomorrah' → Season 2 (NEW): 12 link(s), title='Gomorrah Season 2 (Complete)', cloned from pk=23001 ('Gomorrah Season 1 (Complete)')
+
+  'gomorrah' → Season 4 (NEW): 12 link(s), title='Gomorrah Season 4 (Complete)', cloned from pk=23001 ('Gomorrah Season 1 (Complete)')
+
+  'saving-hope' → Season 4 (NEW): 18 link(s), title='Saving Hope Season 4 (Complete)', cloned from pk=22955 ('Saving Hope Season 1 (Complete)')
+
+  'saving-hope' → Season 5 (NEW): 18 link(s), title='Saving Hope Season 5 (Complete)', cloned from pk=22955 ('Saving Hope Season 1 (Complete)')
+
+  'saving-hope' → Season 2 (NEW): 18 link(s), title='Saving Hope Season 2 (Complete)', cloned from pk=22955 ('Saving Hope Season 1 (Complete)')
+
+  'saving-hope' → Season 3 (NEW): 18 link(s), title='Saving Hope Season 3 (Complete)', cloned from pk=22955 ('Saving Hope Season 1 (Complete)')
+
+  'blue-miburo' → Season 1 (NEW): 10 link(s), title='Blue Miburo Season 1 (Complete)', cloned from pk=5637 ('Blue Miburo Season 2 (Complete)')
+
+  'slugterra' → Season 3 (NEW): 13 link(s), title='Slugterra Season 3 (Complete)', cloned from pk=28249 ('Slugterra Season 1 (Complete)')
+
+  'slugterra' → Season 4 (NEW): 13 link(s), title='Slugterra Season 4 (Complete)', cloned from pk=28249 ('Slugterra Season 1 (Complete)')
+
+  'slugterra' → Season 2 (NEW): 13 link(s), title='Slugterra Season 2 (Complete)', cloned from pk=28249 ('Slugterra Season 1 (Complete)')
+
+  'killjoys-2015' → Season 4 (NEW): 10 link(s), title='Killjoys (2015) Season 4 (Complete)', cloned from pk=29182 ('Killjoys (2015) Season 1 (Complete)')
+
+  'killjoys-2015' → Season 3 (NEW): 10 link(s), title='Killjoys (2015) Season 3 (Complete)', cloned from pk=29182 ('Killjoys (2015) Season 1 (Complete)')
+
+  'killjoys-2015' → Season 2 (NEW): 10 link(s), title='Killjoys (2015) Season 2 (Complete)', cloned from pk=29182 ('Killjoys (2015) Season 1 (Complete)')
+
+  'killjoys-2015' → Season 5 (NEW): 10 link(s), title='Killjoys (2015) Season 5 (Complete)', cloned from pk=29182 ('Killjoys (2015) Season 1 (Complete)')
+
+  'game-of-thrones' → Season 4 (NEW): 10 link(s), title='Game of Thrones S04 (Complete)', cloned from pk=489 ('Game of Thrones S03 (Complete)')
+
+  'komi-can-t-communicate' → Season 2 (NEW): 12 link(s), title='Komi Can’t Communicate Season 2 (Complete)', cloned from pk=8065 ('Komi Can’t Communicate Season 1 (Complete)')
+
+  'snowfall' → Season 4 (NEW): 10 link(s), title='Snowfall S04 (Complete)', cloned from pk=14876 ('Snowfall S03 (Complete)')
+
+  'seinfeld' → Season 8 (NEW): 22 link(s), title='Seinfeld Season 8 (Complete)', cloned from pk=29078 ('Seinfeld Season 7 (Complete)')
+
+  'seinfeld' → Season 9 (NEW): 22 link(s), title='Seinfeld Season 9 (Complete)', cloned from pk=29078 ('Seinfeld Season 7 (Complete)')
+
+  'bofuri' → Season 2 (NEW): 12 link(s), title='Bofuri Season 2 (Complete)', cloned from pk=8167 ('Bofuri Season 1 (Complete)')
+
+  'how-not-to-summon-a-demon-lord' → Season 2 (NEW): 10 link(s), title='How Not to Summon a Demon Lord Season 2 (Complete)', cloned from pk=23577 ('How Not to Summon a Demon Lord Season 1 (Complete)')
+
+  'shooter' → Season 3 (NEW): 13 link(s), title='Shooter Season 3 (Complete)', cloned from pk=28172 ('Shooter Season 1 (Complete)')
+
+  'shooter' → Season 2 (NEW): 8 link(s), title='Shooter Season 2 (Complete)', cloned from pk=28172 ('Shooter Season 1 (Complete)')
+
+  'partners-for-justice' → Season 2 (NEW): 16 link(s), title='Partners for Justice S02 (Complete)', cloned from pk=14982 ('Partners for Justice S01 (Complete)')
+
+  'isibaya' → Season 1 (NEW): 1 link(s), title='Isibaya S01', cloned from pk=1774 ('Isibaya S07')
+
+  'rick-and-morty' → Season 2 (NEW): 10 link(s), title='Rick and Morty S02 (Complete)', cloned from pk=17183 ('Rick and Morty S01 (Complete)')
+
+  'maria-watches-over-us' → Season 2 (NEW): 13 link(s), title='Maria Watches Over Us Season 2 (Complete)', cloned from pk=23841 ('Maria Watches Over Us Season 1 (Complete)')
+
+  'maria-watches-over-us' → Season 3 (NEW): 5 link(s), title='Maria Watches Over Us Season 3 (Complete)', cloned from pk=23841 ('Maria Watches Over Us Season 1 (Complete)')
+
+  'maria-watches-over-us' → Season 4 (NEW): 13 link(s), title='Maria Watches Over Us Season 4 (Complete)', cloned from pk=23841 ('Maria Watches Over Us Season 1 (Complete)')
+
+  'mr-bad' → Season 2 (NEW): 1 link(s), title='Mr. Bad S02 (Complete)', cloned from pk=2358 ('Mr. Bad S01 (Complete)')
+
+  'arrested-development' → Season 5 (NEW): 16 link(s), title='Arrested Development Season 5 (Complete)', cloned from pk=23661 ('Arrested Development Season 4 (Complete)')
+
+  'dr-oakley-yukon-vet' → Season 3 (NEW): 8 link(s), title='Dr. Oakley, Yukon Vet Season 3 (Complete)', cloned from pk=28099 ('Dr. Oakley, Yukon Vet Season 1 (Complete)')
+
+  'dr-oakley-yukon-vet' → Season 5 (NEW): 8 link(s), title='Dr. Oakley, Yukon Vet Season 5 (Complete)', cloned from pk=28099 ('Dr. Oakley, Yukon Vet Season 1 (Complete)')
+
+  'dr-oakley-yukon-vet' → Season 7 (NEW): 8 link(s), title='Dr. Oakley, Yukon Vet Season 7 (Complete)', cloned from pk=28099 ('Dr. Oakley, Yukon Vet Season 1 (Complete)')
+
+  'dr-oakley-yukon-vet' → Season 6 (NEW): 8 link(s), title='Dr. Oakley, Yukon Vet Season 6 (Complete)', cloned from pk=28099 ('Dr. Oakley, Yukon Vet Season 1 (Complete)')
+
+  'dr-oakley-yukon-vet' → Season 8 (NEW): 9 link(s), title='Dr. Oakley, Yukon Vet Season 8 (Complete)', cloned from pk=28099 ('Dr. Oakley, Yukon Vet Season 1 (Complete)')
+
+  'dr-oakley-yukon-vet' → Season 4 (NEW): 8 link(s), title='Dr. Oakley, Yukon Vet Season 4 (Complete)', cloned from pk=28099 ('Dr. Oakley, Yukon Vet Season 1 (Complete)')
+
+  'dr-oakley-yukon-vet' → Season 9 (NEW): 10 link(s), title='Dr. Oakley, Yukon Vet Season 9 (Complete)', cloned from pk=28099 ('Dr. Oakley, Yukon Vet Season 1 (Complete)')
+
+  'dr-oakley-yukon-vet' → Season 2 (NEW): 10 link(s), title='Dr. Oakley, Yukon Vet Season 2 (Complete)', cloned from pk=28099 ('Dr. Oakley, Yukon Vet Season 1 (Complete)')
+
+  'haikyu' → Season 3 (NEW): 10 link(s), title='Haikyu!! Season 3 (Complete)', cloned from pk=25128 ('Haikyu!! Season 1 (Complete)')
+
+  'haikyu' → Season 2 (NEW): 25 link(s), title='Haikyu!! Season 2 (Complete)', cloned from pk=25128 ('Haikyu!! Season 1 (Complete)')
+
+  'haikyu' → Season 4 (NEW): 25 link(s), title='Haikyu!! Season 4 (Complete)', cloned from pk=25128 ('Haikyu!! Season 1 (Complete)')
+
+  'seinfeld' → Season 4 (NEW): 22 link(s), title='Seinfeld Season 4 (Complete)', cloned from pk=28830 ('Seinfeld Season 3 (Complete)')
+
+  'lego-star-wars-rebuild-the-galaxy' → Season 2 (NEW): 4 link(s), title='LEGO Star Wars Rebuild the Galaxy S02 (Complete)', cloned from pk=14905 ('LEGO Star Wars Rebuild the Galaxy S01 (Complete)')
+
+  'shin-8217-s-project' → Season 1 (NEW): 3 link(s), title='Shin&#8217;s Project S01', cloned from pk=631 ('Shin&#8217;s Project S02')
+
+  'sound-euphonium' → Season 3 (NEW): 13 link(s), title='Sound! Euphonium Season 3 (Complete)', cloned from pk=26085 ('Sound! Euphonium Season 1 (Complete)')
+
+  'sound-euphonium' → Season 2 (NEW): 13 link(s), title='Sound! Euphonium Season 2 (Complete)', cloned from pk=26085 ('Sound! Euphonium Season 1 (Complete)')
+
+  'game-of-thrones' → Season 6 (NEW): 10 link(s), title='Game of Thrones S06 (Complete)', cloned from pk=488 ('Game of Thrones S05 (Complete)')
+
+  'revolution' → Season 2 (NEW): 22 link(s), title='Revolution Season 2 (Complete)', cloned from pk=27730 ('Revolution Season 1 (Complete)')
+
+  'the-diamond-heist' → Season 4 (NEW): 1 link(s), title='The Diamond Heist S04 (Complete)', cloned from pk=15192 ('The Diamond Heist S01 (Complete)')
+
+  'halt-and-catch-fire' → Season 2 (NEW): 10 link(s), title='Halt and Catch Fire Season 2 (Complete)', cloned from pk=28171 ('Halt and Catch Fire Season 1 (Complete)')
+
+  'halt-and-catch-fire' → Season 3 (NEW): 10 link(s), title='Halt and Catch Fire Season 3 (Complete)', cloned from pk=28171 ('Halt and Catch Fire Season 1 (Complete)')
+
+  'halt-and-catch-fire' → Season 4 (NEW): 10 link(s), title='Halt and Catch Fire Season 4 (Complete)', cloned from pk=28171 ('Halt and Catch Fire Season 1 (Complete)')
+
+  'dawson-s-creek-1998' → Season 2 (NEW): 22 link(s), title='Dawson’s Creek (1998) Season 2 (Complete)', cloned from pk=28084 ('Dawson’s Creek (1998) Season 1 (Complete)')
+
+  'dawson-s-creek-1998' → Season 3 (NEW): 23 link(s), title='Dawson’s Creek (1998) Season 3 (Complete)', cloned from pk=28084 ('Dawson’s Creek (1998) Season 1 (Complete)')
+
+  'dawson-s-creek-1998' → Season 4 (NEW): 23 link(s), title='Dawson’s Creek (1998) Season 4 (Complete)', cloned from pk=28084 ('Dawson’s Creek (1998) Season 1 (Complete)')
+
+  'dawson-s-creek-1998' → Season 5 (NEW): 23 link(s), title='Dawson’s Creek (1998) Season 5 (Complete)', cloned from pk=28084 ('Dawson’s Creek (1998) Season 1 (Complete)')
+
+  'er' → Season 13 (NEW): 23 link(s), title='ER Season 13 (Complete)', cloned from pk=25221 ('ER Season 11 (Complete)')
+
+  'er' → Season 15 (NEW): 22 link(s), title='ER Season 15 (Complete)', cloned from pk=25221 ('ER Season 11 (Complete)')
+
+  'er' → Season 12 (NEW): 22 link(s), title='ER Season 12 (Complete)', cloned from pk=25221 ('ER Season 11 (Complete)')
+
+  'er' → Season 14 (NEW): 19 link(s), title='ER Season 14 (Complete)', cloned from pk=25221 ('ER Season 11 (Complete)')
+
+  'downton-abbey' → Season 2 (NEW): 8 link(s), title='Downton Abbey Season 2 (Complete)', cloned from pk=26539 ('Downton Abbey Season 1 (Complete)')
+
+  'downton-abbey' → Season 4 (NEW): 8 link(s), title='Downton Abbey Season 4 (Complete)', cloned from pk=26539 ('Downton Abbey Season 1 (Complete)')
+
+  'downton-abbey' → Season 3 (NEW): 8 link(s), title='Downton Abbey Season 3 (Complete)', cloned from pk=26539 ('Downton Abbey Season 1 (Complete)')
+
+  'downton-abbey' → Season 5 (NEW): 8 link(s), title='Downton Abbey Season 5 (Complete)', cloned from pk=26539 ('Downton Abbey Season 1 (Complete)')
+
+  'downton-abbey' → Season 6 (NEW): 9 link(s), title='Downton Abbey Season 6 (Complete)', cloned from pk=26539 ('Downton Abbey Season 1 (Complete)')
+
+  'brotherhood' → Season 3 (NEW): 8 link(s), title='Brotherhood Season 3 (Complete)', cloned from pk=27347 ('Brotherhood Season 1 (Complete)')
+
+  'brotherhood' → Season 2 (NEW): 10 link(s), title='Brotherhood Season 2 (Complete)', cloned from pk=27347 ('Brotherhood Season 1 (Complete)')
+
+  'code-black' → Season 3 (NEW): 13 link(s), title='Code Black Season 3 (Complete)', cloned from pk=24492 ('Code Black Season 1 (Complete)')
+
+  'code-black' → Season 2 (NEW): 16 link(s), title='Code Black Season 2 (Complete)', cloned from pk=24492 ('Code Black Season 1 (Complete)')
+
+  'sledge-hammer' → Season 2 (NEW): 19 link(s), title='Sledge Hammer! Season 2 (Complete)', cloned from pk=24431 ('Sledge Hammer! Season 1 (Complete)')
+
+  'greek' → Season 3 (NEW): 20 link(s), title='Greek Season 3 (Complete)', cloned from pk=28396 ('Greek Season 1 (Complete)')
+
+  'greek' → Season 4 (NEW): 10 link(s), title='Greek Season 4 (Complete)', cloned from pk=28396 ('Greek Season 1 (Complete)')
+
+  'greek' → Season 2 (NEW): 22 link(s), title='Greek Season 2 (Complete)', cloned from pk=28396 ('Greek Season 1 (Complete)')
+
+  'stellar-transformation' → Season 2 (NEW): 12 link(s), title='Stellar Transformation Season 2 (Complete)', cloned from pk=7572 ('Stellar Transformation Season 1 (Complete)')
+
+  'samurai-rabbit-the-usagi-chronicles' → Season 2 (NEW): 10 link(s), title='Samurai Rabbit: The Usagi Chronicles S02 (Complete)', cloned from pk=17259 ('Samurai Rabbit: The Usagi Chronicles S01 (Complete)')
+
+  'girlfriends-guide-to-divorce' → Season 4 (NEW): 6 link(s), title='Girlfriends’ Guide to Divorce Season 4 (Complete)', cloned from pk=24310 ('Girlfriends’ Guide to Divorce Season 1 (Complete)')
+
+  'girlfriends-guide-to-divorce' → Season 3 (NEW): 7 link(s), title='Girlfriends’ Guide to Divorce Season 3 (Complete)', cloned from pk=24310 ('Girlfriends’ Guide to Divorce Season 1 (Complete)')
+
+  'girlfriends-guide-to-divorce' → Season 5 (NEW): 6 link(s), title='Girlfriends’ Guide to Divorce Season 5 (Complete)', cloned from pk=24310 ('Girlfriends’ Guide to Divorce Season 1 (Complete)')
+
+  'girlfriends-guide-to-divorce' → Season 2 (NEW): 13 link(s), title='Girlfriends’ Guide to Divorce Season 2 (Complete)', cloned from pk=24310 ('Girlfriends’ Guide to Divorce Season 1 (Complete)')
+
+  'snowfall' → Season 6 (NEW): 10 link(s), title='Snowfall S06 (Complete)', cloned from pk=14822 ('Snowfall S05 (Complete)')
+
+  'the-walking-dead' → Season 2 (NEW): 13 link(s), title='The Walking Dead S02 (Complete)', cloned from pk=16813 ('The Walking Dead S01 (Complete)')
+
+  'long-sword' → Season 2 (NEW): 10 link(s), title='Long Sword Season 2 (Complete)', cloned from pk=5033 ('Long Sword Season 1 (Complete)')
+
+  'er' → Season 10 (NEW): 22 link(s), title='ER Season 10 (Complete)', cloned from pk=24268 ('ER Season 3 (Complete)')
+
+  'er' → Season 9 (NEW): 22 link(s), title='ER Season 9 (Complete)', cloned from pk=24268 ('ER Season 3 (Complete)')
+
+  'er' → Season 4 (NEW): 22 link(s), title='ER Season 4 (Complete)', cloned from pk=24268 ('ER Season 3 (Complete)')
+
+  'er' → Season 5 (NEW): 22 link(s), title='ER Season 5 (Complete)', cloned from pk=24268 ('ER Season 3 (Complete)')
+
+  'er' → Season 6 (NEW): 22 link(s), title='ER Season 6 (Complete)', cloned from pk=24268 ('ER Season 3 (Complete)')
+
+  'er' → Season 7 (NEW): 22 link(s), title='ER Season 7 (Complete)', cloned from pk=24268 ('ER Season 3 (Complete)')
+
+  'er' → Season 8 (NEW): 22 link(s), title='ER Season 8 (Complete)', cloned from pk=24268 ('ER Season 3 (Complete)')
+
+  '99-to-beat' → Season 4 (NEW): 1 link(s), title='99 to Beat S04', cloned from pk=541 ('99 to Beat S01')
+
+  'the-promised-neverland' → Season 2 (NEW): 12 link(s), title='The Promised Neverland Season 2 (Complete)', cloned from pk=5622 ('The Promised Neverland Season 1 (Complete)')
+
+  'marco-polo' → Season 2 (NEW): 10 link(s), title='Marco Polo Season 2 (Complete)', cloned from pk=17575 ('Marco Polo Season 1 (Complete)')
+
+  'baka-and-test-summon-the-beasts' → Season 2 (NEW): 13 link(s), title='Baka and Test: Summon the Beasts Season 2 (Complete)', cloned from pk=23538 ('Baka and Test: Summon the Beasts Season 1 (Complete)')
+
+  'peter-grill-and-the-philosopher-s-time' → Season 2 (NEW): 12 link(s), title='Peter Grill and the Philosopher’s Time Season 2 (Complete)', cloned from pk=7951 ('Peter Grill and the Philosopher’s Time Season 1 (Complete)')
+
+  'terminator-the-sarah-connor-chronicles' → Season 2 (NEW): 22 link(s), title='Terminator: The Sarah Connor Chronicles S02 (Complete)', cloned from pk=16940 ('Terminator: The Sarah Connor Chronicles S01 (Complete)')
+
+  'star-trek-picard' → Season 2 (NEW): 10 link(s), title='Star Trek: Picard S02 (Complete)', cloned from pk=16616 ('Star Trek: Picard S01 (Complete)')
+
+  'adventure-time' → Season 10 (NEW): 13 link(s), title='Adventure Time Season 10 (Complete)', cloned from pk=18506 ('Adventure Time Season 8 (Complete)')
+
+  'adventure-time' → Season 9 (NEW): 14 link(s), title='Adventure Time Season 9 (Complete)', cloned from pk=18506 ('Adventure Time Season 8 (Complete)')
+
+  'breaking-bad' → Season 4 (NEW): 13 link(s), title='Breaking Bad S04 (Complete)', cloned from pk=17605 ('Breaking Bad S03 (Complete)')
+
+  'never-have-i-ever' → Season 2 (NEW): 10 link(s), title='Never Have I Ever S02 (Complete)', cloned from pk=17267 ('Never Have I Ever S01 (Complete)')
+
+  'queen-of-the-south' → Season 4 (NEW): 13 link(s), title='Queen of the South S04 (Complete)', cloned from pk=17555 ('Queen of the South S03 (Complete)')
+
+  'teen-wolf' → Season 2 (NEW): 12 link(s), title='Teen Wolf S02 (Complete)', cloned from pk=16924 ('Teen Wolf S01 (Complete)')
+
+  'dave' → Season 2 (NEW): 10 link(s), title='Dave S02 (Complete)', cloned from pk=16937 ('Dave S01 (Complete)')
+
+  'ginny-and-georgia' → Season 2 (NEW): 10 link(s), title='Ginny and Georgia S02 (Complete)', cloned from pk=16850 ('Ginny and Georgia S01 (Complete)')
+
+  'mayday' → Season 17 (NEW): 10 link(s), title='Mayday Season 17 (Complete)', cloned from pk=24572 ('Mayday Season 14 (Complete)')
+
+  'mayday' → Season 24 (NEW): 10 link(s), title='Mayday Season 24 (Complete)', cloned from pk=24572 ('Mayday Season 14 (Complete)')
+
+  'mayday' → Season 25 (NEW): 11 link(s), title='Mayday Season 25 (Complete)', cloned from pk=24572 ('Mayday Season 14 (Complete)')
+
+  'mayday' → Season 19 (NEW): 10 link(s), title='Mayday Season 19 (Complete)', cloned from pk=24572 ('Mayday Season 14 (Complete)')
+
+  'mayday' → Season 20 (NEW): 10 link(s), title='Mayday Season 20 (Complete)', cloned from pk=24572 ('Mayday Season 14 (Complete)')
+
+  'mayday' → Season 21 (NEW): 10 link(s), title='Mayday Season 21 (Complete)', cloned from pk=24572 ('Mayday Season 14 (Complete)')
+
+  'mayday' → Season 22 (NEW): 10 link(s), title='Mayday Season 22 (Complete)', cloned from pk=24572 ('Mayday Season 14 (Complete)')
+
+  'mayday' → Season 23 (NEW): 10 link(s), title='Mayday Season 23 (Complete)', cloned from pk=24572 ('Mayday Season 14 (Complete)')
+
+  'mayday' → Season 15 (NEW): 10 link(s), title='Mayday Season 15 (Complete)', cloned from pk=24572 ('Mayday Season 14 (Complete)')
+
+  'mayday' → Season 16 (NEW): 10 link(s), title='Mayday Season 16 (Complete)', cloned from pk=24572 ('Mayday Season 14 (Complete)')
+
+  'mayday' → Season 18 (NEW): 9 link(s), title='Mayday Season 18 (Complete)', cloned from pk=24572 ('Mayday Season 14 (Complete)')
+
+  'tsugumomo' → Season 2 (NEW): 12 link(s), title='Tsugumomo Season 2 (Complete)', cloned from pk=7308 ('Tsugumomo Season 1 (Complete)')
+
+  'the-newsroom' → Season 3 (NEW): 6 link(s), title='The Newsroom Season 3 (Complete)', cloned from pk=28062 ('The Newsroom Season 1 (Complete)')
+
+  'the-newsroom' → Season 2 (NEW): 9 link(s), title='The Newsroom Season 2 (Complete)', cloned from pk=28062 ('The Newsroom Season 1 (Complete)')
+
+  'his-dark-materials' → Season 2 (NEW): 7 link(s), title='His Dark Materials S02 (Complete)', cloned from pk=16828 ('His Dark Materials S01 (Complete)')
+
+  'the-mick' → Season 2 (NEW): 20 link(s), title='The Mick Season 2 (Complete)', cloned from pk=26903 ('The Mick Season 1 (Complete)')
+
+  'jormungand' → Season 2 (NEW): 12 link(s), title='Jormungand Season 2 (Complete)', cloned from pk=7337 ('Jormungand Season 1 (Complete)')
+
+  'by-the-grace-of-the-gods' → Season 2 (NEW): 12 link(s), title='By the Grace of the Gods Season 2 (Complete)', cloned from pk=8099 ('By the Grace of the Gods Season 1 (Complete)')
+
+  'fleabag' → Season 2 (NEW): 6 link(s), title='Fleabag S02 (Complete)', cloned from pk=14808 ('Fleabag S01 (Complete)')
+
+  'the-son' → Season 2 (NEW): 10 link(s), title='The Son S02 (Complete)', cloned from pk=16803 ('The Son S01 (Complete)')
+
+  'the-asterisk-war' → Season 2 (NEW): 14 link(s), title='The Asterisk War Season 2 (Complete)', cloned from pk=7262 ('The Asterisk War Season 1 (Complete)')
+
+  'welcome-to-wrexham' → Season 2 (NEW): 15 link(s), title='Welcome to Wrexham Season 2 (Complete)', cloned from pk=2588 ('Welcome to Wrexham Season 1 (Complete)')
+
+  'welcome-to-wrexham' → Season 3 (NEW): 8 link(s), title='Welcome to Wrexham Season 3 (Complete)', cloned from pk=2588 ('Welcome to Wrexham Season 1 (Complete)')
+
+  'game-of-thrones' → Season 8 (NEW): 6 link(s), title='Game of Thrones S08 (Complete)', cloned from pk=487 ('Game of Thrones S07 (Complete)')
+
+  'the-tale-of-the-spirit-stone' → Season 2 (NEW): 11 link(s), title='The Tale Of The Spirit Stone Season 2 (Complete)', cloned from pk=5043 ('The Tale Of The Spirit Stone Season 1 (Complete)')
+
+  'moriarty-the-patriot' → Season 2 (NEW): 13 link(s), title='Moriarty The Patriot Season 2 (Complete)', cloned from pk=6640 ('Moriarty The Patriot Season 1 (Complete)')
+
+  'slow-horses' → Season 4 (NEW): 6 link(s), title='Slow Horses S04 (Complete)', cloned from pk=14818 ('Slow Horses S03 (Complete)')
+
+  'daniel-spellbound' → Season 2 (NEW): 10 link(s), title='Daniel Spellbound S02 (Complete)', cloned from pk=16751 ('Daniel Spellbound S01 (Complete)')
+
+  'knights-of-sidonia' → Season 2 (NEW): 13 link(s), title='Knights Of Sidonia Season 2 (Complete)', cloned from pk=6164 ('Knights Of Sidonia Season 1 (Complete)')
+
+  'mayday' → Season 5 (NEW): 10 link(s), title='Mayday Season 5 (Complete)', cloned from pk=22979 ('Mayday Season 3 (Complete)')
+
+  'mayday' → Season 9 (NEW): 8 link(s), title='Mayday Season 9 (Complete)', cloned from pk=22979 ('Mayday Season 3 (Complete)')
+
+  'mayday' → Season 7 (NEW): 8 link(s), title='Mayday Season 7 (Complete)', cloned from pk=22979 ('Mayday Season 3 (Complete)')
+
+  'mayday' → Season 10 (NEW): 6 link(s), title='Mayday Season 10 (Complete)', cloned from pk=22979 ('Mayday Season 3 (Complete)')
+
+  'mayday' → Season 8 (NEW): 2 link(s), title='Mayday Season 8 (Complete)', cloned from pk=22979 ('Mayday Season 3 (Complete)')
+
+  'mayday' → Season 4 (NEW): 10 link(s), title='Mayday Season 4 (Complete)', cloned from pk=22979 ('Mayday Season 3 (Complete)')
+
+  'mayday' → Season 12 (NEW): 13 link(s), title='Mayday Season 12 (Complete)', cloned from pk=22979 ('Mayday Season 3 (Complete)')
+
+  'mayday' → Season 11 (NEW): 13 link(s), title='Mayday Season 11 (Complete)', cloned from pk=22979 ('Mayday Season 3 (Complete)')
+
+  'mayday' → Season 6 (NEW): 3 link(s), title='Mayday Season 6 (Complete)', cloned from pk=22979 ('Mayday Season 3 (Complete)')
+
+  'undone' → Season 2 (NEW): 8 link(s), title='Undone S02 (Complete)', cloned from pk=17062 ('Undone S01 (Complete)')
+
+  'cobra-kai' → Season 4 (NEW): 10 link(s), title='Cobra Kai S04 (Complete)', cloned from pk=17348 ('Cobra Kai S03 (Complete)')
+
+  'fate-the-winx-saga' → Season 2 (NEW): 7 link(s), title='Fate: The Winx Saga S02 (Complete)', cloned from pk=17204 ('Fate: The Winx Saga S01 (Complete)')
+
+  'better-call-saul' → Season 3 (NEW): 10 link(s), title='Better Call Saul S03 (Complete)', cloned from pk=17480 ('Better Call Saul S02 (Complete)')
+
+  'rick-and-morty' → Season 5 (NEW): 10 link(s), title='Rick and Morty S05 (Complete)', cloned from pk=17143 ('Rick and Morty S03 (Complete)')
+
+  'rick-and-morty' → Season 4 (NEW): 10 link(s), title='Rick and Morty S04 (Complete)', cloned from pk=17143 ('Rick and Morty S03 (Complete)')
+
+  'magical-sisters-luluttolilly' → Season 0 (NEW): 1 link(s), title='Magical Sisters LuluttoLilly Season 0 (Complete)', cloned from pk=4073 ('Magical Sisters LuluttoLilly Season 1 (Complete)')
+
+  'black-mirror' → Season 3 (NEW): 6 link(s), title='Black Mirror S03 (Complete)', cloned from pk=14629 ('Black Mirror S01 (Complete)')
+
+  'black-mirror' → Season 2 (NEW): 4 link(s), title='Black Mirror S02 (Complete)', cloned from pk=14629 ('Black Mirror S01 (Complete)')
+
+  'succession' → Season 2 (NEW): 10 link(s), title='Succession S02 (Complete)', cloned from pk=14637 ('Succession S01 (Complete)')
+
+  'monk-2002' → Season 5 (NEW): 16 link(s), title='Monk (2002) Season 5 (Complete)', cloned from pk=23553 ('Monk (2002) Season 1 (Complete)')
+
+  'monk-2002' → Season 7 (NEW): 16 link(s), title='Monk (2002) Season 7 (Complete)', cloned from pk=23553 ('Monk (2002) Season 1 (Complete)')
+
+  'monk-2002' → Season 4 (NEW): 16 link(s), title='Monk (2002) Season 4 (Complete)', cloned from pk=23553 ('Monk (2002) Season 1 (Complete)')
+
+  'monk-2002' → Season 3 (NEW): 16 link(s), title='Monk (2002) Season 3 (Complete)', cloned from pk=23553 ('Monk (2002) Season 1 (Complete)')
+
+  'monk-2002' → Season 8 (NEW): 16 link(s), title='Monk (2002) Season 8 (Complete)', cloned from pk=23553 ('Monk (2002) Season 1 (Complete)')
+
+  'monk-2002' → Season 6 (NEW): 16 link(s), title='Monk (2002) Season 6 (Complete)', cloned from pk=23553 ('Monk (2002) Season 1 (Complete)')
+
+  'monk-2002' → Season 2 (NEW): 16 link(s), title='Monk (2002) Season 2 (Complete)', cloned from pk=23553 ('Monk (2002) Season 1 (Complete)')
+
+  'a-man-who-defies-the-world-of-bl' → Season 2 (NEW): 4 link(s), title='A Man Who Defies the World of BL Season 2 (Complete)', cloned from pk=3758 ('A Man Who Defies the World of BL Season 1 (Complete)')
+
+  'titans' → Season 2 (NEW): 13 link(s), title='Titans S02 (Complete)', cloned from pk=17733 ('Titans S01 (Complete)')
+
+  'into-the-badlands' → Season 2 (NEW): 10 link(s), title='Into the Badlands S02 (Complete)', cloned from pk=16831 ('Into the Badlands S01 (Complete)')
+
+  'raising-dion' → Season 2 (NEW): 8 link(s), title='Raising Dion S02 (Complete)', cloned from pk=17632 ('Raising Dion S01 (Complete)')
+
+  'the-lincoln-lawyer' → Season 2 (NEW): 10 link(s), title='The Lincoln Lawyer S02 (Complete)', cloned from pk=14608 ('The Lincoln Lawyer S01 (Complete)')
+
+  'top-boy' → Season 2 (NEW): 4 link(s), title='Top Boy S02 (Complete)', cloned from pk=17564 ('Top Boy S01 (Complete)')
+
+  'peaky-blinders' → Season 2 (NEW): 6 link(s), title='Peaky Blinders S02 (Complete)', cloned from pk=1112 ('Peaky Blinders S01 (Complete)')
+
+  'peaky-blinders' → Season 3 (NEW): 6 link(s), title='Peaky Blinders S03 (Complete)', cloned from pk=1112 ('Peaky Blinders S01 (Complete)')
+
+  'peaky-blinders' → Season 4 (NEW): 6 link(s), title='Peaky Blinders S04 (Complete)', cloned from pk=1112 ('Peaky Blinders S01 (Complete)')
+
+  '9-1-1' → Season 1 (NEW): 1 link(s), title='9-1-1 S01', cloned from pk=534 ('9-1-1 S09')
+
+  'victorious' → Season 2 (NEW): 13 link(s), title='Victorious S02 (Complete)', cloned from pk=17341 ('Victorious S01 (Complete)')
+
+  'i-m-standing-on-a-million-lives' → Season 2 (NEW): 12 link(s), title='I’m Standing on a Million Lives Season 2 (Complete)', cloned from pk=6843 ('I’m Standing on a Million Lives Season 1 (Complete)')
+
+  'our-skyy' → Season 2 (NEW): 16 link(s), title='Our Skyy Season 2 (Complete)', cloned from pk=4153 ('Our Skyy Season 1 (Complete)')
+
+  '1923' → Season 0 (NEW): 1 link(s), title='1923 S00', cloned from pk=15316 ('1923 S02')
+
+  'blood-and-water' → Season 2 (NEW): 7 link(s), title='Blood and Water S02 (Complete)', cloned from pk=17785 ('Blood and Water S01 (Complete)')
+
+  'big-love' → Season 3 (NEW): 10 link(s), title='Big Love Season 3 (Complete)', cloned from pk=28385 ('Big Love Season 1 (Complete)')
+
+  'big-love' → Season 4 (NEW): 9 link(s), title='Big Love Season 4 (Complete)', cloned from pk=28385 ('Big Love Season 1 (Complete)')
+
+  'big-love' → Season 5 (NEW): 10 link(s), title='Big Love Season 5 (Complete)', cloned from pk=28385 ('Big Love Season 1 (Complete)')
+
+  'big-love' → Season 2 (NEW): 12 link(s), title='Big Love Season 2 (Complete)', cloned from pk=28385 ('Big Love Season 1 (Complete)')
+
+  'sky-rojo' → Season 2 (NEW): 8 link(s), title='Sky Rojo S02 (Complete)', cloned from pk=17804 ('Sky Rojo S01 (Complete)')
+
+  'doc' → Season 0 (NEW): 1 link(s), title='Doc S00', cloned from pk=15436 ('Doc S01')
+
+  'young-royals' → Season 2 (NEW): 6 link(s), title='Young Royals S02 (Complete)', cloned from pk=16801 ('Young Royals S01 (Complete)')
+
+  'kaguya-sama-love-is-war' → Season 3 (NEW): 13 link(s), title='Kaguya-sama: Love Is War Season 3 (Complete)', cloned from pk=6710 ('Kaguya-sama: Love Is War Season 1 (Complete)')
+
+  'kaguya-sama-love-is-war' → Season 2 (NEW): 12 link(s), title='Kaguya-sama: Love Is War Season 2 (Complete)', cloned from pk=6710 ('Kaguya-sama: Love Is War Season 1 (Complete)')
+
+  'tides-of-love' → Season 1 (NEW): 1 link(s), title='Tides of Love Season 1', cloned from pk=13754 ('Tides of Love Season 2')
+
+  'oh-my-baby' → Season 3 (NEW): 1 link(s), title='Oh My Baby Season 3 (Complete)', cloned from pk=10332 ('Oh My Baby Season 1 (Complete)')
+
+  'love-you-as-the-world-ends' → Season 5 (NEW): 5 link(s), title='Love You as the World Ends Season 5 (Complete)', cloned from pk=3788 ('Love You as the World Ends Season 2 (Complete)')
+
+  'love-you-as-the-world-ends' → Season 3 (NEW): 6 link(s), title='Love You as the World Ends Season 3 (Complete)', cloned from pk=3788 ('Love You as the World Ends Season 2 (Complete)')
+
+  'love-you-as-the-world-ends' → Season 4 (NEW): 5 link(s), title='Love You as the World Ends Season 4 (Complete)', cloned from pk=3788 ('Love You as the World Ends Season 2 (Complete)')
+
+  'black-mirror' → Season 5 (NEW): 3 link(s), title='Black Mirror S05 (Complete)', cloned from pk=14621 ('Black Mirror S04 (Complete)')
+
+  'golden-kamuy' → Season 3 (NEW): 12 link(s), title='Golden Kamuy Season 3 (Complete)', cloned from pk=6699 ('Golden Kamuy Season 1 (Complete)')
+
+  'golden-kamuy' → Season 4 (NEW): 13 link(s), title='Golden Kamuy Season 4 (Complete)', cloned from pk=6699 ('Golden Kamuy Season 1 (Complete)')
+
+  'golden-kamuy' → Season 2 (NEW): 12 link(s), title='Golden Kamuy Season 2 (Complete)', cloned from pk=6699 ('Golden Kamuy Season 1 (Complete)')
+
+  'going-dutch' → Season 20 (NEW): 1 link(s), title='Going Dutch S20 (Complete)', cloned from pk=1421 ('Going Dutch S02 (Complete)')
+
+  'star-trek-strange-new-worlds' → Season 42 (NEW): 1 link(s), title='Star Trek: Strange New Worlds S42', cloned from pk=14998 ('Star Trek: Strange New Worlds S03')
+
+  'industry' → Season 2 (NEW): 8 link(s), title='Industry S02 (Complete)', cloned from pk=15725 ('Industry S01 (Complete)')
+
+  'bloodhounds' → Season 4 (NEW): 1 link(s), title='Bloodhounds Season 4 (Complete)', cloned from pk=1891 ('Bloodhounds Season 2 (Complete)')
+
+  'the-bear' → Season 34 (NEW): 1 link(s), title='The Bear S34 (Complete)', cloned from pk=15793 ('The Bear S03 (Complete)')
+
+  'spirit-sword-sovereign' → Season 2 (NEW): 1 link(s), title='Spirit Sword Sovereign Season 2 (Complete)', cloned from pk=5903 ('Spirit Sword Sovereign Season 1 (Complete)')
+
+  'overlord' → Season 3 (NEW): 13 link(s), title='Overlord Season 3 (Complete)', cloned from pk=3848 ('Overlord Season 2 (Complete)')
+
+  'overlord' → Season 4 (NEW): 13 link(s), title='Overlord Season 4 (Complete)', cloned from pk=3848 ('Overlord Season 2 (Complete)')
+
+  'the-mirror-twin-cities' → Season 2 (NEW): 16 link(s), title='The Mirror: Twin Cities Season 2 (Complete)', cloned from pk=4702 ('The Mirror: Twin Cities Season 1 (Complete)')
+
+  'blood-of-zeus' → Season 2 (NEW): 8 link(s), title='Blood of Zeus S02 (Complete)', cloned from pk=15860 ('Blood of Zeus S01 (Complete)')
+
+  'elite' → Season 2 (NEW): 8 link(s), title='Elite S02 (Complete)', cloned from pk=17744 ('Elite S01 (Complete)')
+
+  'sex-education' → Season 2 (NEW): 8 link(s), title='Sex Education S02 (Complete)', cloned from pk=17791 ('Sex Education S01 (Complete)')
+
+  'beacon-23' → Season 1 (NEW): 8 link(s), title='Beacon 23 S01', cloned from pk=16204 ('Beacon 23 S02')
+
+  'ted-lasso' → Season 2 (NEW): 12 link(s), title='Ted Lasso S02 (Complete)', cloned from pk=16762 ('Ted Lasso S01 (Complete)')
+
+  'saimdang-memoir-of-colors' → Season 9 (NEW): 1 link(s), title='Saimdang, Memoir of Colors S09 (Complete)', cloned from pk=13762 ('Saimdang, Memoir of Colors S01 (Complete)')
+
+  'his-man' → Season 3 (NEW): 14 link(s), title='His Man Season 3 (Complete)', cloned from pk=4337 ('His Man Season 1 (Complete)')
+
+  'his-man' → Season 2 (NEW): 14 link(s), title='His Man Season 2 (Complete)', cloned from pk=4337 ('His Man Season 1 (Complete)')
+
+  'surrealestate' → Season 9 (NEW): 1 link(s), title='SurrealEstate S09', cloned from pk=16237 ('SurrealEstate S02')
+
+  'good-job' → Season 8 (NEW): 1 link(s), title='Good Job Season 8', cloned from pk=9015 ('Good Job Season 1')
+
+  'succession' → Season 4 (NEW): 10 link(s), title='Succession S04 (Complete)', cloned from pk=14589 ('Succession S03 (Complete)')
+
+  'tom-clancy-s-jack-ryan' → Season 2 (NEW): 8 link(s), title="Tom Clancy's Jack Ryan S02 (Complete)", cloned from pk=16898 ("Tom Clancy's Jack Ryan S01 (Complete)")
+
+  'the-morning-show' → Season 2 (NEW): 10 link(s), title='The Morning Show S02 (Complete)', cloned from pk=16301 ('The Morning Show S01 (Complete)')
+
+  'wu-tang-an-american-saga' → Season 2 (NEW): 10 link(s), title='Wu-Tang: An American Saga S02 (Complete)', cloned from pk=17038 ('Wu-Tang: An American Saga S01 (Complete)')
+
+  'emily-in-paris' → Season 2 (NEW): 10 link(s), title='Emily in Paris S02 (Complete)', cloned from pk=17728 ('Emily in Paris S01 (Complete)')
+
+  'mythic-quest-raven-banquet' → Season 2 (NEW): 9 link(s), title='Mythic Quest Raven Banquet S02 (Complete)', cloned from pk=17796 ('Mythic Quest Raven Banquet S01 (Complete)')
+
+  'the-mandalorian' → Season 2 (NEW): 8 link(s), title='The Mandalorian S02 (Complete)', cloned from pk=17892 ('The Mandalorian S01 (Complete)')
+
+  'pennyworth' → Season 2 (NEW): 10 link(s), title='Pennyworth S02 (Complete)', cloned from pk=17871 ('Pennyworth S01 (Complete)')
+
+  'warrior' → Season 2 (NEW): 10 link(s), title='Warrior S02 (Complete)', cloned from pk=17922 ('Warrior S01 (Complete)')
+
+  'laid-back-camp' → Season 2 (NEW): 13 link(s), title='Laid-Back Camp Season 2 (Complete)', cloned from pk=2812 ('Laid-Back Camp Season 1 (Complete)')
+
+  'laid-back-camp' → Season 3 (NEW): 12 link(s), title='Laid-Back Camp Season 3 (Complete)', cloned from pk=2812 ('Laid-Back Camp Season 1 (Complete)')
+
+  'outer-range' → Season 2 (NEW): 7 link(s), title='Outer Range S02 (Complete)', cloned from pk=15815 ('Outer Range S01 (Complete)')
+
+  'dragon-raja-ii-mourner-s-eyes' → Season 2 (NEW): 21 link(s), title='Dragon Raja II: Mourner’s Eyes Season 2 (Complete)', cloned from pk=7091 ('Dragon Raja II: Mourner’s Eyes Season 1 (Complete)')
+
+  'mystic-pop-up-bar' → Season 2 (NEW): 1 link(s), title='Mystic Pop-Up Bar Season 2 (Complete)', cloned from pk=10274 ('Mystic Pop-Up Bar Season 1 (Complete)')
+
+  'breaking-bad' → Season 2 (NEW): 13 link(s), title='Breaking Bad S02 (Complete)', cloned from pk=17582 ('Breaking Bad S01 (Complete)')
+
+  'stumble' → Season 5 (NEW): 1 link(s), title='Stumble S05', cloned from pk=454 ('Stumble S01')
+
+  'chained-soldier' → Season 2 (NEW): 11 link(s), title='Chained Soldier Season 2', cloned from pk=5803 ('Chained Soldier Season 1')
+
+  'gangs-of-london' → Season 2 (NEW): 8 link(s), title='Gangs of London S02 (Complete)', cloned from pk=17074 ('Gangs of London S01 (Complete)')
+
+  'tokyo-ghoul' → Season 2 (NEW): 12 link(s), title='Tokyo Ghoul Season 2 (Complete)', cloned from pk=5424 ('Tokyo Ghoul Season 1 (Complete)')
+
+  'the-queen-of-attack' → Season 2 (NEW): 17 link(s), title='The Queen of Attack Season 2 (Complete)', cloned from pk=4979 ('The Queen of Attack Season 1 (Complete)')
+
+  'himouto-umaru-chan' → Season 2 (NEW): 12 link(s), title='Himouto Umaru chan Season 2 (Complete)', cloned from pk=6131 ('Himouto Umaru chan Season 1 (Complete)')
+
+  'dragon-prince-yuan' → Season 2 (NEW): 1 link(s), title='Dragon Prince Yuan Season 2', cloned from pk=8336 ('Dragon Prince Yuan Season 1')
+
+  'legend-of-exorcism' → Season 2 (NEW): 13 link(s), title='Legend of Exorcism Season 2 (Complete)', cloned from pk=8377 ('Legend of Exorcism Season 1 (Complete)')
+
+  'snowfall' → Season 2 (NEW): 10 link(s), title='Snowfall S02 (Complete)', cloned from pk=14854 ('Snowfall S01 (Complete)')
+
+  'kamitsubaki-city-under-construction' → Season 2 (NEW): 1 link(s), title='KAMITSUBAKI CITY UNDER CONSTRUCTION S02 (Complete)', cloned from pk=847 ('KAMITSUBAKI CITY UNDER CONSTRUCTION S01 (Complete)')
+
+  'the-last-kingdom' → Season 4 (NEW): 10 link(s), title='The Last Kingdom S04 (Complete)', cloned from pk=17487 ('The Last Kingdom S03 (Complete)')
+
+  'the-last-kingdom' → Season 5 (NEW): 10 link(s), title='The Last Kingdom S05 (Complete)', cloned from pk=17487 ('The Last Kingdom S03 (Complete)')
+
+  'white-cat-legend' → Season 2 (NEW): 12 link(s), title='White Cat Legend Season 2 (Complete)', cloned from pk=12072 ('White Cat Legend Season 1 (Complete)')
+
+
+======================================================================
+🎉  Done!
+    New season records created: 566
+    Links moved: 6851
+    Duplicate links deleted: 116
+======================================================================

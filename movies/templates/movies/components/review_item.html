@@ -7,11 +7,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <a href="{% url 'movies:profile' review.user.profile.display_name %}" class="font-semibold text-gray-900 dark:text-white hover:underline">{{ review.user.profile.display_name }}</a>
-          {% if review.user.is_staff %}
-            <span class="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs rounded-full">
-              <i class="fas fa-star mr-1"></i>Staff
-            </span>
-          {% endif %}
+          {% include 'movies/components/verified_tick.html' with profile=review.user.profile size='sm' %}
           {% if review.user_id in verified_watched_ids %}
             <span class="px-2 py-0.5 bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/30 text-[10px] font-bold rounded-full whitespace-nowrap" title="This user actually streamed/downloaded this title on Watch2D">
               <i class="fas fa-circle-check mr-1"></i>Watched on Watch2D

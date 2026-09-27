@@ -2,7 +2,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from .contact import contact
-from .scene_id import identify_scene
+from .scene_id import identify_scene, scan_ad_click, scan_quota_status
 from .views import (
     HomeView,
     CategoryMoviesView, MovieDetailView,
@@ -129,6 +129,8 @@ urlpatterns = [
     #    clip link (Gemini vision → TMDB). The app matches tmdb_id to its own
     #    catalogue. ────────────────────────────────────────────────────────────
     path('identify-scene/', identify_scene, name='identify_scene'),
+    path('identify-scene/ad-click/', scan_ad_click, name='scan_ad_click'),
+    path('identify-scene/quota/', scan_quota_status, name='scan_quota_status'),
 
     # ── Contact / complaint form (emails admin via Brevo; hides the address) ──
     path('contact/', contact, name='contact'),

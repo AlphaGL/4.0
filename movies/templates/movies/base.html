@@ -252,7 +252,7 @@
               <h1 class="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary-600 via-blue-600 to-accent-600 bg-clip-text text-transparent">
                 Watch2D
               </h1>
-              <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Movies for you</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Movies. Unlimited</p>
             </div>
           </a>
         </div>
@@ -297,6 +297,7 @@
                       class="flex items-center gap-2 p-1.5 pr-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300">
                 <img src="{{ user.profile.avatar_url }}" alt="" class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-200 max-w-[100px] truncate">{{ user.profile.display_name }}</span>
+                {% include 'movies/components/verified_tick.html' with profile=user.profile size='sm' %}
                 <i class="fas fa-chevron-down text-xs text-gray-400"></i>
               </button>
               <div id="account-menu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 z-50">
@@ -517,7 +518,8 @@
                       </div>
                       <div>
                         <span class="font-medium">My Profile</span>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ user.profile.display_name }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">{{ user.profile.display_name }}
+                          {% include 'movies/components/verified_tick.html' with profile=user.profile size='sm' %}</p>
                       </div>
                     </div>
                     <i class="fas fa-chevron-right text-gray-400"></i>
@@ -717,7 +719,7 @@
             <h3 class="text-xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">Watch2D</h3>
           </div>
           <p class="text-gray-300 text-sm leading-relaxed">
-            Your ultimate destination for streaming and downloading movies, series, anime, and more. 
+            Your ultimate destination for Movies, Tv Shows and more. 
             Fresh content updated daily in high quality.
           </p>
           {# Get the App #}
@@ -776,6 +778,18 @@
        .telegram-icon, .pulse-ring, …) are now compiled into tw.min.css via
        tailwind_src/input.css — the @apply directives that used to live here only
        worked because of the runtime Play CDN. */
+
+    /* Verified tick — shared wherever a display name appears (nav, comments,
+       reviews, profile header). Gold = official Watch2D staff account,
+       blue = earned via real usage. See Profile.verification_tier. */
+    .verified-tick {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 50%; font-size: .72rem; flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,.15);
+    }
+    .verified-tick-gold { background: linear-gradient(135deg,#fde68a,#f59e0b); color: #7c2d12; }
+    .verified-tick-blue { background: linear-gradient(135deg,#60a5fa,#2563eb); color: #fff; }
+    .verified-tick-sm { width: 15px; height: 15px; font-size: .5rem; }
 
     /* Horizontal-scrolling category strip (scrollbar hidden). */
     .cat-scroll {
@@ -881,6 +895,7 @@
       }
       if (btn.dataset.busy === '1') return;
       btn.dataset.busy = '1';
+      btn.classList.add('js-btn-pending');
       try {
         const response = await fetch(btn.dataset.toggleUrl, {
           method: 'GET',
@@ -904,6 +919,7 @@
         console.error('Watchlist toggle failed', err);
       } finally {
         btn.dataset.busy = '0';
+        btn.classList.remove('js-btn-pending');
       }
     });
 
@@ -918,6 +934,7 @@
       }
       if (btn.dataset.busy === '1') return;
       btn.dataset.busy = '1';
+      btn.classList.add('js-btn-pending');
       try {
         const response = await fetch(btn.dataset.toggleUrl, {
           method: 'GET',
@@ -938,6 +955,7 @@
         console.error('Like toggle failed', err);
       } finally {
         btn.dataset.busy = '0';
+        btn.classList.remove('js-btn-pending');
       }
     });
 
@@ -952,6 +970,7 @@
       }
       if (btn.dataset.busy === '1') return;
       btn.dataset.busy = '1';
+      btn.classList.add('js-btn-pending');
       try {
         const response = await fetch(btn.dataset.toggleUrl, {
           method: 'GET',
@@ -972,6 +991,7 @@
         console.error('Watched toggle failed', err);
       } finally {
         btn.dataset.busy = '0';
+        btn.classList.remove('js-btn-pending');
       }
     });
 
@@ -986,6 +1006,7 @@
       }
       if (btn.dataset.busy === '1') return;
       btn.dataset.busy = '1';
+      btn.classList.add('js-btn-pending');
       try {
         const response = await fetch(btn.dataset.toggleUrl, {
           method: 'GET',
@@ -1009,6 +1030,7 @@
         console.error('Notify toggle failed', err);
       } finally {
         btn.dataset.busy = '0';
+        btn.classList.remove('js-btn-pending');
       }
     });
 
@@ -1562,6 +1584,11 @@
     }
     .ic-rt { color: #fa320a; }
     .ic-audience { color: #f59e0b; }
+
+    /* Instant feedback on Watchlist/Like/Watched clicks — without this, the
+       ~200-500ms server round-trip (extra on this repo, whose local dev DB
+       is a remote Postgres instance) reads as "the button did nothing". */
+    .js-btn-pending { opacity: .5; pointer-events: none; transition: opacity .1s; }
 
     /* ── Horizontal-scroll card row — shared by every page that shows a
        "you may also like" style strip (home, download/stream gate pages). ── */

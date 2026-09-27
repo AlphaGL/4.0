@@ -1,0 +1,314 @@
+{# "Scan a Scene" — identify a movie/show from a screenshot or a social clip link (Gemini vision + TMDB). Include once per page (uses page-global element IDs). #}
+<div class="scan-card">
+  <div class="scan-head">
+    <div class="scan-icon-wrap">
+      <div class="scan-icon"><i class="fas fa-camera-retro"></i></div>
+      <div class="scan-beam"></div>
+    </div>
+    <div class="min-w-0">
+      <h3 class="scan-title">Scan a Scene</h3>
+      <p class="scan-sub">Saw a movie somewhere but don't know the name? Drop a screenshot or paste a link — we'll find it.</p>
+    </div>
+    <span id="scan-quota-badge" class="scan-quota-badge"></span>
+  </div>
+
+  <div id="scan-form-area">
+    <div class="scan-tabs">
+      <button type="button" class="scan-tab active" data-panel="scan-panel-image">
+        <i class="fas fa-image"></i> Screenshot
+      </button>
+      <button type="button" class="scan-tab" data-panel="scan-panel-link">
+        <i class="fas fa-link"></i> Social Link
+      </button>
+    </div>
+
+    <div id="scan-panel-image" class="scan-panel active">
+      <label for="scan-file-input" class="scan-dropzone" id="scan-dropzone">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <span id="scan-dropzone-text">Click to upload, or drag a screenshot here</span>
+        <input type="file" id="scan-file-input" accept="image/*" multiple hidden>
+      </label>
+    </div>
+
+    <div id="scan-panel-link" class="scan-panel">
+      <input type="url" id="scan-url-input" class="scan-input"
+             placeholder="Paste a TikTok, Instagram, YouTube or Facebook link…">
+    </div>
+  </div>
+
+  {# Shown instead of the form once today's free scans run out #}
+  <div id="scan-locked-area" class="scan-locked hidden">
+    <p class="scan-locked-msg">
+      <i class="fas fa-lock"></i> You've used today's free scans.
+      Watch <b><span id="scan-ads-remaining">3</span> ads</b> to unlock one more.
+    </p>
+    <div class="scan-ad-dots">
+      <span class="scan-ad-dot" data-i="0"></span>
+      <span class="scan-ad-dot" data-i="1"></span>
+      <span class="scan-ad-dot" data-i="2"></span>
+    </div>
+    <button type="button" id="scan-watch-ad-btn" class="scan-submit">
+      <i class="fas fa-play-circle"></i> <span>Watch an Ad</span>
+    </button>
+  </div>
+
+  <button type="button" id="scan-submit-btn" class="scan-submit" disabled>
+    <i class="fas fa-search"></i> <span>Identify It</span>
+  </button>
+
+  <div id="scan-results" class="scan-results hidden"></div>
+</div>
+
+<style>
+  .scan-card {
+    background: linear-gradient(135deg, rgba(99,102,241,.06), rgba(168,85,247,.06));
+    border: 1px solid rgba(99,102,241,.18); border-radius: 18px; padding: 20px;
+  }
+  .dark .scan-card { background: linear-gradient(135deg, rgba(99,102,241,.12), rgba(168,85,247,.1)); border-color: rgba(99,102,241,.3); }
+  .scan-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+  .scan-icon-wrap { position: relative; width: 48px; height: 48px; flex-shrink: 0; border-radius: 14px; overflow: hidden;
+    background: linear-gradient(135deg,#6366f1,#a855f7); display: flex; align-items: center; justify-content: center; }
+  .scan-icon { color: #fff; font-size: 1.2rem; z-index: 1; }
+  .scan-beam { position: absolute; left: 0; right: 0; height: 3px; background: rgba(255,255,255,.85);
+    box-shadow: 0 0 8px 2px rgba(255,255,255,.7); animation: scan-sweep 2.2s ease-in-out infinite; }
+  @keyframes scan-sweep { 0%,100% { top: 4px; opacity: .3; } 50% { top: 42px; opacity: 1; } }
+  .scan-title { font-size: 1.05rem; font-weight: 800; margin: 0; color: #111827; }
+  .dark .scan-title { color: #f3f4f6; }
+  .scan-sub { font-size: .78rem; color: #6b7280; margin: 3px 0 0; line-height: 1.4; }
+  .dark .scan-sub { color: #9ca3af; }
+  .scan-quota-badge {
+    flex-shrink: 0; padding: 4px 10px; border-radius: 999px; font-size: .68rem; font-weight: 800;
+    background: rgba(99,102,241,.12); color: #6366f1; white-space: nowrap;
+  }
+  .dark .scan-quota-badge { background: rgba(99,102,241,.2); color: #a5b4fc; }
+  .scan-quota-badge.scan-quota-empty { background: rgba(239,68,68,.12); color: #dc2626; }
+  .dark .scan-quota-badge.scan-quota-empty { background: rgba(239,68,68,.2); color: #f87171; }
+
+  .scan-locked { text-align: center; }
+  .scan-locked.hidden { display: none; }
+  .scan-locked-msg { font-size: .84rem; color: #374151; margin-bottom: 14px; line-height: 1.5; }
+  .dark .scan-locked-msg { color: #d1d5db; }
+  .scan-ad-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; }
+  .scan-ad-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,.12); transition: background .2s; }
+  .dark .scan-ad-dot { background: rgba(255,255,255,.15); }
+  .scan-ad-dot.done { background: linear-gradient(90deg,#6366f1,#a855f7); }
+  #scan-form-area.hidden { display: none; }
+
+  .scan-tabs { display: flex; gap: 6px; margin-bottom: 12px; background: rgba(0,0,0,.04); border-radius: 10px; padding: 4px; }
+  .dark .scan-tabs { background: rgba(255,255,255,.06); }
+  .scan-tab { flex: 1; padding: 7px; border: none; background: none; color: #6b7280; font-weight: 700; font-size: .76rem; border-radius: 8px; cursor: pointer; }
+  .dark .scan-tab { color: #9ca3af; }
+  .scan-tab.active { background: #fff; color: #6366f1; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .dark .scan-tab.active { background: rgba(255,255,255,.12); color: #a5b4fc; }
+
+  .scan-panel { display: none; }
+  .scan-panel.active { display: block; }
+  .scan-dropzone {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    padding: 28px 16px; border: 2px dashed rgba(99,102,241,.35); border-radius: 14px;
+    color: #6366f1; font-size: .8rem; font-weight: 600; cursor: pointer; text-align: center; transition: all .18s;
+  }
+  .scan-dropzone:hover, .scan-dropzone.dragover { background: rgba(99,102,241,.08); border-color: #6366f1; }
+  .scan-dropzone i { font-size: 1.6rem; }
+  .scan-input {
+    width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,0,0,.12);
+    background: #fff; font-size: .85rem;
+  }
+  .dark .scan-input { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.14); color: #f3f4f6; }
+
+  .scan-submit {
+    width: 100%; margin-top: 14px; padding: 12px; border: none; border-radius: 12px;
+    background: linear-gradient(90deg,#6366f1,#a855f7); color: #fff; font-weight: 800; font-size: .85rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity .15s;
+  }
+  .scan-submit:disabled { opacity: .45; cursor: not-allowed; }
+
+  .scan-results { margin-top: 16px; }
+  .scan-results.hidden { display: none; }
+  .scan-result-row {
+    display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: 12px;
+    background: #fff; border: 1px solid rgba(0,0,0,.08); margin-bottom: 8px; text-decoration: none; color: inherit;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .dark .scan-result-row { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.08); }
+  .scan-result-row:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.1); }
+  .scan-result-poster { width: 44px; aspect-ratio: 2/3; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: #e5e7eb; }
+  .dark .scan-result-poster { background: #242424; }
+  .scan-result-title { font-weight: 700; font-size: .85rem; }
+  .scan-result-meta { font-size: .72rem; color: #9ca3af; margin-top: 2px; }
+  .scan-conf { margin-left: auto; flex-shrink: 0; padding: 3px 9px; border-radius: 999px; font-size: .64rem; font-weight: 800; text-transform: uppercase; }
+  .scan-conf-high { background: rgba(34,197,94,.15); color: #16a34a; }
+  .scan-conf-medium { background: rgba(245,158,11,.15); color: #d97706; }
+  .scan-conf-low { background: rgba(107,114,128,.15); color: #6b7280; }
+  .scan-status { font-size: .8rem; color: #6b7280; text-align: center; padding: 12px; }
+  .dark .scan-status { color: #9ca3af; }
+</style>
+
+<script>
+(function () {
+  // IDs below are page-global — include this component once per page.
+  var tabs = document.querySelectorAll('.scan-tab');
+  var panels = document.querySelectorAll('.scan-panel');
+  var dropzone = document.getElementById('scan-dropzone');
+  var fileInput = document.getElementById('scan-file-input');
+  var dropzoneText = document.getElementById('scan-dropzone-text');
+  var urlInput = document.getElementById('scan-url-input');
+  var submitBtn = document.getElementById('scan-submit-btn');
+  var resultsBox = document.getElementById('scan-results');
+  var quotaBadge = document.getElementById('scan-quota-badge');
+  var formArea = document.getElementById('scan-form-area');
+  var lockedArea = document.getElementById('scan-locked-area');
+  var watchAdBtn = document.getElementById('scan-watch-ad-btn');
+  var adsRemainingEl = document.getElementById('scan-ads-remaining');
+  var adDots = document.querySelectorAll('.scan-ad-dot');
+  if (!submitBtn) return;
+
+  // Reuses the same ad link already approved for the download/stream gates —
+  // opened deliberately on click, never a forced/timed takeover.
+  var AD_URL = 'https://omg10.com/4/9160518';
+
+  var mode = 'image';
+  var selectedFiles = [];
+
+  function renderQuota(q) {
+    if (!q) return;
+    if (q.remaining > 0) {
+      quotaBadge.textContent = q.remaining + '/' + q.limit + ' scans left today';
+      quotaBadge.classList.remove('scan-quota-empty');
+      formArea.classList.remove('hidden');
+      lockedArea.classList.add('hidden');
+    } else {
+      quotaBadge.textContent = '0 scans left today';
+      quotaBadge.classList.add('scan-quota-empty');
+      formArea.classList.add('hidden');
+      lockedArea.classList.remove('hidden');
+      adsRemainingEl.textContent = q.ads_needed - q.ad_progress;
+      adDots.forEach(function (dot) {
+        dot.classList.toggle('done', parseInt(dot.dataset.i, 10) < q.ad_progress);
+      });
+    }
+  }
+
+  fetch('{% url "movies:scan_quota_status" %}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    .then(function (r) { return r.json(); })
+    .then(function (data) { if (data.ok) renderQuota(data.quota); })
+    .catch(function () {});
+
+  if (watchAdBtn) {
+    watchAdBtn.addEventListener('click', function () {
+      window.open(AD_URL, '_blank', 'noopener');
+      watchAdBtn.disabled = true;
+      var label = watchAdBtn.querySelector('span');
+      label.textContent = 'Confirming…';
+      fetch('{% url "movies:scan_ad_click" %}', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          watchAdBtn.disabled = false;
+          label.textContent = 'Watch an Ad';
+          if (data.ok) renderQuota(data.quota);
+        })
+        .catch(function () {
+          watchAdBtn.disabled = false;
+          label.textContent = 'Watch an Ad';
+        });
+    });
+  }
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) { t.classList.remove('active'); });
+      panels.forEach(function (p) { p.classList.remove('active'); });
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel).classList.add('active');
+      mode = tab.dataset.panel === 'scan-panel-image' ? 'image' : 'link';
+      updateSubmitState();
+    });
+  });
+
+  function updateSubmitState() {
+    if (mode === 'image') {
+      submitBtn.disabled = selectedFiles.length === 0;
+    } else {
+      submitBtn.disabled = !urlInput.value.trim();
+    }
+  }
+
+  dropzone.addEventListener('click', function (e) { e.preventDefault(); fileInput.click(); });
+  fileInput.addEventListener('change', function () {
+    selectedFiles = Array.from(fileInput.files).slice(0, 4);
+    dropzoneText.textContent = selectedFiles.length
+      ? selectedFiles.length + ' image' + (selectedFiles.length > 1 ? 's' : '') + ' selected — ready to scan'
+      : 'Click to upload, or drag a screenshot here';
+    updateSubmitState();
+  });
+  ['dragover', 'dragleave', 'drop'].forEach(function (evt) {
+    dropzone.addEventListener(evt, function (e) {
+      e.preventDefault();
+      dropzone.classList.toggle('dragover', evt === 'dragover');
+      if (evt === 'drop' && e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        fileInput.dispatchEvent(new Event('change'));
+      }
+    });
+  });
+  urlInput.addEventListener('input', updateSubmitState);
+
+  function confClass(c) {
+    return c === 'high' ? 'scan-conf-high' : c === 'medium' ? 'scan-conf-medium' : 'scan-conf-low';
+  }
+
+  submitBtn.addEventListener('click', async function () {
+    submitBtn.disabled = true;
+    var icon = submitBtn.querySelector('i');
+    var label = submitBtn.querySelector('span');
+    icon.className = 'fas fa-spinner fa-spin';
+    label.textContent = 'Scanning…';
+    resultsBox.classList.remove('hidden');
+    resultsBox.innerHTML = '<p class="scan-status"><i class="fas fa-circle-notch fa-spin"></i> Looking closely at every clue…</p>';
+
+    var formData = new FormData();
+    if (mode === 'image') {
+      selectedFiles.forEach(function (f) { formData.append('images', f); });
+    } else {
+      formData.append('url', urlInput.value.trim());
+    }
+
+    try {
+      var resp = await fetch('{% url "movies:identify_scene" %}', { method: 'POST', body: formData });
+      var data = await resp.json();
+      icon.className = 'fas fa-search';
+      label.textContent = 'Identify It';
+      submitBtn.disabled = false;
+
+      if (!data.ok) {
+        var msg = data.message || "Couldn't identify that one — try a clearer screenshot or a different link.";
+        resultsBox.innerHTML = '<p class="scan-status">' + msg + '</p>';
+        return;
+      }
+      if (!data.results || !data.results.length) {
+        resultsBox.innerHTML = '<p class="scan-status">' + (data.note || "Couldn't confidently identify this scene.") + '</p>';
+        return;
+      }
+      resultsBox.innerHTML = data.results.map(function (r) {
+        var search = '{% url "movies:search_results" %}?q=' + encodeURIComponent(r.title);
+        var poster = r.poster_url || '';
+        var yearTxt = r.year ? ' (' + r.year + ')' : '';
+        var typeTxt = r.media_type === 'tv' ? 'TV Show' : 'Movie';
+        return '<a href="' + search + '" class="scan-result-row">' +
+          (poster ? '<img src="' + poster + '" class="scan-result-poster" alt="">' : '<div class="scan-result-poster"></div>') +
+          '<div><div class="scan-result-title">' + r.title + yearTxt + '</div>' +
+          '<div class="scan-result-meta">' + typeTxt + (r.context ? ' · ' + r.context : '') + '</div></div>' +
+          '<span class="scan-conf ' + confClass(r.confidence) + '">' + r.confidence + '</span>' +
+          '</a>';
+      }).join('');
+    } catch (err) {
+      icon.className = 'fas fa-search';
+      label.textContent = 'Identify It';
+      submitBtn.disabled = false;
+      resultsBox.innerHTML = '<p class="scan-status">Something went wrong — please try again.</p>';
+      console.error('scan-a-scene:', err);
+    }
+  });
+})();
+</script>

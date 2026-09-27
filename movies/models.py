@@ -18,6 +18,8 @@ class Profile(models.Model):
     display_name = models.CharField(max_length=30, unique=True)
     avatar_seed  = models.CharField(max_length=40, blank=True, default='',
                                     help_text="Seed for the generated avatar — stays fixed even if display_name changes.")
+    custom_avatar_url = models.URLField(max_length=500, blank=True, default='',
+                                    help_text="Fixed avatar (e.g. the site logo for the official Watch2D account) — takes priority over the generated one.")
     created_at   = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -25,8 +27,55 @@ class Profile(models.Model):
 
     @property
     def avatar_url(self):
+        if self.custom_avatar_url:
+            return self.custom_avatar_url
         seed = self.avatar_seed or self.display_name
         return f'https://api.dicebear.com/9.x/adventurer/svg?seed={quote(seed)}&backgroundType=gradientLinear'
+
+    # ── Verification tick ────────────────────────────────────────────────
+    # 'gold' = official Watch2D staff account. 'blue' = earned by real usage
+    # (written reviews + account age + watched count), so it can't be farmed
+    # by a fresh account posting empty ratings. Computed live rather than a
+    # manually-flipped flag so it appears the moment the bar is met.
+    BLUE_TICK_REVIEWS = 10
+    BLUE_TICK_ACCOUNT_AGE_DAYS = 14
+    BLUE_TICK_WATCHED = 5
+
+    def blue_tick_progress(self):
+        """Raw counts + pass/fail per requirement — used for the profile's
+        progress display. Not cached: only called on a profile page view."""
+        written_reviews = self.user.reviews.exclude(content='').count()
+        account_age_days = (timezone.now() - self.user.date_joined).days
+        watched_count = self.user.watched_movies.count()
+        pct = lambda have, needed: min(100, round(have * 100 / needed))
+        return {
+            'reviews': written_reviews, 'reviews_needed': self.BLUE_TICK_REVIEWS,
+            'reviews_met': written_reviews >= self.BLUE_TICK_REVIEWS,
+            'reviews_pct': pct(written_reviews, self.BLUE_TICK_REVIEWS),
+            'age_days': account_age_days, 'age_needed': self.BLUE_TICK_ACCOUNT_AGE_DAYS,
+            'age_met': account_age_days >= self.BLUE_TICK_ACCOUNT_AGE_DAYS,
+            'age_pct': pct(account_age_days, self.BLUE_TICK_ACCOUNT_AGE_DAYS),
+            'watched': watched_count, 'watched_needed': self.BLUE_TICK_WATCHED,
+            'watched_met': watched_count >= self.BLUE_TICK_WATCHED,
+            'watched_pct': pct(watched_count, self.BLUE_TICK_WATCHED),
+        }
+
+    @property
+    def verification_tier(self):
+        """'gold', 'blue', or None. This is evaluated everywhere a display
+        name is shown (nav, comments, reviews), so the blue check is cached
+        briefly per-user to avoid a burst of COUNT queries on busy pages."""
+        if self.user.is_staff:
+            return 'gold'
+        from django.core.cache import cache
+        cache_key = f'verify_tier_blue_{self.user_id}'
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cached or None
+        progress = self.blue_tick_progress()
+        is_blue = progress['reviews_met'] and progress['age_met'] and progress['watched_met']
+        cache.set(cache_key, 'blue' if is_blue else '', 300)
+        return 'blue' if is_blue else None
 
 
 class Category(models.Model):

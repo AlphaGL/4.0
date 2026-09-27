@@ -81,109 +81,117 @@
    purpose, same as the push-notification prompt further up this file.
 ══════════════════════════════════════════════════════════════════════ #} -->
 <style>
+  /* Ad gate — the ad loads in its own iframe modal (no window.open, so
+     nothing for the popup blocker to eat) with a short countdown before
+     Continue closes it and browsing resumes. */
   .w2d-ad-gate {
-    position: fixed; inset: 0; z-index: 9999;
+    position: fixed; inset: 0; z-index: 999999;
     display: flex; align-items: center; justify-content: center;
-    background: rgba(0,0,0,.75); backdrop-filter: blur(3px);
+    background: rgba(0,0,0,.8); backdrop-filter: blur(3px);
     opacity: 0; visibility: hidden; transition: opacity .25s ease;
-    cursor: pointer; padding: 16px;
+    padding: 16px;
   }
   .w2d-ad-gate.w2d-ad-visible { opacity: 1; visibility: visible; }
   .w2d-ad-card {
-    position: relative; width: min(300px, 90vw); background: #111827;
-    border-radius: 16px; padding: 28px 20px 22px; text-align: center;
+    position: relative; width: min(380px, 94vw); background: #111827;
+    border-radius: 16px; padding: 14px; text-align: center;
     box-shadow: 0 20px 60px rgba(0,0,0,.55);
   }
   .w2d-ad-gate.w2d-ad-visible .w2d-ad-card { animation: w2d-pop .35s cubic-bezier(.34,1.56,.64,1); }
   @keyframes w2d-pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .w2d-ad-header { display: flex; align-items: center; gap: 8px; padding: 0 2px 10px; }
   .w2d-ad-tag {
-    position: absolute; top: 10px; left: 10px; font-size: .62rem; font-weight: 700;
-    letter-spacing: .05em; color: rgba(255,255,255,.55); background: rgba(255,255,255,.08);
+    font-size: .62rem; font-weight: 700; letter-spacing: .05em;
+    color: rgba(255,255,255,.55); background: rgba(255,255,255,.08);
     padding: 2px 7px; border-radius: 5px;
   }
-  .w2d-ad-tap { position: relative; width: 64px; height: 64px; margin: 6px auto 14px; display: flex; align-items: center; justify-content: center; }
-  .w2d-ad-tap i { position: relative; z-index: 2; font-size: 1.6rem; color: #38bdf8; animation: w2d-tap .9s ease-in-out infinite; }
-  .w2d-ad-ring { position: absolute; inset: 0; border: 2px solid #38bdf8; border-radius: 50%; opacity: 0; animation: w2d-ring 1.8s ease-out infinite; }
-  .w2d-ad-ring2 { animation-delay: .6s; }
-  @keyframes w2d-ring { 0% { transform: scale(.4); opacity: .7; } 100% { transform: scale(1.4); opacity: 0; } }
-  @keyframes w2d-tap { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
-  .w2d-ad-title { color: #fff; font-size: .95rem; font-weight: 700; margin: 0 0 4px; }
-  .w2d-ad-sub { color: rgba(255,255,255,.55); font-size: .75rem; margin: 0; }
-  .w2d-ad-status { color: #38bdf8; font-size: .72rem; font-weight: 600; min-height: 1em; margin: 8px 0 0; }
-  .w2d-ad-card.w2d-ad-ok { outline: 2px solid #22c55e; }
-  @media (prefers-reduced-motion: reduce) { .w2d-ad-tap i, .w2d-ad-ring { animation: none; } }
+  .w2d-ad-head-label { color: rgba(255,255,255,.7); font-size: .78rem; font-weight: 600; }
+  .w2d-ad-frame-wrap {
+    width: 100%; aspect-ratio: 4/5; max-height: 60vh; background: #000;
+    border-radius: 10px; overflow: hidden;
+  }
+  .w2d-ad-frame-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .w2d-ad-continue {
+    width: 100%; margin-top: 12px; padding: 12px; border: none; border-radius: 12px;
+    font-size: .85rem; font-weight: 700; background: #374151; color: rgba(255,255,255,.45);
+    cursor: not-allowed; transition: background .2s, color .2s;
+  }
+  .w2d-ad-continue.w2d-ad-ready {
+    background: linear-gradient(90deg,#22c55e,#16a34a); color: #fff; cursor: pointer;
+  }
 </style>
 <script>
 (function () {
   var AD_URL = 'https://omg10.com/4/9160518';
-  var AD_INTERVAL_MS = 60000; // reappears this often — raise it if bounce rate climbs
-  var AD_LOAD_WAIT_MS = 6000; // keep the gate up this long after tap so the new tab
-                               // actually finishes loading before the visitor can
-                               // flip back and close it — closing too early is what
-                               // stops these networks from paying out the visit
-  var isOpen = false, timerId = null;
-
-  function buildGate() {
-    var existing = document.getElementById('w2d-ad-gate');
-    if (existing) return existing;
-    var wrap = document.createElement('div');
-    wrap.id = 'w2d-ad-gate';
-    wrap.className = 'w2d-ad-gate';
-    wrap.innerHTML =
-      '<div class="w2d-ad-card">' +
-        '<span class="w2d-ad-tag">Ad</span>' +
-        '<div class="w2d-ad-tap">' +
-          '<span class="w2d-ad-ring"></span><span class="w2d-ad-ring w2d-ad-ring2"></span>' +
-          '<i class="fas fa-hand-pointer"></i>' +
-        '</div>' +
-        '<p class="w2d-ad-title">Tap anywhere to continue</p>' +
-        '<p class="w2d-ad-sub">Quick ad &mdash; won&rsquo;t take long</p>' +
-        '<p class="w2d-ad-status" aria-live="polite"></p>' +
-      '</div>';
-    document.body.appendChild(wrap);
-    wrap.addEventListener('click', onTap);
-    return wrap;
-  }
-
-  function onTap() {
-    var wrap = document.getElementById('w2d-ad-gate');
-    if (!wrap || wrap._resolved) return;
-    var statusEl = wrap.querySelector('.w2d-ad-status');
-    var win = window.open(AD_URL, '_blank'); // must stay synchronous with the click
-    if (win) {
-      wrap._resolved = true;
-      wrap.querySelector('.w2d-ad-card').classList.add('w2d-ad-ok');
-      var remaining = Math.ceil(AD_LOAD_WAIT_MS / 1000);
-      if (statusEl) statusEl.textContent = 'Loading your page… ' + remaining + 's';
-      var tick = setInterval(function () {
-        remaining--;
-        if (statusEl && remaining > 0) statusEl.textContent = 'Loading your page… ' + remaining + 's';
-      }, 1000);
-      setTimeout(function () { clearInterval(tick); closeGate(); }, AD_LOAD_WAIT_MS);
-    } else if (statusEl) {
-      statusEl.textContent = 'Pop-up blocked — allow pop-ups, then tap again';
-      setTimeout(function () { if (!wrap._resolved) closeGate(); }, 4000); // never trap the visitor
-    }
-  }
+  var AD_INTERVAL_MS = 30000; // reappears this often — raise it if bounce rate climbs
+  var AD_WAIT_MS = 6000; // countdown before Continue unlocks — gives the ad time to load
+  var isOpen = false, timerId = null, gateEl = null;
 
   function closeGate() {
-    var wrap = document.getElementById('w2d-ad-gate');
-    if (wrap) {
-      wrap.classList.remove('w2d-ad-visible');
-      wrap._resolved = false;
-      wrap.querySelector('.w2d-ad-card').classList.remove('w2d-ad-ok');
-      var statusEl = wrap.querySelector('.w2d-ad-status');
-      if (statusEl) statusEl.textContent = '';
+    if (gateEl) {
+      gateEl.classList.remove('w2d-ad-visible');
+      var el = gateEl;
+      gateEl = null;
+      setTimeout(function () { el.remove(); }, 250);
     }
     isOpen = false;
     scheduleNext();
   }
 
+  function buildGate() {
+    var el = document.createElement('div');
+    el.className = 'w2d-ad-gate';
+    el.innerHTML =
+      '<div class="w2d-ad-card">' +
+        '<div class="w2d-ad-header"><span class="w2d-ad-tag">Ad</span><span class="w2d-ad-head-label">Advertisement</span></div>' +
+        '<div class="w2d-ad-frame-wrap"><iframe src="' + AD_URL + '" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" referrerpolicy="no-referrer"></iframe></div>' +
+        '<button type="button" class="w2d-ad-continue" disabled>Continue in ' + Math.ceil(AD_WAIT_MS / 1000) + 's</button>' +
+      '</div>';
+    document.body.appendChild(el);
+
+    var btn = el.querySelector('.w2d-ad-continue');
+    var remaining = Math.ceil(AD_WAIT_MS / 1000);
+    var tick = setInterval(function () {
+      remaining--;
+      if (remaining > 0) {
+        btn.textContent = 'Continue in ' + remaining + 's';
+      } else {
+        clearInterval(tick);
+        btn.disabled = false;
+        btn.textContent = 'Continue';
+        btn.classList.add('w2d-ad-ready');
+      }
+    }, 1000);
+
+    // If the ad inside the iframe opens a new tab (can't see inside a
+    // cross-origin iframe to know for sure), this tab loses focus — coming
+    // back is a strong enough signal they've engaged with the ad, so close
+    // right away instead of making them wait out/click the countdown too.
+    var leftTab = false;
+    function onBlur() { leftTab = true; }
+    function onFocus() { if (leftTab) finish(); }
+    window.addEventListener('blur', onBlur);
+    window.addEventListener('focus', onFocus);
+
+    function finish() {
+      clearInterval(tick);
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('focus', onFocus);
+      closeGate();
+    }
+
+    btn.addEventListener('click', function () {
+      if (btn.disabled) return;
+      finish();
+    });
+    return el;
+  }
+
   function showGate() {
     if (isOpen || document.hidden) { scheduleNext(); return; }
     isOpen = true;
-    var wrap = buildGate();
-    requestAnimationFrame(function () { wrap.classList.add('w2d-ad-visible'); });
+    gateEl = buildGate();
+    requestAnimationFrame(function () { gateEl.classList.add('w2d-ad-visible'); });
   }
 
   function scheduleNext() {
@@ -1357,171 +1365,4 @@
   });
 </script>
 
-{# ═══ FLOATING DOWNLOAD GUIDE VIDEO ═══ #}
-<style>
-  @keyframes guide-pulse { 0%,100%{opacity:.9} 50%{opacity:.25} }
-  #guideWidget {
-    position: fixed;
-    bottom: 20px;
-    right: 16px;
-    width: clamp(130px, 18vw, 170px);
-    background: #0f0f0f;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
-    z-index: 9999;
-    transition: opacity 0.4s ease, transform 0.4s ease;
-  }
-  #guideWidget.gw-hidden {
-    opacity: 0 !important;
-    transform: translateY(20px) !important;
-    pointer-events: none !important;
-  }
-  #guideVideoWrap {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 9/16;
-    max-height: 260px;
-    background: #000;
-    cursor: pointer;
-  }
-  #guideVideo {
-    width: 100%; height: 100%;
-    display: block;
-    object-fit: contain;
-  }
-  #guidePlayOverlay {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 6px;
-    background: rgba(0,0,0,0.55);
-    transition: opacity .2s;
-  }
-  #guidePlayOverlay .gpo-btn {
-    width: 44px; height: 44px; border-radius: 50%;
-    background: rgba(229,9,20,0.92);
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 1.1rem; padding-left: 3px;
-    box-shadow: 0 4px 16px rgba(229,9,20,0.5);
-    transition: transform .18s, background .18s;
-  }
-  #guidePlayOverlay:hover .gpo-btn { transform: scale(1.1); background: #e50914; }
-  #guidePlayOverlay .gpo-label {
-    color: #fff; font-size: .58rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .07em;
-    text-shadow: 0 1px 4px rgba(0,0,0,.8);
-  }
-  #guideWidget .gw-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 7px 10px 6px;
-    background: linear-gradient(90deg, #e50914, #b0060f);
-  }
-  #guideWidget .gw-label-wrap { display: flex; align-items: center; gap: 6px; }
-  #guideWidget .gw-dot {
-    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
-    background: #fff; opacity: .9;
-    animation: guide-pulse 1.4s ease infinite;
-  }
-  #guideWidget .gw-label {
-    color: #fff; font-size: .62rem; font-weight: 800;
-    letter-spacing: .07em; text-transform: uppercase;
-  }
-  #guideClose {
-    background: rgba(255,255,255,0.18); border: none; color: #fff;
-    cursor: pointer; width: 20px; height: 20px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: .65rem; flex-shrink: 0; transition: background .2s; line-height: 1;
-  }
-  #guideClose:hover { background: rgba(255,255,255,0.35); }
-  #guideProgress {
-    height: 3px; background: rgba(255,255,255,0.15);
-    position: absolute; bottom: 0; left: 0; right: 0;
-  }
-  #guideProgressBar {
-    height: 100%; width: 0%;
-    background: #e50914;
-    transition: width 0.25s linear;
-  }
-</style>
-
-<div id="guideWidget">
-  <div class="gw-bar">
-    <div class="gw-label-wrap">
-      <span class="gw-dot"></span>
-      <span class="gw-label">How to Download</span>
-    </div>
-    <button id="guideClose" title="Close">&#x2715;</button>
-  </div>
-  <div id="guideVideoWrap">
-    <video id="guideVideo"
-      src="{% static 'guide/move-detail-page.mp4' %}"
-      muted autoplay playsinline preload="auto">
-    </video>
-    <div id="guidePlayOverlay">
-      <div class="gpo-btn">&#9654;</div>
-      <span class="gpo-label">Tap to watch</span>
-    </div>
-    <div id="guideProgress"><div id="guideProgressBar"></div></div>
-  </div>
-</div>
-
-<script>
-(function () {
-  var widget      = document.getElementById('guideWidget');
-  var video       = document.getElementById('guideVideo');
-  var closeBtn    = document.getElementById('guideClose');
-  var overlay     = document.getElementById('guidePlayOverlay');
-  var progressBar = document.getElementById('guideProgressBar');
-  var closedByUser = false;
-  var hasReappeared = false;
-  var reappearTimer = null;
-
-  /* ── slow down playback ── */
-  video.playbackRate = 0.75;
-  video.addEventListener('play', function () { video.playbackRate = 0.75; });
-
-  function hideWidget() { widget.classList.add('gw-hidden'); }
-  function showWidget() {
-    if (closedByUser) return;
-    widget.classList.remove('gw-hidden');
-    video.currentTime = 0;
-    video.playbackRate = 0.75;
-    tryPlay();
-  }
-  function tryPlay() {
-    var p = video.play();
-    if (p !== undefined) {
-      p.then(function () { overlay.style.display = 'none'; })
-       .catch(function () { overlay.style.display = 'flex'; });
-    }
-  }
-  overlay.addEventListener('click', function () {
-    overlay.style.display = 'none';
-    video.playbackRate = 0.75;
-    video.play();
-  });
-  video.addEventListener('timeupdate', function () {
-    if (!video.duration) return;
-    progressBar.style.width = ((video.currentTime / video.duration) * 100) + '%';
-  });
-  video.addEventListener('ended', function () {
-    progressBar.style.width = '100%';
-    setTimeout(function () {
-      hideWidget();
-      if (!closedByUser && !hasReappeared) {
-        hasReappeared = true;
-        reappearTimer = setTimeout(showWidget, 45000);
-      }
-    }, 400);
-  });
-  closeBtn.addEventListener('click', function () {
-    closedByUser = true;
-    if (reappearTimer) clearTimeout(reappearTimer);
-    video.pause();
-    hideWidget();
-  });
-  tryPlay();
-})();
-</script>
 {% endblock %}

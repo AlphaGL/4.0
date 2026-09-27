@@ -13,8 +13,8 @@
         <span class="gist-name">
           {% if comment.user %}{{ comment.user.profile.display_name }}{% else %}{{ comment.guest_name }}{% endif %}
         </span>
-        {% if comment.user and comment.user.is_staff %}
-          <span class="gist-staff-badge"><i class="fas fa-star"></i></span>
+        {% if comment.user %}
+          {% include 'movies/components/verified_tick.html' with profile=comment.user.profile size='sm' %}
         {% endif %}
         <span class="gist-dot">·</span>
         <span class="gist-time">{{ comment.created_at|shorttime }}</span>

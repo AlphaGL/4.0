@@ -88,6 +88,15 @@ class CommentForm(forms.ModelForm):
         }
 
 class ReviewForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The rating input is hidden (the visible stars drive it via JS) and a
+        # browser can't show its native "required" validation prompt on a
+        # hidden field — it just silently blocks the submit instead, so the
+        # JS-side "pick a star rating" message never gets a chance to show.
+        # add_review() already validates 1-10 server-side, so this is safe.
+        self.fields['rating'].required = False
+
     class Meta:
         model = Review
         fields = ['rating', 'content']
