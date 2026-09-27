@@ -46,6 +46,18 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
+# Django 4+ requires the exact scheme+host of any HTTPS deploy target here,
+# or CSRF validation fails on POST (login, comments, reviews, etc.) even
+# though the request is legitimate — SECURE_PROXY_SSL_HEADER alone isn't
+# enough once you're behind a reverse proxy (nginx/HAProxy).
+CSRF_TRUSTED_ORIGINS = [
+    'https://watch2d.org',
+    'https://www.watch2d.org',
+    'https://watch2d.com',
+    'https://www.watch2d.com',
+    'https://*.onrender.com',
+]
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
