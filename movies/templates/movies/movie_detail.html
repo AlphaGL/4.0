@@ -824,6 +824,7 @@
           }
         </script>
 
+      {% include 'movies/components/ratings_summary.html' %}
   <!-- ═══════════════════════════════════════════════
      CAST / DIRECTOR / WRITERS / PRODUCERS  (TMDB-enriched)
   ════════════════════════════════════════════════ -->
@@ -961,7 +962,6 @@
 {% endif %}
 
   {# Ratings & Reviews #}
-  {% include 'movies/components/ratings_summary.html' %}
   {% include 'movies/components/reviews_section.html' %}
 
   {# Comments #}
@@ -995,42 +995,56 @@
   .action-pill.active-like i { color: #ef4444; }
   .action-pill.active-like { border-color: rgba(239,68,68,.5); }
 
-  /* ── Ratings histogram (Letterboxd-style) ── */
+  /* ── Ratings histogram (Letterboxd-style) ──
+     These sit in normal page flow (outside the always-dark hero backdrop),
+     so — unlike the hero content — they need to work on both themes. They
+     were originally hardcoded for a permanently-dark page; light-mode
+     variants added below since the site can now toggle. */
   .ratings-histogram {
     display: flex; align-items: center; gap: 16px;
-    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+    background: rgba(0,0,0,.03); border: 1px solid rgba(0,0,0,.08);
     border-radius: 14px; padding: 16px 18px; margin: 1.5rem 0;
   }
+  .dark .ratings-histogram { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
   .rh-bars { flex: 1; display: flex; align-items: flex-end; gap: 4px; height: 56px; }
   .rh-bar { flex: 1; background: #00e054; border-radius: 3px 3px 1px 1px; min-height: 3px; opacity: .9; transition: opacity .15s; }
   .rh-bar:hover { opacity: 1; }
   .rh-avg { display: flex; flex-direction: column; align-items: center; min-width: 64px; }
-  .rh-avg-num { font-size: 1.9rem; font-weight: 300; color: #fff; line-height: 1; }
+  .rh-avg-num { font-size: 1.9rem; font-weight: 300; color: #111827; line-height: 1; }
+  .dark .rh-avg-num { color: #fff; }
   .rh-avg-star { color: #00e054; font-size: 1rem; margin-top: 2px; }
-  .rh-count { font-size: .68rem; color: #9ca3af; margin-top: 3px; }
+  .rh-count { font-size: .68rem; color: #6b7280; margin-top: 3px; }
+  .dark .rh-count { color: #9ca3af; }
 
   /* ── Cast/Director/Writers/Producers tabs ── */
-  .credit-tabs { display: flex; gap: 4px; border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 1rem; overflow-x: auto; }
-  .credit-tab { padding: 8px 4px; margin-right: 18px; font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #9ca3af; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
-  .credit-tab.active { color: #fff; border-bottom-color: #e50914; }
+  .credit-tabs { display: flex; gap: 4px; border-bottom: 1px solid rgba(0,0,0,.1); margin-bottom: 1rem; overflow-x: auto; }
+  .dark .credit-tabs { border-bottom-color: rgba(255,255,255,.1); }
+  .credit-tab { padding: 8px 4px; margin-right: 18px; font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #6b7280; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+  .dark .credit-tab { color: #9ca3af; }
+  .credit-tab.active { color: #111827; border-bottom-color: #e50914; }
+  .dark .credit-tab.active { color: #fff; }
   .credit-panel { display: none; }
   .credit-panel.active { display: flex; }
 
   /* ── Quick-review bar (Letterboxd "Rate, log, review..." bar) ── */
   .quick-review-bar {
     display: flex; align-items: center; gap: 12px;
-    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+    background: rgba(0,0,0,.04); border: 1px solid rgba(0,0,0,.1);
     border-radius: 14px; padding: 12px 16px; margin-bottom: 1.25rem; cursor: pointer;
     transition: background .18s;
   }
-  .quick-review-bar:hover { background: rgba(255,255,255,.1); }
+  .dark .quick-review-bar { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); }
+  .quick-review-bar:hover { background: rgba(0,0,0,.07); }
+  .dark .quick-review-bar:hover { background: rgba(255,255,255,.1); }
   .quick-review-avatar {
     width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
     background: linear-gradient(135deg,#6366f1,#a855f7); color: #fff;
     display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .85rem;
   }
-  .quick-review-text { color: #9ca3af; font-size: .82rem; flex: 1; }
+  .quick-review-text { color: #6b7280; font-size: .82rem; flex: 1; }
+  .dark .quick-review-text { color: #9ca3af; }
   .quick-review-more { color: #6b7280; }
+  .dark .quick-review-more { color: #9ca3af; }
 
   /* Cinematic blurred backdrop */
   .cinematic-backdrop {
