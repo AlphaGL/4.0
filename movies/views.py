@@ -1658,32 +1658,54 @@ class MovieDetailView(DetailView):
             .order_by('-created_at')[:20]
         )
 
-        # ── Related movies — by category, deterministic order (NO order_by('?'))
-        # order_by('?') = ORDER BY RANDOM() = full table scan every request.
-        # Use pk descending (fast index scan) filtered by same category instead.
-        # Cached per-movie (30 min) — this m2m join+distinct is the page's heaviest
+        # ── Related movies — matched on the movie's most SPECIFIC category,
+        # not just any shared one. A movie is usually tagged with several
+        # categories at once (e.g. an anime might also carry Action/Comedy),
+        # and the old `categories__in=movie_categories` matched ANY of them —
+        # since broad genre tags (Comedy: 5.6k movies, Action: 3.4k) vastly
+        # outnumber niche ones (Anime: 1.9k, Wrestling: 351), results got
+        # swamped by generic titles instead of staying true to what the movie
+        # actually is. Picking the category with the FEWEST total movies (the
+        # most defining tag) keeps anime with anime, Korean with Korean,
+        # wrestling with wrestling — falling back to the broader union only
+        # if that specific category doesn't have enough titles to fill 12.
+        # Deterministic order (NO order_by('?') = full table scan every
+        # request). Cached per-movie (30 min) — this is the page's heaviest
         # query and its result changes rarely, so skip the round-trip on repeats.
-        rel_key = f'movie_related_{movie.id}_v2'
+        rel_key = f'movie_related_{movie.id}_v3'
         related_movies = cache.get(rel_key)
         if related_movies is None:
+            base_qs = (
+                Movie.objects
+                .only('id', 'title', 'slug', 'image_url', 'created_at', 'rating', 'trailer_url')
+                .prefetch_related('external_ratings')
+                .exclude(id=movie.id)
+            )
+            related_movies = []
             if movie_categories:
+                primary_category = min(
+                    movie_categories, key=lambda c: c.movies.count())
                 related_movies = list(
-                    Movie.objects
-                    .only('id', 'title', 'slug', 'image_url', 'created_at', 'rating', 'trailer_url')
-                    .prefetch_related('external_ratings')
-                    .filter(categories__in=movie_categories)
-                    .exclude(id=movie.id)
+                    base_qs.filter(categories=primary_category)
                     .distinct()
                     .order_by('-created_at')[:12]
                 )
-            else:
-                related_movies = list(
-                    Movie.objects
-                    .only('id', 'title', 'slug', 'image_url', 'created_at', 'rating', 'trailer_url')
-                    .prefetch_related('external_ratings')
-                    .exclude(id=movie.id)
-                    .order_by('-created_at')[:12]
+                if len(related_movies) < 12:
+                    seen_ids = {m.id for m in related_movies}
+                    topup = (
+                        base_qs.filter(categories__in=movie_categories)
+                        .exclude(id__in=seen_ids)
+                        .distinct()
+                        .order_by('-created_at')[:12 - len(related_movies)]
+                    )
+                    related_movies += list(topup)
+            if len(related_movies) < 12:
+                seen_ids = {m.id for m in related_movies}
+                topup = (
+                    base_qs.exclude(id__in=seen_ids)
+                    .order_by('-created_at')[:12 - len(related_movies)]
                 )
+                related_movies += list(topup)
             cache.set(rel_key, related_movies, 60 * 30)
 
         context['related_movies'] = related_movies

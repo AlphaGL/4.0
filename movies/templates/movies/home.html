@@ -8,6 +8,10 @@
 {% block meta_keywords %}free movies, download movies, stream movies, anime, K-Drama, Nollywood, Hollywood{% endblock %}
 {% block canonical_block %}<link rel="canonical" href="{{ request.build_absolute_uri }}" />{% endblock %}
 {% block og_type %}website{% endblock %}
+
+{% block popunder_scripts %}
+  {% include 'movies/components/ad_gate.html' with interval_ms=60000 %}
+{% endblock %}
 {% block og_title %}Watch2D – Free Movie Downloads & Streaming{% endblock %}
 {% block og_description %}Download & stream movies, anime, K-Dramas, Nollywood & Hollywood series free in HD.{% endblock %}
 {% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
@@ -184,7 +188,7 @@
   .rt-score { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
   .rt-score-muted { color: #9ca3af; font-weight: 500; }
   .rt-imdb { color: #f5c518; -webkit-text-stroke: .3px #b8930f; font-weight: 900; }
-  .rt-card-title { display: block; font-size: .78rem; font-weight: 700; color: #111827; margin-top: 4px; text-decoration: none; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rt-card-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; font-size: .78rem; font-weight: 700; color: #111827; margin-top: 4px; text-decoration: none; line-height: 1.3; overflow: hidden; }
   .dark .rt-card-title { color: #f3f4f6; }
   .rt-watchlist-btn {
     margin-top: 7px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
