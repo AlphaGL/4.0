@@ -45,11 +45,11 @@
     </span>
   {% endif %}
   {% if community_score and community_review_count >= 3 %}
-    <span class="inline-flex items-center gap-1.5 bg-white/15 border border-white/25 text-white px-2.5 py-1 rounded-md text-xs font-bold shadow" title="Watch2D community rating ({{ community_review_count }} reviews)">
+    <span class="inline-flex items-center gap-1.5 bg-gray-900/10 dark:bg-white/15 border border-gray-900/15 dark:border-white/25 text-gray-900 dark:text-white px-2.5 py-1 rounded-md text-xs font-bold shadow" title="Watch2D community rating ({{ community_review_count }} reviews)">
       <i class="fas fa-users text-[11px]"></i>{{ community_score }}<span class="opacity-70 font-normal">({{ community_review_count }})</span>
     </span>
   {% else %}
-    <span class="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 text-white/60 px-2.5 py-1 rounded-md text-[11px] font-medium" title="Not enough Watch2D reviews yet">
+    <span class="inline-flex items-center gap-1.5 bg-gray-900/5 dark:bg-white/10 border border-gray-900/10 dark:border-white/15 text-gray-500 dark:text-white/60 px-2.5 py-1 rounded-md text-[11px] font-medium" title="Not enough Watch2D reviews yet">
       <i class="fas fa-users text-[11px]"></i> Not enough ratings yet
     </span>
   {% endif %}

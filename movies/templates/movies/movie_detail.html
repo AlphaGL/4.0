@@ -298,7 +298,7 @@
       </div>
       {% include 'movies/components/rating_badges.html' %}
       {% if director_names %}
-        <p class="text-sm text-gray-300 mt-1 mb-3">Directed by <span class="text-white font-semibold">{{ director_names }}</span></p>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 mb-3">Directed by <span class="text-gray-900 dark:text-white font-semibold">{{ director_names }}</span></p>
       {% endif %}
 
       {# ── Primary CTA — comes first, before the description/metadata below. ── #}
@@ -314,15 +314,15 @@
             {% endif %}
             {% if movie.download_links.exists or movie.download_url %}
             <button onclick="openDownloadModal()"
-                    class="inline-flex items-center gap-2 px-5 py-3 bg-white/15 border border-white/30
-                           text-white rounded-full text-base font-bold hover:bg-white/25 transition-all duration-300 hover:scale-105">
+                    class="inline-flex items-center gap-2 px-5 py-3 bg-gray-900/10 dark:bg-white/15 border border-gray-900/20 dark:border-white/30
+                           text-gray-900 dark:text-white rounded-full text-base font-bold hover:bg-gray-900/15 dark:hover:bg-white/25 transition-all duration-300 hover:scale-105">
               <i class="fas fa-download"></i> Download
             </button>
             {% endif %}
           </div>
 
           {% if movie.download_links.exists or movie.download_url %}
-          <p class="text-xs text-gray-400 mb-4 -mt-2">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-4 -mt-2">
             {{ seo_type }} &middot; Available in 480p, 720p &amp; 1080p (MP4/MKV){% if movie.vi_subtitle %} &middot; {{ movie.vi_subtitle }} subtitle{% endif %}{% if movie.vi_filesize %} &middot; {{ movie.vi_filesize }}{% endif %}
           </p>
           {% endif %}
@@ -368,7 +368,7 @@
             <div class="flex flex-wrap gap-1.5 mb-3">
               {% for cat in movie.categories.all %}
                 <a href="{% url 'movies:category_movies' cat.id cat.slug %}"
-                   class="px-2.5 py-0.5 bg-white/15 border border-white/20 rounded-full text-xs text-white/90 hover:bg-white/25 transition-all duration-200">
+                   class="px-2.5 py-0.5 bg-gray-900/10 dark:bg-white/15 border border-gray-900/15 dark:border-white/20 rounded-full text-xs text-gray-800 dark:text-white/90 hover:bg-gray-900/15 dark:hover:bg-white/25 transition-all duration-200">
                   {{ cat.name }}
                 </a>
               {% endfor %}
@@ -378,7 +378,7 @@
           {# Description #}
           {% if movie.description %}
             <div id="movie-description" class="transition-all duration-300">
-              <p class="text-gray-300 text-sm leading-relaxed desc-clamp">{{ movie.description }}</p>
+              <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed desc-clamp">{{ movie.description }}</p>
             </div>
           {% endif %}
 
@@ -390,47 +390,47 @@
 
               {% if movie.vi_year %}
               <div class="flex items-start gap-2">
-                <span class="shrink-0 text-gray-400 w-20">Year</span>
-                <span class="text-white/90 font-medium">{{ movie.vi_year }}</span>
+                <span class="shrink-0 text-gray-500 dark:text-gray-400 w-20">Year</span>
+                <span class="text-gray-800 dark:text-white/90 font-medium">{{ movie.vi_year }}</span>
               </div>
               {% endif %}
 
               {% if movie.vi_country %}
               <div class="flex items-start gap-2">
-                <span class="shrink-0 text-gray-400 w-20">Country</span>
-                <span class="text-white/90 font-medium">{{ movie.vi_country }}</span>
+                <span class="shrink-0 text-gray-500 dark:text-gray-400 w-20">Country</span>
+                <span class="text-gray-800 dark:text-white/90 font-medium">{{ movie.vi_country }}</span>
               </div>
               {% endif %}
 
               {% if movie.vi_language %}
               <div class="flex items-start gap-2">
-                <span class="shrink-0 text-gray-400 w-20">Language</span>
-                <span class="text-white/90 font-medium">{{ movie.vi_language }}</span>
+                <span class="shrink-0 text-gray-500 dark:text-gray-400 w-20">Language</span>
+                <span class="text-gray-800 dark:text-white/90 font-medium">{{ movie.vi_language }}</span>
               </div>
               {% endif %}
 
               {% if movie.vi_subtitle %}
               <div class="flex items-start gap-2">
-                <span class="shrink-0 text-gray-400 w-20">Subtitle</span>
-                <span class="text-white/90 font-medium">{{ movie.vi_subtitle }}</span>
+                <span class="shrink-0 text-gray-500 dark:text-gray-400 w-20">Subtitle</span>
+                <span class="text-gray-800 dark:text-white/90 font-medium">{{ movie.vi_subtitle }}</span>
               </div>
               {% endif %}
 
 
               {% if movie.vi_episodes %}
               <div class="flex items-start gap-2">
-                <span class="shrink-0 text-gray-400 w-20">Episodes</span>
-                <span class="text-white/90 font-medium">{{ movie.vi_episodes }}</span>
+                <span class="shrink-0 text-gray-500 dark:text-gray-400 w-20">Episodes</span>
+                <span class="text-gray-800 dark:text-white/90 font-medium">{{ movie.vi_episodes }}</span>
               </div>
               {% endif %}
 
               {% if movie.vi_status %}
               <div class="flex items-start gap-2">
-                <span class="shrink-0 text-gray-400 w-20">Status</span>
+                <span class="shrink-0 text-gray-500 dark:text-gray-400 w-20">Status</span>
                 <span class="font-semibold
-                  {% if 'complet' in movie.vi_status|lower %}text-green-400
-                  {% elif 'ongoing' in movie.vi_status|lower or 'going' in movie.vi_status|lower %}text-yellow-400
-                  {% else %}text-white/90{% endif %}">
+                  {% if 'complet' in movie.vi_status|lower %}text-green-600 dark:text-green-400
+                  {% elif 'ongoing' in movie.vi_status|lower or 'going' in movie.vi_status|lower %}text-yellow-600 dark:text-yellow-400
+                  {% else %}text-gray-800 dark:text-white/90{% endif %}">
                   {{ movie.vi_status }}
                 </span>
               </div>
@@ -438,15 +438,15 @@
 
               {% if movie.vi_runtime %}
               <div class="flex items-start gap-2">
-                <span class="shrink-0 text-gray-400 w-20">Runtime</span>
-                <span class="text-white/90 font-medium">{{ movie.vi_runtime }}</span>
+                <span class="shrink-0 text-gray-500 dark:text-gray-400 w-20">Runtime</span>
+                <span class="text-gray-800 dark:text-white/90 font-medium">{{ movie.vi_runtime }}</span>
               </div>
               {% endif %}
 
               {% if movie.vi_filesize %}
               <div class="flex items-start gap-2">
-                <span class="shrink-0 text-gray-400 w-20">File Size</span>
-                <span class="text-white/90 font-medium">{{ movie.vi_filesize }}</span>
+                <span class="shrink-0 text-gray-500 dark:text-gray-400 w-20">File Size</span>
+                <span class="text-gray-800 dark:text-white/90 font-medium">{{ movie.vi_filesize }}</span>
               </div>
               {% endif %}
 
@@ -860,12 +860,15 @@
   .action-pill {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 3px; min-width: 64px; padding: 8px 10px; border-radius: 10px;
-    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
-    color: #e5e7eb; font-size: .62rem; font-weight: 700; letter-spacing: .01em;
+    background: rgba(0,0,0,.06); border: 1px solid rgba(0,0,0,.12);
+    color: #374151; font-size: .62rem; font-weight: 700; letter-spacing: .01em;
     text-decoration: none; cursor: pointer; transition: all .18s;
   }
-  .action-pill i { font-size: .95rem; color: #9ca3af; transition: color .18s; }
-  .action-pill:hover { background: rgba(255,255,255,.16); }
+  .dark .action-pill { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); color: #e5e7eb; }
+  .action-pill i { font-size: .95rem; color: #6b7280; transition: color .18s; }
+  .dark .action-pill i { color: #9ca3af; }
+  .action-pill:hover { background: rgba(0,0,0,.1); }
+  .dark .action-pill:hover { background: rgba(255,255,255,.16); }
   .action-pill.active i, .action-pill.active { color: #fff; }
   .action-pill.active { background: rgba(229,9,20,.85); border-color: rgba(229,9,20,.9); }
   .action-pill.active i { color: #fff; }
