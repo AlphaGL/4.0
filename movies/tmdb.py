@@ -12,6 +12,7 @@ from decouple import config
 
 BASE = 'https://api.themoviedb.org/3'
 IMG = 'https://image.tmdb.org/t/p/w500'
+IMG_BACKDROP = 'https://image.tmdb.org/t/p/w1280'  # backdrops are landscape stills, shown large — need more than poster-res
 
 
 def _key():
@@ -181,6 +182,7 @@ def details(tmdb_id, media):
         })
 
     poster = data.get('poster_path')
+    backdrop = data.get('backdrop_path')
     rating = data.get('vote_average')
     year = (data.get('release_date') or data.get('first_air_date') or '')[:4]
     runtime = data.get('runtime')
@@ -195,6 +197,7 @@ def details(tmdb_id, media):
         'imdb_id': imdb_id,
         'rating': round(rating, 1) if rating else None,
         'poster_url': f'{IMG}{poster}' if poster else None,
+        'backdrop_url': f'{IMG_BACKDROP}{backdrop}' if backdrop else None,
         'trailer_url': trailer,
         'cast': cast,
         'cast_list': cast_list,

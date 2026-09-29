@@ -179,6 +179,6 @@ migrate_prod.sh
 # dry-runs — never meant to ship, keeps sneaking into commits via `git add .`
 _rt_debug.html
 apply_output.txt
-*_log.txt
+*_log*.txt
 *_dry_run_output*.txt
 backup_before_*.json

@@ -134,6 +134,9 @@ class Movie(models.Model):
                   "have downloads AND streaming at the same time."
     )
     image_url    = models.URLField("Cover Image URL", blank=True, null=True, max_length=500)
+    backdrop_url = models.URLField("Backdrop Image URL", blank=True, null=True, max_length=500,
+                                   help_text="Wide landscape still from TMDB, used as the movie "
+                                             "detail page's hero banner (separate from the poster).")
     # ── TMDB enrichment (rating / trailer / matched id) ───────────────
     tmdb_id      = models.IntegerField(null=True, blank=True, db_index=True,
                                        help_text="Matched TheMovieDB id, if any.")

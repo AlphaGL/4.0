@@ -115,7 +115,8 @@ class Command(BaseCommand):
         if not opts['force']:
             qs = qs.filter(tmdb_synced=False)
         qs = qs.only('id', 'title', 'is_series', 'vi_year', 'vi_cast',
-                     'vi_genre', 'vi_runtime', 'description', 'image_url')
+                     'vi_genre', 'vi_runtime', 'description', 'image_url',
+                     'backdrop_url')
         if opts['limit']:
             qs = qs[:opts['limit']]
         movies = list(qs)
@@ -161,6 +162,11 @@ class Command(BaseCommand):
                     new_img = rehost_image(d['poster_url'])
                     if new_img:
                         updates['image_url'] = new_img
+
+                if d.get('backdrop_url') and r2 and not m.backdrop_url:
+                    new_backdrop = rehost_image(d['backdrop_url'])
+                    if new_backdrop:
+                        updates['backdrop_url'] = new_backdrop
 
                 updates['genres_synced'] = True
                 Movie.objects.filter(pk=m.id).update(**updates)

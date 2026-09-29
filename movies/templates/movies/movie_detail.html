@@ -173,14 +173,66 @@
   ════════════════════════════════════════════════ -->
   <div class="relative overflow-hidden hero-section">
 
-    {# Blurred backdrop #}
-    {% if movie.image_url %}
-      <div class="cinematic-backdrop absolute inset-0 z-0"
-           style="background-image:url('{{ movie.image_url }}');"></div>
-    {% else %}
-      <div class="absolute inset-0 z-0 bg-gradient-to-br from-gray-800 to-gray-900"></div>
+    {# Full-width backdrop — static image base layer, trailer plays on top and self-removes on error #}
+    {% with yt_id=movie.trailer_url|youtube_id %}
+    <div class="relative w-full {% if movie.backdrop_url or yt_id %}aspect-video sm:aspect-[21/9] max-h-[320px] sm:max-h-[420px]{% else %}h-40 sm:h-48{% endif %} overflow-hidden bg-black">
+      {% if movie.backdrop_url %}
+        <img src="{{ movie.backdrop_url }}" alt="" class="absolute inset-0 w-full h-full object-cover"
+             loading="eager" fetchpriority="high" decoding="async">
+      {% elif movie.image_url %}
+        <div class="cinematic-backdrop absolute inset-0" style="background-image:url('{{ movie.image_url }}');"></div>
+        <div class="absolute inset-0 bg-black/65"></div>
+      {% else %}
+        <div class="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900"></div>
+      {% endif %}
+
+      {% if yt_id %}
+        <div class="hero-trailer-frame absolute inset-0">
+          <div id="hero-trailer-player"></div>
+        </div>
+      {% endif %}
+
+      <div class="absolute inset-0 bg-gradient-to-t from-black via-black/5 to-black/35"></div>
+    </div>
+    {% if yt_id %}
+      <script>
+      (function () {
+        var YT_ID = '{{ yt_id|escapejs }}';
+        function createPlayer() {
+          if (!document.getElementById('hero-trailer-player') || !window.YT || !window.YT.Player) return;
+          new YT.Player('hero-trailer-player', {
+            videoId: YT_ID,
+            playerVars: {
+              autoplay: 1, mute: 1, loop: 1, playlist: YT_ID, controls: 0,
+              modestbranding: 1, rel: 0, playsinline: 1, disablekb: 1, iv_load_policy: 3
+            },
+            events: {
+              onError: function () {
+                var frame = document.querySelector('.hero-trailer-frame');
+                if (frame) frame.remove();
+              }
+            }
+          });
+        }
+        if (window.YT && window.YT.Player) {
+          createPlayer();
+        } else {
+          var prev = window.onYouTubeIframeAPIReady;
+          window.onYouTubeIframeAPIReady = function () {
+            if (typeof prev === 'function') prev();
+            createPlayer();
+          };
+          if (!document.getElementById('youtube-iframe-api')) {
+            var tag = document.createElement('script');
+            tag.id = 'youtube-iframe-api';
+            tag.src = 'https://www.youtube.com/iframe_api';
+            document.head.appendChild(tag);
+          }
+        }
+      })();
+      </script>
     {% endif %}
-    <div class="absolute inset-0 z-[1] bg-black/65"></div>
+    {% endwith %}
 
     {# Back / more overlay icons — Letterboxd-style #}
     <div class="absolute top-3 left-3 right-3 z-[3] flex items-center justify-between">
@@ -194,98 +246,63 @@
       </button>
     </div>
 
-    <div class="relative z-[2] container mx-auto px-4 py-6">
-      <div class="flex flex-col md:flex-row gap-6 items-start">
+    <div class="relative container mx-auto px-4 pb-6">
 
-        {# ── LEFT: Poster ── #}
-        <div class="flex-shrink-0 w-full md:w-auto flex flex-col items-center md:items-start">
-
-          <div class="poster-player-wrap relative group" id="poster-trigger">
-
-            {# Glow ring #}
-            <div class="glow-ring absolute -inset-1 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-xl blur-md opacity-60 group-hover:opacity-90 transition-opacity duration-500"></div>
-
-            {# Poster #}
-            <div id="poster-shell" class="relative bg-white/10 backdrop-blur-sm p-1 rounded-xl transition-all duration-300">
-              {% if movie.image_url %}
-                <img src="{{ movie.image_url }}"
-                     alt="{{ movie.title }}"
-                     class="poster-img w-44 h-64 sm:w-52 sm:h-76 md:w-56 md:h-80 object-cover rounded-lg shadow-2xl block"
-                     loading="eager"
-                     fetchpriority="high"
-                     decoding="async">
-              {% else %}
-                <div class="poster-img w-44 h-64 sm:w-52 sm:h-76 md:w-56 md:h-80 bg-gradient-to-br from-gray-700 to-gray-600 rounded-lg flex items-center justify-center">
-                  <i class="fas fa-film text-4xl text-gray-400"></i>
-                </div>
-              {% endif %}
-
-              {# HD badge #}
-              <div class="absolute top-2 right-2 bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow z-10">HD</div>
-
-              {# NEW badge #}
-              {% if movie.created_at|is_recent %}
-                <div class="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow z-10">
-                  <i class="fas fa-star mr-0.5"></i>NEW
-                </div>
-              {% endif %}
-
-              <!-- {# Play overlay on poster — scrolls to stream section #}
-              {% if movie.download_links.exists or movie.download_url or movie.hls_manifest %}
-                <div id="poster-play-overlay"
-                     onclick="scrollToStream()"
-                     class="absolute inset-0 rounded-lg flex items-center justify-center bg-black/50
-                            opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
-                  <div class="flex flex-col items-center gap-1.5">
-                    <div class="w-12 h-12 bg-white/20 backdrop-blur-sm border-2 border-white/70 rounded-full flex items-center justify-center
-                                transform scale-90 group-hover:scale-100 transition-transform duration-300 shadow-xl">
-                      <i class="fas fa-play text-white text-lg ml-1"></i>
-                    </div>
-                    <span class="text-white text-[10px] font-semibold tracking-wide drop-shadow">Watch</span>
-                  </div>
-                </div>
-              {% endif %} -->
-            </div>
-
-          </div>{# end poster-player-wrap #}
-
+      {# Title row: title/meta left, small poster card floating up right #}
+      <div class="flex items-end justify-between gap-3 -mt-14 sm:-mt-16 mb-3">
+        <div class="flex-1 min-w-0 pb-1">
+          <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-tight drop-shadow-lg">
+            {{ movie.title }}
+          </h1>
+          {# Subtitle line: completion status + content type e.g. "(Complete) | Chinese Drama" #}
+          {% if completion_label or seo_type %}
+            <p class="text-sm text-gray-200 mt-1 drop-shadow">
+              {% if completion_label %}<span class="text-green-400 font-semibold">{{ completion_label }}</span>{% endif %}
+              {% if completion_label and seo_type %} | {% endif %}
+              {% if seo_type %}<span>{{ seo_type }}</span>{% endif %}
+            </p>
+          {% endif %}
+          {% if movie.title_b %}
+            <h2 class="text-sm text-gray-300 mt-1">{{ movie.title_b }}</h2>
+          {% endif %}
         </div>
-        {# END LEFT #}
 
-        {# ── RIGHT: Movie info ── #}
-        <div class="flex-1 min-w-0">
-
-          {# Title block #}
-          <div class="mb-3">
-            <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 leading-tight">
-              {{ movie.title }}
-            </h1>
-            {# Subtitle line: completion status + content type e.g. "(Complete) | Chinese Drama" #}
-            {% if completion_label or seo_type %}
-              <p class="text-sm text-gray-300 mb-2">
-                {% if completion_label %}<span class="text-green-400 font-semibold">{{ completion_label }}</span>{% endif %}
-                {% if completion_label and seo_type %} | {% endif %}
-                {% if seo_type %}<span>{{ seo_type }}</span>{% endif %}
-              </p>
+        {# Small poster card #}
+        <div class="flex-shrink-0 w-24 sm:w-28">
+          <div id="poster-shell" class="relative rounded-lg overflow-hidden shadow-2xl border-2 border-black/40 aspect-[2/3]">
+            {% if movie.image_url %}
+              <img src="{{ movie.image_url }}" alt="{{ movie.title }}"
+                   class="poster-img w-full h-full object-cover block"
+                   loading="eager" fetchpriority="high" decoding="async">
+            {% else %}
+              <div class="poster-img w-full h-full bg-gradient-to-br from-gray-700 to-gray-600 flex items-center justify-center">
+                <i class="fas fa-film text-2xl text-gray-400"></i>
+              </div>
             {% endif %}
-            {% if movie.title_b %}
-              <h2 class="text-sm text-gray-300 mb-2">{{ movie.title_b }}</h2>
-            {% endif %}
-            <div class="flex flex-wrap items-center gap-2 mb-2">
-              {% if movie.year %}
-                <span class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-0.5 rounded-full text-xs font-semibold shadow">
-                  {{ movie.year }}
-                </span>
-              {% endif %}
-            </div>
-            {% include 'movies/components/rating_badges.html' %}
-            {% if director_names %}
-              <p class="text-sm text-gray-300 mt-1">Directed by <span class="text-white font-semibold">{{ director_names }}</span></p>
+            <div class="absolute top-1 right-1 bg-green-500 text-white text-[8px] font-bold px-1 py-0.5 rounded shadow z-10">HD</div>
+            {% if movie.created_at|is_recent %}
+              <div class="absolute top-1 left-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-[8px] font-bold px-1 py-0.5 rounded-full shadow z-10">
+                <i class="fas fa-star"></i>
+              </div>
             {% endif %}
           </div>
+        </div>
+      </div>
 
-          {# ── Primary CTA — comes first, before the description/metadata below. ── #}
-          <div class="flex flex-wrap gap-2 mb-4">
+      <div class="flex flex-wrap items-center gap-2 mb-2">
+        {% if movie.year %}
+          <span class="inline-block bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-0.5 rounded-full text-xs font-semibold shadow">
+            {{ movie.year }}
+          </span>
+        {% endif %}
+      </div>
+      {% include 'movies/components/rating_badges.html' %}
+      {% if director_names %}
+        <p class="text-sm text-gray-300 mt-1 mb-3">Directed by <span class="text-white font-semibold">{{ director_names }}</span></p>
+      {% endif %}
+
+      {# ── Primary CTA — comes first, before the description/metadata below. ── #}
+      <div class="flex flex-wrap gap-2 mb-4 mt-3">
             {% if movie.stream_url %}
               <a href="{% url 'movies:stream_gate' movie.pk %}"
                  class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600
@@ -438,11 +455,10 @@
           {% endif %}
           {% endwith %}
 
-        </div>
-        {# END RIGHT #}
-
-      </div>
     </div>
+
+    {# Soften the boundary into the page background below — was a hard cut #}
+    <div class="hero-fade-bottom"></div>
   </div>
   {# END HERO #}
 
@@ -906,6 +922,24 @@
   .dark .quick-review-text { color: #9ca3af; }
   .quick-review-more { color: #6b7280; }
   .dark .quick-review-more { color: #9ca3af; }
+
+  /* Fade the hero into the page background instead of a hard cut */
+  .hero-fade-bottom {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 56px;
+    background: linear-gradient(to bottom, transparent, #f8fafc);
+    pointer-events: none;
+  }
+  .dark .hero-fade-bottom { background: linear-gradient(to bottom, transparent, #111827); }
+
+  /* Hero autoplay trailer — oversized + centered so a 16:9 video covers a
+     wider 21:9 box without letterboxing (cropped, like object-fit:cover). */
+  .hero-trailer-frame { pointer-events: none; }
+  .hero-trailer-frame iframe {
+    position: absolute; top: 50%; left: 50%;
+    width: 178%; height: 178%;
+    transform: translate(-50%, -50%);
+    border: 0;
+  }
 
   /* Cinematic blurred backdrop */
   .cinematic-backdrop {

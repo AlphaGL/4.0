@@ -1,9 +1,24 @@
 # main/templatetags/movie_extras.py
+import re
+
 from django import template
 from datetime import datetime, timedelta, timezone
 from django.utils import timezone as dj_timezone
 
 register = template.Library()
+
+_YOUTUBE_ID_RE = re.compile(
+    r'(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/)([^&?/]+)')
+
+
+@register.filter
+def youtube_id(url):
+    """Extract the video id from a YouTube watch/short/embed URL, or '' if
+    it isn't one — used to build a hero-banner autoplay embed."""
+    if not url:
+        return ''
+    m = _YOUTUBE_ID_RE.search(url)
+    return m.group(1) if m else ''
 
 @register.filter
 def shorttime(value):
