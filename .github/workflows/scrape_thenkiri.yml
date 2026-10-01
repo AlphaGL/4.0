@@ -48,24 +48,35 @@ jobs:
       - name: Backfill show grouping (only rows still missing it)
         run: python manage.py backfill_shows --only-missing
 
-  scrape:
+  # ── Telegram-uploading scrapers — MUST run one at a time, never in parallel.
+  # Telethon uses ONE session (one auth_key) shared across every upload:true
+  # job; Telegram's anti-hijacking protection permanently kills a session the
+  # moment it sees that same auth_key used from two different IPs at once —
+  # which is exactly what happens if these run in parallel (each GitHub-hosted
+  # runner has its own IP).
+  #
+  # This used to be enforced with a shared `concurrency: group:` across all
+  # these jobs, relying on GitHub to queue them. That doesn't work for >2
+  # jobs: a concurrency group only holds ONE "in progress" + ONE "queued" job
+  # at a time, and when ~14 jobs all request the same group within the same
+  # second (as happens here, right after `migrate` finishes), each new
+  # arrival cancels whatever was previously queued. In practice this meant
+  # only 1-2 of the 14 jobs ever actually ran per workflow trigger — the rest
+  # were cancelled before they started, which is why several categories (e.g.
+  # Wrestling, Korean, Anime) silently stopped getting new titles for days.
+  #
+  # `strategy.max-parallel: 1` is the correct fix: it's GitHub's own matrix
+  # scheduler running entries strictly one-after-another, not a queue with a
+  # 1-deep buffer — it scales to any number of matrix entries with zero
+  # cancellation risk. No concurrency group is needed here anymore.
+  scrape_serial:
     name: ${{ matrix.name }}
     needs: migrate
     runs-on: ubuntu-latest
     timeout-minutes: 180
-    # Telethon uses ONE session (one auth_key) shared across every
-    # upload:true job. Telegram's anti-hijacking protection permanently
-    # kills a session the moment it sees that same auth_key used from two
-    # different IPs at once — which is exactly what happens if these run in
-    # parallel (each GitHub-hosted runner has its own IP). This group forces
-    # every upload:true job onto a single queue (one at a time, in whichever
-    # order they're scheduled) while jobs with upload:false keep running in
-    # parallel as before, since each gets its own unique group.
-    concurrency:
-      group: ${{ matrix.upload && 'telethon-session-lock' || format('scrape-{0}', matrix.name) }}
-      cancel-in-progress: false
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include:
           # STRATEGY: 9jarocks is the MAIN source — each of its categories runs as
@@ -122,10 +133,6 @@ jobs:
           - name: "🌏 thenkiri · gap categories (Korean/Chinese movies, Philippine, variety)"
             cmd: "python manage.py scrape_thenkiri --category gaps --max-pages 3"
             upload: true
-          # ── StreamIMDB — streaming links for movies + TV (unchanged; streamable). ──
-          - name: "▶️ StreamIMDB (movies + TV)"
-            cmd: "python manage.py scrape_streamimdb --media both --max-pages 3"
-            upload: false
           # ── Backfill: archive existing (pre-pipeline) DownloadLinks to the
           #    private Telegram channel, most-viewed first. Deliberately slow
           #    (small --limit) — runs every cycle automatically, no manual
@@ -213,10 +220,89 @@ jobs:
           [ -d /tmp/tg_uploads ] && rm -rf /tmp/tg_uploads/* || true
           df -h /
 
+  # ── Non-uploading scrapers — no shared Telegram session, so these can run
+  # freely in parallel (and in parallel with scrape_serial above, since
+  # neither depends on the other — both only need `migrate`). ──
+  scrape_parallel:
+    name: ${{ matrix.name }}
+    needs: migrate
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "▶️ StreamIMDB (movies + TV)"
+            cmd: "python manage.py scrape_streamimdb --media both --max-pages 3"
+            upload: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install telethon django-redis
+
+      - name: Create .env file
+        run: |
+          cat > .env << 'ENVEOF'
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          DEBUG=False
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          REDIS_URL=${{ secrets.REDIS_URL }}
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_MOVIES_CHANNEL=${{ secrets.TELEGRAM_MOVIES_CHANNEL }}
+          TELEGRAM_ANIME_CHANNEL=${{ secrets.TELEGRAM_ANIME_CHANNEL }}
+          TELEGRAM_MANGA_CHANNEL=${{ secrets.TELEGRAM_MANGA_CHANNEL }}
+          TWITTER_CLIENT_ID=${{ secrets.TWITTER_CLIENT_ID }}
+          TWITTER_CLIENT_SECRET=${{ secrets.TWITTER_CLIENT_SECRET }}
+          TWITTER_REFRESH_TOKEN=${{ secrets.TWITTER_REFRESH_TOKEN }}
+          FB_PAGE_ID=${{ secrets.FB_PAGE_ID }}
+          FB_ACCESS_TOKEN=${{ secrets.FB_ACCESS_TOKEN }}
+          SITE_URL=${{ secrets.SITE_URL }}
+          TELETHON_API_ID=${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH=${{ secrets.TELETHON_API_HASH }}
+          TELETHON_SESSION_NAME=uploader
+          TELETHON_PRIVATE_CHANNEL=${{ secrets.TELETHON_PRIVATE_CHANNEL }}
+          ENVEOF
+
+      - name: Restore Telethon session
+        if: ${{ matrix.upload && vars.DATA_ONLY != 'true' }}
+        run: |
+          echo "${{ secrets.TELETHON_SESSION_B64 }}" | base64 --decode > uploader.session
+          echo "✅ Telethon session restored ($(wc -c < uploader.session) bytes)"
+
+      - name: Run scraper
+        run: |
+          CMD="${{ matrix.cmd }}"
+          if [ "${{ vars.DATA_ONLY }}" = "true" ]; then
+            # Secondary (app-DB) account: scrape DATA only — no Telegram, no FB/Twitter.
+            CMD="$CMD --no-social"
+          else
+            UPLOAD="${{ github.event.inputs.upload_files || 'true' }}"
+            if [ "${{ matrix.upload }}" = "true" ] && [ "$UPLOAD" = "true" ]; then
+              CMD="$CMD --upload-files"
+            fi
+          fi
+          echo "▶️  $CMD"
+          $CMD
+
+      - name: Cleanup temp files
+        if: always()
+        run: |
+          [ -d /tmp/tg_uploads ] && rm -rf /tmp/tg_uploads/* || true
+          df -h /
+
   # ── After all scrapers: merge dup categories/movies + purge junk links ──────
   cleanse:
     name: "🧹 Cleanse + Enrich"
-    needs: scrape
+    needs: [scrape_serial, scrape_parallel]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 90
