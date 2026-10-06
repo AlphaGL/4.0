@@ -1877,20 +1877,25 @@ class SearchResultsView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
+        from movies.search_utils import normalize_for_search, normalized_title_expression
+
         query = self.request.GET.get('q', '').strip()
         if not query:
             return Movie.objects.none()
 
-        search_cache_key = f'search_v2_{hash(query.lower())}'
+        search_cache_key = f'search_v3_{hash(query.lower())}'
         cached_results = cache.get(search_cache_key)
         if cached_results is not None:
             return cached_results
 
         base_qs = Movie.objects.only(
             'id', 'title', 'slug', 'description', 'image_url', 'created_at', 'rating', 'trailer_url'
-        ).prefetch_related('external_ratings')
+        ).prefetch_related('external_ratings').annotate(
+            norm_title=normalized_title_expression()
+        )
 
-        exact_q = Q(title__icontains=query) | Q(description__icontains=query)
+        norm_query = normalize_for_search(query)
+        exact_q = Q(norm_title__icontains=norm_query) | Q(description__icontains=query)
         exact_matches = list(base_qs.filter(exact_q).distinct())
 
         if exact_matches:
@@ -1900,7 +1905,7 @@ class SearchResultsView(ListView):
         keywords = query.split()
         fallback_q = Q()
         for kw in keywords:
-            fallback_q |= Q(title__icontains=kw) | Q(description__icontains=kw)
+            fallback_q |= Q(norm_title__icontains=normalize_for_search(kw)) | Q(description__icontains=kw)
 
         keyword_results = list(base_qs.filter(fallback_q).distinct())
 

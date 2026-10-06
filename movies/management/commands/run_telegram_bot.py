@@ -120,8 +120,11 @@ class Command(BaseCommand):
 
     def _search(self, chat_id, query: str):
         """Free-text title search — lets someone just type e.g. 'Avatar the
-        Last Airbender' instead of needing a deep link at all."""
+        Last Airbender' instead of needing a deep link at all. Matches
+        regardless of spacing/punctuation ("spiderman" / "spider man" /
+        "Spider-Man" all find the same title) — see movies/search_utils.py."""
         from movies.models import Movie
+        from movies.search_utils import normalize_for_search, normalized_title_expression
 
         query = query.strip()
         if len(query) < 2:
@@ -129,8 +132,11 @@ class Command(BaseCommand):
             return
 
         safe_query = html.escape(query)
+        norm_query = normalize_for_search(query)
         matches = list(
-            Movie.objects.filter(title__icontains=query).order_by('-created_at')[:8]
+            Movie.objects.annotate(norm_title=normalized_title_expression())
+            .filter(norm_title__icontains=norm_query)
+            .order_by('-created_at')[:8]
         )
         if not matches:
             _send_message(chat_id, f"😕 No results for '<b>{safe_query}</b>'. "
