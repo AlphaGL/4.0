@@ -273,12 +273,18 @@ CSP_MANIFEST_SRC = ("'self'",)
 DATABASES = {
     'default': dj_database_url.parse(
         config('DATABASE_URL'),
-        # Reuse DB connections across requests instead of opening a brand-new
-        # one (TLS handshake to remote Supabase) every single request. This is
-        # the biggest per-request latency win for a remote database.
-        conn_max_age=600,
-        # Drop a connection that died while idle before reusing it (Django 4.1+).
-        conn_health_checks=True,
+        # conn_max_age=0 (fresh connection per request) is intentional here,
+        # NOT an oversight — this DB is Supabase's TRANSACTION pooler (port
+        # 6543). Transaction-mode PgBouncer does not guarantee the same
+        # backend connection stays valid across separate client requests; it
+        # can silently recycle/invalidate it between them. Persistent Django
+        # connections (conn_max_age>0) against this pooler caused production
+        # outages — gunicorn workers hitting `django.db.utils.InterfaceError:
+        # connection already closed` on every query — even with
+        # conn_health_checks=True, since the pooler's own recycling can race
+        # past Django's health check. Let PgBouncer do the pooling instead;
+        # it already absorbs the per-connection cost this was meant to save.
+        conn_max_age=0,
     )
 }
 # Supabase's transaction pooler (port 6543 / pgbouncer) does not support
