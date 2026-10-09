@@ -45,6 +45,23 @@ class Command(BaseCommand):
             help='Skip the thenkiri pass.',
         )
         parser.add_argument(
+            '--startpage', type=int, default=1,
+            help=(
+                'Category listing page to start from, per category (default: 1). '
+                'E.g. --startpage 6 skips the newest 5 pages — useful for a historical '
+                'backfill pass that leaves the freshest pages for a separate pass run '
+                'closer to launch, so recency stays naturally correct.'
+            ),
+        )
+        parser.add_argument(
+            '--endpage', type=int, default=None,
+            help=(
+                'Stop after this listing page, per category (default: none — '
+                'crawls to the end). E.g. --startpage 1 --endpage 5 scrapes just '
+                'the newest 5 pages, for a follow-up pass after a --startpage 6 backfill.'
+            ),
+        )
+        parser.add_argument(
             '--spacing-seconds', type=int, default=30,
             help='Synthetic gap between consecutive Latest-ordering timestamps (default: 30).',
         )
@@ -52,16 +69,17 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         run_started_at = timezone.now()
         self.stdout.write(f"🚀 Full catalog backfill started at {run_started_at.isoformat()}")
+        page_kwargs = {'startpage': options['startpage'], 'endpage': options['endpage']}
 
         if not options['skip_9jarocks']:
-            self.stdout.write("\n=== 9jarocks: scraping --category all ===")
-            call_command('scrape_9jarocks', category='all', no_social=True)
+            self.stdout.write(f"\n=== 9jarocks: scraping --category all (pages {options['startpage']}-{options['endpage'] or 'end'}) ===")
+            call_command('scrape_9jarocks', category='all', no_social=True, **page_kwargs)
         else:
             self.stdout.write("\n(skipping 9jarocks pass)")
 
         if not options['skip_thenkiri']:
-            self.stdout.write("\n=== thenkiri: scraping --category all ===")
-            call_command('scrape_thenkiri', category='all', no_social=True)
+            self.stdout.write(f"\n=== thenkiri: scraping --category all (pages {options['startpage']}-{options['endpage'] or 'end'}) ===")
+            call_command('scrape_thenkiri', category='all', no_social=True, **page_kwargs)
         else:
             self.stdout.write("\n(skipping thenkiri pass)")
 
